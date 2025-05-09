@@ -15,7 +15,7 @@ const LoginPage = () => {
 
         <div className="flex flex-col w-full md:w-1/2 lg:w-1/3 bg-white p-8 md:p-16 justify-center rounded-xl shadow-lg md:rounded-none md:shadow-none">
           <div className="mb-8 text-left">
-            <h2 className="text-xl md:text-2xl font-bold text-red-900">
+            <h2 className="text-base md:text-2xl font-bold text-red-900">
               Sistem Informasi Manajemen Laboratorium Komputer
             </h2>
             <p className="mt-2 text-gray-600">
