@@ -131,7 +131,7 @@ const nextSlide = () => {
                 <p className="text-white/90 mt-1">Update terbaru penggunaan laboratorium komputer</p>
               </div>
               
-              <div className="relative h-[500px] w-full">
+              <div className="relative h-[500px] w-full md:w-lg">
                 {announcements.map((item, index) => (
                   <div 
                     key={item.id}
@@ -142,7 +142,7 @@ const nextSlide = () => {
                       <img 
                         src={item.image} 
                         alt="Pengumuman" 
-                        className="w-full h-58 md:h-78 object-cover rounded-t-lg"
+                        className="w-md h-58 md:h-70 object-left- rounded-t-lg"
                       />
                       <div className="p-4">
                         <h5 className="text-xl font-bold text-gray-900">{item.title}</h5>
