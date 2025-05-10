@@ -1,12 +1,71 @@
-// pages/LoginPage.js
-import React from "react";
-import {Newspaper} from "lucide-react";
+import React,{useState,useEffect} from "react";
+import { Card } from "flowbite-react";
+
+import { Newspaper, ChevronLeft, ChevronRight } from "lucide-react";
+
 
 const LoginPage = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const announcements = [
+    {
+      id: 1,
+      title: "Jadwal Blok Penggunaan Lab 1,2,3 dan 4",
+      date: "21 Juni 2025",
+      content: "Berikut jadwal blok penggunaan lab untuk minggu depan. Harap diperhatikan.",
+      image: "/assets/images/pengumuman.png"
+    },
+    {
+      id: 2,
+      title: "Pemeliharaan Rutin Lab Komputer",
+      date: "15 Juni 2025",
+      content: "Akan dilakukan pemeliharaan rutin pada semua lab komputer setiap hari Sabtu.",
+      image: "/assets/images/pengumuman.png"
+    },
+    {
+      id: 3,
+      title: "Pelatihan Software Baru",
+      date: "10 Juni 2025",
+      content: "Pelatihan software terbaru akan dilaksanakan untuk semua pengguna lab.",
+      image: "/assets/images/pengumuman.png"
+    }
+  ];
+const nextSlide = () => {
+    setCurrentIndex((prevIndex) => 
+      prevIndex === announcements.length - 1 ? 0 : prevIndex + 1
+    );
+  };
+
+  const prevSlide = () => {
+    setCurrentIndex((prevIndex) => 
+      prevIndex === 0 ? announcements.length - 1 : prevIndex - 1
+    );
+  };
+
+  // Auto slide setiap 5 detik
+  useEffect(() => {
+    const interval = setInterval(() => {
+      nextSlide();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [currentIndex]);
+
+  // Fungsi untuk menentukan posisi card pada desktop
+  const getCardPosition = (index) => {
+    const position = (index - currentIndex + announcements.length) % announcements.length;
+    
+    switch(position) {
+      case 0: return 'z-30 top-0 left-0 right-0 opacity-100';
+      case 1: return 'z-20 top-4 left-4 right-4 opacity-80';
+      case 2: return 'z-10 top-8 left-8 right-8 opacity-60';
+      default: return 'hidden';
+    }
+  };
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
-      <div className="flex flex-col md:flex-row flex-1  mx-4 md:mx-0">
-        <div className="flex flex-col w-full md:w-1/2 lg:w-2/3 bg-white p-8 md:p-16 justifyrounded-xl shadow-lg md:rounded-none md:shadow-none">
+    <div className="relative flex flex-col min-h-screen bg-gray-100">
+     
+      <div className="flex flex-col md:flex-row flex-1 mx-0">
+        <div className="flex flex-col w-full  md:w-1/2 lg:w-2/3 bg-white p-8 md:p-16 justifyrounded-xl shadow-lg md:rounded-none md:shadow-none">
           <div className="mb-8 text-left">
             <div className="headerWrapper align-start">
               <div className="h-24 w-24 mb-4">
@@ -18,8 +77,8 @@ const LoginPage = () => {
               </h2>
             </div>
             <div className="mt-12">
-              <p className="mt-2  text-gray-900 font-bold text-2xl">Login</p>
-              <p className="mt-2  text-gray-600">Lengkapi data berikut ini !</p>
+              <p className="mt-2 text-gray-900 font-bold text-2xl">Login</p>
+              <p className="mt-2 text-gray-600">Lengkapi data berikut ini !</p>
             </div>
           </div>
 
@@ -65,30 +124,67 @@ const LoginPage = () => {
           </form>
         </div>
 
-        <div className="hidden md:flex md:w-1/2 bg-red-900 items-center p-12">
-          {/* <img
-            className="max-w-lg"
-            src="/assets/images/login/login-illustration.svg" 
-            alt="Login Illustration"
-          /> */}
-          <div className="flex flex-col gap-8">
-            <div className="">
-              {/* <div className="bg-white">
-                <Newspaper color="red" size={34}/>
-              </div> */}
-            <h1 className="text-base md:text-3xl font-bold text-white">
-              Pengumuman Terbaru
-            </h1>
-            <p className="text-based md:text-md text-white pt-1">Update terbaru penggunaan laboratorium komputer</p>
-            </div>
-            <div className="CardWrapper pl-8">
-              <div className="h-[550px] w-[400px] bg-white rounded-lg">
-              <div className="ImageWrapper bg-gray-900 w-full h-[300px] rounded-t-lg">
-                {/* Isi gambar atau konten lain di sini */}
+        <div className="flex md:w-1/2 bg-red-900 items-center p-12">
+          <div className="flex flex-col gap-8 w-full">
+              <div>
+                <h1 className="text-3xl font-bold text-white">Pengumuman Terbaru</h1>
+                <p className="text-white/90 mt-1">Update terbaru penggunaan laboratorium komputer</p>
+              </div>
+              
+              <div className="relative h-[500px] w-full">
+                {announcements.map((item, index) => (
+                  <div 
+                    key={item.id}
+                    className={`absolute transition-all duration-500 ease-in-out ${getCardPosition(index)}`}
+                    onClick={() => setCurrentIndex(index)}
+                  >
+                    <Card className="w-full cursor-pointer hover:shadow-xl transition-shadow">
+                      <img 
+                        src={item.image} 
+                        alt="Pengumuman" 
+                        className="w-full h-58 md:h-78 object-cover rounded-t-lg"
+                      />
+                      <div className="p-4">
+                        <h5 className="text-xl font-bold text-gray-900">{item.title}</h5>
+                        <p className="text-sm text-gray-600 mt-1">{item.date}</p>
+                        <p className="text-gray-700 mt-2 line-clamp-3">
+                          {item.content}
+                        </p>
+                      </div>
+                    </Card>
+                  </div>
+                ))}
+
+                {/* Navigation Buttons */}
+                <div className="absolute bottom-4 left-0 right-0 flex justify-between px-4 z-40">
+                  <button 
+                    onClick={prevSlide}
+                    className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                  >
+                    <ChevronLeft className="h-6 w-6 text-red-900" />
+                  </button>
+                  <button 
+                    onClick={nextSlide}
+                    className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                  >
+                    <ChevronRight className="h-6 w-6 text-red-900" />
+                  </button>
+                </div>
+
+                {/* Indicators */}
+                <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2 z-30">
+                  {announcements.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentIndex(index)}
+                      className={`w-2.5 h-2.5 rounded-full transition-colors ${
+                        index === currentIndex ? 'bg-white' : 'bg-white/50'
+                      }`}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
