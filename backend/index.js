@@ -2,7 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
-import db from './config/db.js'; // Import koneksi DB
+import userRoutes from './router/userRoutes.js';
+import indexRoutes from './router/indexRoutes.js';
 
 dotenv.config();
 
@@ -11,15 +12,9 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Menggunakan koneksi DB di sini
-app.get('/test-db', (req, res) => {
-  db.query('SELECT NOW()', (err, results) => {
-    if (err) {
-      return res.status(500).json({ message: 'Error connecting to DB' });
-    }
-    res.json({ message: 'Database connected', time: results });
-  });
-});
+app.use("/api/user", userRoutes);
+app.use(indexRoutes)
+
 
 const PORT = process.env.PORT || 5000;
 
