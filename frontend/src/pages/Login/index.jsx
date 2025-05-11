@@ -138,7 +138,7 @@ const nextSlide = () => {
                     className={`absolute transition-all duration-500 ease-in-out ${getCardPosition(index)}`}
                     onClick={() => setCurrentIndex(index)}
                   >
-                    <Card className="w-full cursor-pointer hover:shadow-xl transition-shadow !bg-white">
+                    <Card className="w-md cursor-pointer hover:shadow-xl transition-shadow !bg-white">
                       <img 
                         src={item.image} 
                         alt="Pengumuman" 
