@@ -3,6 +3,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import userRoutes from './router/userRoutes.js';
+import authRoutes from './router/authRoutes.js';
 import indexRoutes from './router/indexRoutes.js';
 
 dotenv.config();
@@ -13,6 +14,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 app.use("/api/user", userRoutes);
+app.use("/api/auth", authRoutes);
 app.use(indexRoutes)
 
 
