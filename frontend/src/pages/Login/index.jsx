@@ -124,21 +124,21 @@ const nextSlide = () => {
           </form>
         </div>
 
-        <div className="flex md:w-1/2 bg-red-900 items-center p-12">
+        <div className="flex md:w-1/2 bg-red-900 items-center p-6 md:p-12">
           <div className="flex flex-col gap-8 w-full">
               <div>
                 <h1 className="text-3xl font-bold text-white">Pengumuman Terbaru</h1>
                 <p className="text-white/90 mt-1">Update terbaru penggunaan laboratorium komputer</p>
               </div>
               
-              <div className="relative h-[500px] w-full md:w-lg">
+              <div className="relative h-[600px] w-full md:w-lg">
                 {announcements.map((item, index) => (
                   <div 
                     key={item.id}
                     className={`absolute transition-all duration-500 ease-in-out ${getCardPosition(index)}`}
                     onClick={() => setCurrentIndex(index)}
                   >
-                    <Card className="w-md cursor-pointer hover:shadow-xl transition-shadow !bg-white">
+                    <Card className="flex md:w-md cursor-pointer hover:shadow-xl transition-shadow !bg-white">
                       <img 
                         src={item.image} 
                         alt="Pengumuman" 
