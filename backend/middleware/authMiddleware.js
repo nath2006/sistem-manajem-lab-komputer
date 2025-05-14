@@ -37,30 +37,41 @@ export const verifyToken = (req, res, next) => {
   }
 };
 
-export const verifyAdmin = (req, res, next) => {
-  if (!req.user || req.user.role !== "Admin") {
-    return res.status(403).json({ msg: "Access Ditolak. Hanya Admin" });
-  }
-  next();
-};
+// export const verifyAdmin = (req, res, next) => {
+//   if (!req.user || req.user.role !== "Admin") {
+//     return res.status(403).json({ msg: "Access Ditolak. Hanya Admin" });
+//   }
+//   next();
+// };
 
-export const verifyKepalaLab = (req, res, next) => {
-  if (!req.user || req.user.role !== "Kepala Lab") {
-    return res.status(403).json({ msg: "Access Ditolak. Hanya Kepala Lab." });
-  }
-  next();
-};
+// export const verifyKepalaLab = (req, res, next) => {
+//   if (!req.user || req.user.role !== "Kepala Lab") {
+//     return res.status(403).json({ msg: "Access Ditolak. Hanya Kepala Lab." });
+//   }
+//   next();
+// };
 
-export const verifyKoorLab = (req, res, next) => {
-  if (!req.user || req.user.role !== "Kepala Koor Lab") {
-    return res.status(403).json({ msg: "Access Ditolak. Hanya Koordinator Lab." });
-  }
-  next();
-};
+// export const verifyKoorLab = (req, res, next) => {
+//   if (!req.user || req.user.role !== "Kepala Koor Lab") {
+//     return res.status(403).json({ msg: "Access Ditolak. Hanya Koordinator Lab." });
+//   }
+//   next();
+// };
 
-export const verifyTeknisi = (req, res, next) => {
-  if (!req.user || req.user.role !== "Teknisi") {
-    return res.status(403).json({ msg: "Access Ditolak. Hanya Teknisi." });
-  }
-  next();
+// export const verifyTeknisi = (req, res, next) => {
+//   if (!req.user || req.user.role !== "Teknisi") {
+//     return res.status(403).json({ msg: "Access Ditolak. Hanya Teknisi." });
+//   }
+//   next();
+// };
+export const authorizeRoles = (allowedRoles = []) => {
+  return (req, res, next) => {
+    const userRole = req.user?.role;
+
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      return res.status(403).json({ message: 'Akses ditolak. Role tidak diizinkan.' });
+    }
+
+    next();
+  };
 };
