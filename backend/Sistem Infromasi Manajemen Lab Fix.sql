@@ -26,6 +26,7 @@ CREATE TABLE `perangkat` (
   `spesifikasi` TEXT,
   `status` ENUM ('Baik', 'Rusak', 'Perlu Perbaikan') NOT NULL DEFAULT 'Baik',
   `lab_id` INT NOT NULL,
+  `file_path` VARCHAR(255),
   `nomor_inventaris` VARCHAR(50)
 );
 
@@ -126,3 +127,9 @@ ALTER TABLE `perbaikan` ADD FOREIGN KEY (`perangkat_id`) REFERENCES `perangkat` 
 ALTER TABLE `laporan` ADD FOREIGN KEY (`dibuat_oleh`) REFERENCES `user` (`user_id`);
 
 ALTER TABLE `pengumuman` ADD FOREIGN KEY (`created_by`) REFERENCES `user` (`user_id`);
+
+INSERT INTO user (username, password, nama_lengkap, email, role)
+SELECT 'admin', '$2b$10$WzS0KkqFdnDZf9xTq4BzCOz1X4VkWJZ1wTO93MoFDZ2zVpy5VKQ4C', 'Admin', 'admin@gmail.com', 'Admin'
+WHERE NOT EXISTS (
+    SELECT 1 FROM user WHERE username = 'admin'
+);
