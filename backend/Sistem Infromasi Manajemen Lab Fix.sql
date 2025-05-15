@@ -4,7 +4,7 @@ CREATE TABLE `user` (
   `password` VARCHAR(255) NOT NULL,
   `nama_lengkap` VARCHAR(100) NOT NULL,
   `email` VARCHAR(100) NOT NULL,
-  `role` ENUM ('Guru', 'Kepala Lab', 'Kepala Koor Lab', 'Teknisi', 'Admin') NOT NULL
+  `role` ENUM ('Guru', 'Kepala Lab', 'Koordinator Lab', 'Teknisi', 'Admin') NOT NULL
 );
 
 CREATE TABLE `laboratorium` (

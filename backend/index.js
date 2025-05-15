@@ -8,7 +8,8 @@ import { fileURLToPath } from 'url';
 import userRoutes from './router/userRoutes.js';
 import authRoutes from './router/authRoutes.js';
 import indexRoutes from './router/indexRoutes.js';
-import labRoutes from './router/labRoutes.js'; // ✅ Tambahkan
+import labRoutes from './router/labRoutes.js'; 
+import deviceRoutes from './router/deviceRoutes.js';
 
 dotenv.config();
 
@@ -29,7 +30,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Routes
 app.use("/api/user", userRoutes);
 app.use("/api/auth", authRoutes);
-app.use("/api/lab", labRoutes); // ✅ Tambahkan labRoutes
+app.use("/api/lab", labRoutes); 
+app.use("/api/perangkat", deviceRoutes);
 app.use(indexRoutes);
 
 const PORT = process.env.PORT || 5000;

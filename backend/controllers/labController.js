@@ -1,7 +1,6 @@
 import db from "../config/db.js";
 import path from "path";
 import fs from "fs";
-import { uploadImage } from "../utils/multer.js";
 
 //Buat Data Lab Baru
 export const createLab = async (req, res) => {
