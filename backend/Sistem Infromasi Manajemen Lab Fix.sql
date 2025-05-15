@@ -129,7 +129,11 @@ ALTER TABLE `laporan` ADD FOREIGN KEY (`dibuat_oleh`) REFERENCES `user` (`user_i
 ALTER TABLE `pengumuman` ADD FOREIGN KEY (`created_by`) REFERENCES `user` (`user_id`);
 
 INSERT INTO user (username, password, nama_lengkap, email, role)
-SELECT 'admin', '$2b$10$WzS0KkqFdnDZf9xTq4BzCOz1X4VkWJZ1wTO93MoFDZ2zVpy5VKQ4C', 'Admin', 'admin@gmail.com', 'Admin'
+-- DEFAULT USER
+-- username = admin
+-- password = 12345678
+-- role = Admin
+SELECT 'admin', '$2a$10$ybTPe1uDN/aVEz3/o6xHYOTahBcazv4Icfzwg9t0GA49eC4WryYZS', 'Admin', 'admin@gmail.com', 'Admin'
 WHERE NOT EXISTS (
     SELECT 1 FROM user WHERE username = 'admin'
 );
