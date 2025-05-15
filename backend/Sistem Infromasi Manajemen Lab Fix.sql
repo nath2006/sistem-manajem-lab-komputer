@@ -26,7 +26,7 @@ CREATE TABLE `perangkat` (
   `spesifikasi` TEXT,
   `status` ENUM ('Baik', 'Rusak', 'Perlu Perbaikan') NOT NULL DEFAULT 'Baik',
   `lab_id` INT NOT NULL,
-  `file_path` VARCHAR(255),
+  `foto_perangkat` VARCHAR(255),
   `nomor_inventaris` VARCHAR(50)
 );
 
@@ -128,11 +128,11 @@ ALTER TABLE `laporan` ADD FOREIGN KEY (`dibuat_oleh`) REFERENCES `user` (`user_i
 
 ALTER TABLE `pengumuman` ADD FOREIGN KEY (`created_by`) REFERENCES `user` (`user_id`);
 
-INSERT INTO user (username, password, nama_lengkap, email, role)
 -- DEFAULT USER
 -- username = admin
 -- password = 12345678
 -- role = Admin
+INSERT INTO user (username, password, nama_lengkap, email, role)
 SELECT 'admin', '$2a$10$ybTPe1uDN/aVEz3/o6xHYOTahBcazv4Icfzwg9t0GA49eC4WryYZS', 'Admin', 'admin@gmail.com', 'Admin'
 WHERE NOT EXISTS (
     SELECT 1 FROM user WHERE username = 'admin'
