@@ -9,7 +9,6 @@ export const createDevice = async (req, res) => {
       nama_perangkat, 
       spesifikasi, 
       status, 
-      lokasi, 
       lab_id, 
       nomor_inventaris
     } = req.body;
@@ -17,8 +16,8 @@ export const createDevice = async (req, res) => {
     const foto_perangkat = req.file ? req.file.filename : null;
 
     const [result] = await db.query(
-      "INSERT INTO perangkat (nama_perangkat, spesifikasi, status, lokasi, lab_id, foto_perangkat, nomor_inventaris) VALUES (?,?,?,?,?,?)",
-      [nama_perangkat, spesifikasi, status, lokasi, lab_id,foto_perangkat, nomor_inventaris]
+      "INSERT INTO perangkat (nama_perangkat, spesifikasi, status, lab_id, foto_perangkat, nomor_inventaris) VALUES (?,?,?,?,?,?)",
+      [nama_perangkat, spesifikasi, status, lab_id,foto_perangkat, nomor_inventaris]
     );
 
     const newLab = {
@@ -26,7 +25,6 @@ export const createDevice = async (req, res) => {
       nama_perangkat, 
       spesifikasi, 
       status, 
-      lokasi, 
       lab_id, 
       foto_perangkat,
       nomor_inventaris
@@ -95,7 +93,6 @@ export const updateDevice = async (req, res) => {
       nama_perangkat, 
       spesifikasi, 
       status, 
-      lokasi, 
       lab_id, 
       nomor_inventaris
     } = req.body;
@@ -132,7 +129,6 @@ export const updateDevice = async (req, res) => {
         nama_perangkat = ?, 
         spesifikasi = ?, 
         status = ?, 
-        lokasi = ?, 
         lab_id = ?, 
         foto_perangkat = ?, 
         nomor_inventaris = ? 
@@ -141,7 +137,6 @@ export const updateDevice = async (req, res) => {
         nama_perangkat, 
         spesifikasi, 
         status, 
-        lokasi, 
         lab_id, 
         newFotoPerangkat,
         nomor_inventaris,
@@ -161,7 +156,6 @@ export const updateDevice = async (req, res) => {
         nama_perangkat, 
         spesifikasi, 
         status, 
-        lokasi, 
         lab_id, 
         foto_perangkat: newFotoPerangkat,
         nomor_inventaris

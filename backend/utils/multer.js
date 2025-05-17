@@ -22,10 +22,11 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const uuid = crypto.randomUUID();
     const baseName = file.fieldname === "foto_lab"
       ? req.body.nama_lab?.replace(/\s+/g, "-") || "lab"
       : req.body.nama_perangkat?.replace(/\s+/g, "-") || "perangkat";
-    const fileName = `${baseName}-${date}${ext}`;
+    const fileName = `${baseName}-${date}-${uuid}${ext}`;
     cb(null, fileName);
   }
 });
