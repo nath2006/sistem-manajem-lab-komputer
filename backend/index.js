@@ -10,6 +10,7 @@ import authRoutes from './router/authRoutes.js';
 import indexRoutes from './router/indexRoutes.js';
 import labRoutes from './router/labRoutes.js'; 
 import deviceRoutes from './router/deviceRoutes.js';
+import pemeriksaanRouter from './router/pemerikasaanRouter.js';
 
 dotenv.config();
 
@@ -24,6 +25,8 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 
+
+
 // ✅ Serve folder uploads (agar gambar bisa diakses dari browser)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -32,6 +35,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/lab", labRoutes); 
 app.use("/api/perangkat", deviceRoutes);
+app.use("/api/pemeriksaan", pemeriksaanRouter);
 app.use(indexRoutes);
 
 const PORT = process.env.PORT || 5000;
