@@ -107,11 +107,24 @@ export const updateUser = async (req, res) => {
 };
 
 
-//Hapus User
+// Hapus User
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Cek apakah user menjadi kepala lab
+    const [labRelation] = await db.query(
+      "SELECT * FROM laboratorium WHERE kepala_lab_id = ?",
+      [id]
+    );
+
+    if (labRelation.length > 0) {
+      return res.status(400).json({
+        message: "Harap ubah kepala lab jika ingin melanjutkan menghapus user"
+      });
+    }
+
+    // Lanjut hapus jika tidak ada relasi
     const [result] = await db.query(
       "DELETE FROM user WHERE user_id = ?",
       [id]
@@ -129,8 +142,8 @@ export const deleteUser = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ 
-      message: 'Menghapus User Gagal' ,
-      error: error.message,
+      message: 'Menghapus User Gagal',
+      error: error.message
     });
   }
 };

@@ -46,14 +46,14 @@ export const login = async (req, res) => {
 
     //query untuk cek apakah username dan password ada di dalam database
     if (rows.length === 0) {
-      return res.status(401).json({ message: 'Invalid username or password' });
+      return res.status(401).json({ message: 'Username atau Password Salah' });
     }
     const user = rows[0];
 
     //query untuk cek apakah password yang diinputkan sama dengan password yang ada di dalam database
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid username or password' });
+      return res.status(401).json({ message: 'Username atau Password Salah' });
     }
 
     const accessToken = generateAccesToken(user);
@@ -87,7 +87,7 @@ export const login = async (req, res) => {
 export const refreshToken = (req, res) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken) {
-    return res.status(401).json({ message: 'Refresh token not found' });
+    return res.status(401).json({ message: 'Refresh token tidak ditemukan' });
   }
 
   jwt.verify(
@@ -95,14 +95,14 @@ export const refreshToken = (req, res) => {
     process.env.JWT_SECRET,
     (error, decoded) => {
       if(error) {
-        return res.status(403).json({ message: 'Invalid refresh token' });
+        return res.status(403).json({ message: 'refresh token salah' });
       }
 
       //untuk debug di console
       console.log('Decoded refresh token:', decoded);
 
       if(!decoded.full_name){
-        return res.status(403).json({ message: 'Invalid refresh token' });
+        return res.status(403).json({ message: 'refresh token salah' });
       }
 
       const newAccessToken = generateAccesToken(

@@ -30,10 +30,10 @@ export const verifyToken = (req, res, next) => {
     //console.log("Token verification failed:", error.message);
 
     if (error.name === "TokenExpiredError") {
-      return res.status(401).json({ msg: "Token expired. Please login again." });
+      return res.status(401).json({ msg: "Token expired. Silakan Login Lagi." });
     }
 
-    return res.status(401).json({ msg: "Unauthorized or invalid token" });
+    return res.status(401).json({ msg: "Unauthorized atau token salah" });
   }
 };
 
