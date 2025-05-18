@@ -69,10 +69,18 @@ CREATE TABLE `pemeriksaan` (
   `catatan` TEXT
 );
 
-CREATE TABLE `perbaikan` (
-  `perbaikan_id` INT PRIMARY KEY AUTO_INCREMENT,
+CREATE TABLE `pengecekan` (
+  `pengecekan_id` INT PRIMARY KEY AUTO_INCREMENT,
   `user_id` INT NOT NULL,
   `perangkat_id` INT NOT NULL,
+  `tanggal_pengecekan` DATE NOT NULL,
+  `ditemukan_kerusakan` TEXT
+);
+
+CREATE TABLE `perbaikan` (
+  `perbaikan_id` INT PRIMARY KEY AUTO_INCREMENT,
+  `pengecekan_id` INT NOT NULL,
+  `user_id` INT NOT NULL,
   `tanggal_perbaikan` DATE NOT NULL,
   `tindakan` TEXT,
   `hasil_perbaikan` ENUM ('Berhasil', 'Gagal') NOT NULL,
@@ -81,7 +89,7 @@ CREATE TABLE `perbaikan` (
 
 CREATE TABLE `laporan` (
   `laporan_id` INT PRIMARY KEY AUTO_INCREMENT,
-  `jenis_laporan` ENUM ('Perangkat', 'Perbaikan', 'Penggunaan Lab') NOT NULL,
+  `jenis_laporan` ENUM ('Pemeriksaan', 'Perbaikan', 'Penggunaan Lab') NOT NULL,
   `periode` VARCHAR(50),
   `file_path` VARCHAR(255),
   `tanggal_dibuat` DATE DEFAULT (CURRENT_DATE),
@@ -102,6 +110,22 @@ CREATE UNIQUE INDEX `no_schedule_overlap` ON `jadwal_lab` (`lab_id`, `tanggal`, 
 
 CREATE UNIQUE INDEX `prevent_overlapping_requests` ON `pengajuan_lab` (`lab_id`, `tanggal_pakai`, `jam_mulai`);
 
+ALTER TABLE `pemeriksaan` ADD FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`);
+
+ALTER TABLE `pemeriksaan` ADD FOREIGN KEY (`perangkat_id`) REFERENCES `perangkat` (`perangkat_id`);
+
+ALTER TABLE `pengecekan` ADD FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`);
+
+ALTER TABLE `pengecekan` ADD FOREIGN KEY (`perangkat_id`) REFERENCES `perangkat` (`perangkat_id`);
+
+ALTER TABLE `perbaikan` ADD FOREIGN KEY (`pengecekan_id`) REFERENCES `pengecekan` (`pengecekan_id`);
+
+ALTER TABLE `perbaikan` ADD FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`);
+
+ALTER TABLE `laporan` ADD FOREIGN KEY (`dibuat_oleh`) REFERENCES `user` (`user_id`);
+
+ALTER TABLE `pengumuman` ADD FOREIGN KEY (`created_by`) REFERENCES `user` (`user_id`);
+
 ALTER TABLE `laboratorium` ADD FOREIGN KEY (`kepala_lab_id`) REFERENCES `user` (`user_id`);
 
 ALTER TABLE `perangkat` ADD FOREIGN KEY (`lab_id`) REFERENCES `laboratorium` (`lab_id`);
@@ -116,17 +140,6 @@ ALTER TABLE `pengajuan_lab` ADD FOREIGN KEY (`guru_id`) REFERENCES `user` (`user
 
 ALTER TABLE `pengajuan_lab` ADD FOREIGN KEY (`disetujui_oleh`) REFERENCES `user` (`user_id`);
 
-ALTER TABLE `pemeriksaan` ADD FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`);
-
-ALTER TABLE `pemeriksaan` ADD FOREIGN KEY (`perangkat_id`) REFERENCES `perangkat` (`perangkat_id`);
-
-ALTER TABLE `perbaikan` ADD FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`);
-
-ALTER TABLE `perbaikan` ADD FOREIGN KEY (`perangkat_id`) REFERENCES `perangkat` (`perangkat_id`);
-
-ALTER TABLE `laporan` ADD FOREIGN KEY (`dibuat_oleh`) REFERENCES `user` (`user_id`);
-
-ALTER TABLE `pengumuman` ADD FOREIGN KEY (`created_by`) REFERENCES `user` (`user_id`);
 
 -- DEFAULT USER
 -- username = admin
