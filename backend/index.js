@@ -11,6 +11,7 @@ import indexRoutes from './router/indexRoutes.js';
 import labRoutes from './router/labRoutes.js'; 
 import deviceRoutes from './router/deviceRoutes.js';
 import pemeriksaanRouter from './router/pemerikasaanRouter.js';
+import pengumumanRouter from './router/pengumumanRoutes.js';
 
 dotenv.config();
 
@@ -36,6 +37,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/lab", labRoutes); 
 app.use("/api/perangkat", deviceRoutes);
 app.use("/api/pemeriksaan", pemeriksaanRouter);
+app.use("/api/pengumuman", pengumumanRouter);
 app.use(indexRoutes);
 
 const PORT = process.env.PORT || 5000;
