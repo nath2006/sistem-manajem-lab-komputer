@@ -140,6 +140,41 @@ ALTER TABLE `pengajuan_lab` ADD FOREIGN KEY (`guru_id`) REFERENCES `user` (`user
 
 ALTER TABLE `pengajuan_lab` ADD FOREIGN KEY (`disetujui_oleh`) REFERENCES `user` (`user_id`);
 
+-- VIEW untuk menampilkan alur pemeriksaan → pengecekan → perbaikan
+CREATE VIEW view_laporan_pemeriksaan_perbaikan AS
+SELECT 
+  p.nama_perangkat,
+  lab.nama_lab,
+  
+  u_pemeriksa.nama_lengkap AS pemeriksa,
+  pm.tanggal_pemeriksaan,
+  pm.hasil_pemeriksaan,
+  pm.catatan AS catatan_pemeriksaan,
+
+  u_pengecek.nama_lengkap AS pengecek,
+  pc.tanggal_pengecekan,
+  pc.ditemukan_kerusakan,
+
+  u_perbaiki.nama_lengkap AS teknisi_perbaikan,
+  pb.tanggal_perbaikan,
+  pb.tindakan,
+  pb.hasil_perbaikan,
+  pb.catatan_tambahan
+
+FROM pemeriksaan pm
+JOIN perangkat p ON pm.perangkat_id = p.perangkat_id
+JOIN laboratorium lab ON p.lab_id = lab.lab_id
+JOIN user u_pemeriksa ON pm.user_id = u_pemeriksa.user_id
+
+LEFT JOIN pengecekan pc ON pc.perangkat_id = p.perangkat_id
+LEFT JOIN user u_pengecek ON pc.user_id = u_pengecek.user_id
+
+LEFT JOIN perbaikan pb ON pb.pengecekan_id = pc.pengecekan_id
+LEFT JOIN user u_perbaiki ON pb.user_id = u_perbaiki.user_id
+
+WHERE pm.hasil_pemeriksaan = 'Bermasalah'
+ORDER BY pm.tanggal_pemeriksaan DESC;
+
 
 -- DEFAULT USER
 -- username = admin
