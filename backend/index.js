@@ -13,7 +13,8 @@ import deviceRoutes from './router/deviceRoutes.js';
 import pemeriksaanRouter from './router/pemerikasaanRouter.js';
 import pengumumanRouter from './router/pengumumanRoutes.js';
 import pengecekanRouter from './router/pengecekanRoutes.js';
-
+import laporanPerangkat from './router/laporanPerangkat.js';
+import perbaikanRoutes from './router/perbaikanRoutes.js';
 dotenv.config();
 
 const app = express();
@@ -29,7 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 
 
 
-// ✅ Serve folder uploads (agar gambar bisa diakses dari browser)
+// Serve folder uploads (agar gambar bisa diakses dari browser)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
@@ -40,6 +41,8 @@ app.use("/api/perangkat", deviceRoutes);
 app.use("/api/pemeriksaan", pemeriksaanRouter);
 app.use("/api/pengumuman", pengumumanRouter);
 app.use("/api/pengecekan", pengecekanRouter);
+app.use("/api/laporan/perangkat", laporanPerangkat);
+app.use("/api/perbaikan", perbaikanRoutes);
 app.use(indexRoutes);
 
 const PORT = process.env.PORT || 5000;
