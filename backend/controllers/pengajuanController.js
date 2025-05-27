@@ -111,8 +111,8 @@ export const getPengajuanByGuru = async (req, res) => {
     const userId = req.user_id;
     const userRole = req.user?.role;
 
-    if (!userId || userRole !== "Guru") {
-      return res.status(403).json({ error: "Akses hanya untuk Guru" });
+    if (!userId || userRole !== "Guru" & userRole !== "Admin") {
+      return res.status(403).json({ error: "Akses ditolak!" });
     }
 
     const [pengajuan] = await db.query(
@@ -131,7 +131,6 @@ export const getPengajuanByGuru = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
-
 
 export const approvePengajuan = async (req, res) => {
   try {
