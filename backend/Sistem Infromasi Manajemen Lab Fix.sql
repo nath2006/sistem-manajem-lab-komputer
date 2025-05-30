@@ -4,7 +4,8 @@ CREATE TABLE `user` (
   `password` VARCHAR(255) NOT NULL,
   `nama_lengkap` VARCHAR(100) NOT NULL,
   `email` VARCHAR(100) NOT NULL,
-  `role` ENUM ('Guru', 'Kepala Lab', 'Koordinator Lab', 'Teknisi', 'Admin') NOT NULL
+  `role` ENUM ('Guru', 'Kepala Lab', 'Koordinator Lab', 'Teknisi', 'Admin') NOT NULL,
+  `is_online` BOOLEAN NOT NULL DEFAULT false
 );
 
 CREATE TABLE `laboratorium` (
