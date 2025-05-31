@@ -210,7 +210,7 @@ const Lab = () => {
           title="Data Laboratorium"
           breadcrumbContext={userRole}
           headers={headTable}
-          to={isAuthorized ? "/app/data-master/lab/add" : null} // Ganti path "to" sesuai kebutuhan
+          to={isAuthorized ? "/add-laboratorium" : null} // Ganti path "to" sesuai kebutuhan
           buttonText="Tambah Lab Baru"
           data={data} // Data tetap dikirim, loading dihandle di children
           itemsPerPage={10}

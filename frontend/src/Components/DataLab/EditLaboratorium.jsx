@@ -142,7 +142,7 @@ const EditLaboratorium = ({ id, onClose, onUpdate }) => {
 
   const primaryButton = (
     <button onClick={handleSubmit} disabled={saving}
-      className="w-full px-5 py-2 text-sm font-semibold text-center rounded-md bg-blue-600 hover:bg-blue-700 text-white active:scale-95 focus:outline-none">
+      className="w-full px-5 py-2 text-sm font-semibold text-center rounded-md bg-red-600 hover:bg-red-700 text-white active:scale-95 focus:outline-none">
       {saving ? "Menyimpan..." : "Simpan Perubahan"}
     </button>
   );
