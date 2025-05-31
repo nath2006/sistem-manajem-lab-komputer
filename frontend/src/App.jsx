@@ -20,10 +20,10 @@ function App() {
 
           {/*Protected Routes*/}
           <Route element={<ProtectedRoute />}>
+
             {/*Admin Routes*/}
             <Route element={<AdminRoute />}>
               <Route path="/dashboard" element={<AdminPage />} />
-              {/* Add more admin routes here */}
             </Route>
 
             {/* Kepala Lab Routes*/}

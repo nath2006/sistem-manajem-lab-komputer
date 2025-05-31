@@ -12,7 +12,7 @@ import CardStatAdmin from "../../components/cardDashboard/CardStatAdmin";
 import { get } from "../../utils/api"; 
 
 const DasboardAdmin = () => {
-  useTitle("Admin - Sistem Manajemen Lab Letris 2");
+  
 
   // State untuk menyimpan data dari API baru
   const [dashboardStats, setDashboardStats] = useState(null);

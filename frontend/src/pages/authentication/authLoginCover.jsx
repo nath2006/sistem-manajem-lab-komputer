@@ -5,8 +5,11 @@ import { post } from "../../utils/api";
 import Notification from "../../Components/Notification/Notif";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../Context/AuthContext";
+import useTitle from "../../utils/useTitle";
 
 const LoginPage = () => {
+  useTitle("Login - SIM Lab Komputer");
+
   const { state, dispatch } = useContext(AuthContext);
   const [form, setForm] = useState({ username: "", password: "" });
   const [errorMsg, setErrorMsg] = useState("");
