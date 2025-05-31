@@ -16,7 +16,7 @@ import pengecekanRouter from './router/pengecekanRoutes.js';
 import laporanPerangkat from './router/laporanPerangkat.js';
 import perbaikanRoutes from './router/perbaikanRoutes.js';
 import pengajunLab from './router/pengajuanLabRoutes.js';
-
+import dashboardAdminRoutes from './router/dashboardAdminRoutes.js';
 
 dotenv.config();
 
@@ -48,6 +48,8 @@ app.use("/api/laporan/perangkat", laporanPerangkat);
 app.use("/api/perbaikan", perbaikanRoutes);
 app.use("/api/pengajuan", pengajunLab);
 
+// Admin Dashboard Routes
+app.use("/api/dashboard/", dashboardAdminRoutes);
 app.use(indexRoutes);
 
 const PORT = process.env.PORT || 5000;
