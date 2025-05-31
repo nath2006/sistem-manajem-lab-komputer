@@ -14,6 +14,8 @@ import AddUser from "./Components/User/AddUser";
 import Pengumuman from "./features/KelolaPengumuman/Pengumuman";
 import AddPengumuman from "./Components/Pengumuman/AddPengumuman";
 
+import Lab from "./features/KelolaLaboratorium/Laboratorium";
+
 function App() {
   return (
     //  <RouterProvider router={router} />
@@ -29,6 +31,7 @@ function App() {
             <Route path="/add-user" element={<AddUser />} />
             <Route path="/kelola-pengumuman" element={<Pengumuman />} />
             <Route path="/add-pengumuman" element={<AddPengumuman />} />
+            <Route path="/kelola/data-lab" element={<Lab />} />
 
             {/*Admin Routes*/}
             <Route element={<AdminRoute />}>
