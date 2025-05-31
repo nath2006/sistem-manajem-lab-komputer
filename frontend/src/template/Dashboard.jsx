@@ -1,5 +1,19 @@
 import React, { useState, useContext } from 'react';
-import { FaHouse, FaGraduationCap, FaBars, FaUser, FaFileMedical, FaDatabase, FaArrowRightFromBracket, FaClockRotateLeft, FaUserGear } from 'react-icons/fa6';
+import { FaHouse, FaGraduationCap, 
+  FaBars, 
+  FaUser, 
+  FaFileMedical, 
+  FaDatabase, 
+  FaArrowRightFromBracket, 
+  FaClockRotateLeft, 
+  FaUserGear,
+  FaRegNewspaper,
+  FaRegCalendarDays, 
+  FaRegCalendarCheck,
+  FaLaptopFile,
+  FaLaptopMedical,
+  FaComputer  
+} from 'react-icons/fa6';
 import img from '../images/logo.png';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
@@ -37,41 +51,41 @@ const Dashboard = ({ title, children }) => {
 
     const menuKepalaLab = [
         { name: 'Dashboard', ic: <FaHouse />, to: '/home' },
-        { name: 'Pengajuan Jadwal Lab', ic: <FaUser />, to: '/ortu' },
+        { name: 'Pengajuan Jadwal Lab', ic: < FaRegCalendarCheck />, to: '/ortu' },
         { name: 'Kelola Data Perangkat', ic: <FaGraduationCap />, to: '/siswa' },
     ];
 
     const menuKoordinatorLab = [
         { name: 'Dashboard', ic: <FaHouse />, to: '/home' },
         { name: 'Kelola Data Lab', ic: <FaUser />, to: '/ortu' },
-        { name: 'Kelola Pengumuman', ic: <FaGraduationCap />, to: '/siswa' },
+        { name: 'Kelola Pengumuman', ic: <FaRegNewspaper  />, to: '/siswa' },
     ];
 
     const menuTeknisi = [
         { name: 'Dashboard', ic: <FaHouse />, to: '/home' },
-        { name: 'Perbaikan Perangkat', ic: <FaHouse />, to: '/home' },
-        { name: 'Pengecekan Perangkat', ic: <FaHouse />, to: '/home' },
+        { name: 'Perbaikan Perangkat', ic:  <FaLaptopMedical />, to: '/home' },
+        { name: 'Pengecekan Perangkat', ic:  <FaLaptopMedical />, to: '/home' },
     ];
 
     const menuGuru = [
         { name: 'Dashboard', ic: <FaHouse />, to: '/registrator' },
-        { name: 'Pengajuan Jadwal Lab', ic: <FaDatabase />, to: '/daftar-ulang' },
+        { name: 'Pengajuan Jadwal Lab', ic: <FaRegCalendarDays />, to: '/daftar-ulang' },
     ];
 
     const menuAdmin = [
         { name: 'Dashboard', ic: <FaHouse />, to: '/dashboard' },
         { type: 'divider' },
-        { name: 'Pemeriksaan Perangkat', ic: <FaUser />, to: '/ortu' },
-        { name: 'Kelola Data Perangkat', ic: <FaGraduationCap />, to: '/siswa' },
+        { name: 'Pemeriksaan Perangkat', ic: <FaLaptopMedical />, to: '/ortu' },
+        { name: 'Kelola Data Perangkat', ic: <FaLaptopFile />, to: '/siswa' },
         { type: 'divider' },
-        { name: 'Data Lab', ic: <FaFileMedical />, to: '/medical' },
-        { name: 'Jadwal lab', ic: <FaUserGear />, to: '/user' },
+        { name: 'Data Lab', ic: <FaComputer />, to: '/medical' },
+        { name: 'Jadwal lab', ic: <FaRegCalendarDays />, to: '/user' },
         { type: 'divider' },
-        { name: 'Perbaikan Perangkat', ic: <FaClockRotateLeft />, to: '/logging' },
-        { name: 'Pengecekan Perangkat', ic: <FaHouse />, to: '/landing-page' },
+        { name: 'Perbaikan Perangkat', ic:  <FaLaptopMedical />, to: '/logging' },
+        { name: 'Pengecekan Perangkat', ic:  <FaLaptopMedical />, to: '/landing-page' },
         { type: 'divider' },
-        { name: 'Kelola User', ic: <FaDatabase />, to: '/daftar-ulang' },
-        { name: 'Kelola Pengumuman', ic: <FaDatabase />, to: '/daftar-ulang' },
+        { name: 'Kelola User', ic: <FaUserGear />, to: '/daftar-ulang' },
+        { name: 'Kelola Pengumuman', ic: <FaRegNewspaper  />, to: '/daftar-ulang' },
         { type: 'divider' },
     ];
 
