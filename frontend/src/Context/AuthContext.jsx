@@ -10,6 +10,7 @@ export const AuthContext = createContext();
 const initialState = {
   isAuthenticated: false,
   user: null,
+  fullName: null,
   token: null,
   role: null,
   isLoading: true
@@ -31,6 +32,7 @@ const authReducer = (state, action) => {
       return {
         isAuthenticated: false,
         user: null,
+        fullName: null,
         token: null,
         role: null,
         isLoading: false

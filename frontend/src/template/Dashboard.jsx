@@ -32,8 +32,7 @@ const Dashboard = ({ title, children }) => {
     const navigate = useNavigate();
     const { state, dispatch } = useContext(AuthContext);
 
-    const userName = state?.user || "User"; // Mengambil dari state.user (sesuaikan jika nama properti berbeda)
-    const fullName = state?.fullName || "User"; // Mengambil dari state.fullName jika ada
+    const fullName = state?.fullName; // Mengambil dari state.fullName jika ada
     const userRole = state?.role;
 
     const Logout = async () => {

@@ -100,3 +100,21 @@ export const KepalaLabRoute = () => {
   // Render child routes for registrator
   return <Outlet />;
 }
+
+export const KoordinatorLabRoute = () => {
+    const { state } = useContext(AuthContext);
+  
+  if (state.isLoading) {
+    return <div>Loading...</div>;
+  }
+  
+  // If not authenticated, redirect to login
+  if (!state.isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+
+  
+  // Render child routes for registrator
+  return <Outlet />;
+}

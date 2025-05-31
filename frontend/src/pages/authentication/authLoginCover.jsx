@@ -50,7 +50,7 @@ const LoginPage = () => {
           type: "LOGIN_SUCCESS",
           payload: {
             token: response.data.token,
-            full_name: response.data.full_name,
+            fullName: response.data.fullName,
             username: response.data.username,
             role: response.data.role,
           },
