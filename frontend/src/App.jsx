@@ -12,6 +12,7 @@ import User from "./features/KelolaUser/User";
 import AddUser from "./Components/User/AddUser";
 
 import Pengumuman from "./features/KelolaPengumuman/Pengumuman";
+import AddPengumuman from "./Components/Pengumuman/AddPengumuman";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/add-user" element={<AddUser />} />
             <Route path="/kelola-pengumuman" element={<Pengumuman />} />
+            <Route path="/add-pengumuman" element={<AddPengumuman />} />
 
             {/*Admin Routes*/}
             <Route element={<AdminRoute />}>

@@ -4,35 +4,90 @@ import fs from "fs";
 
 const PENGUMUMAN_FILES_DIR_FROM_ROOT = path.join(process.cwd(), 'uploads', 'pengumuman');
 
-
 // Create Pengumuman
 export const createAnnouncement = async (req, res) => {
-  try {
-    const {
-      judul,
-      content,
-      created_by
-    } = req.body;
+  console.log("CREATE PENGUMUMAN - REQ.BODY:", req.body);
+  console.log("CREATE PENGUMUMAN - REQ.FILE:", req.file); // Akan undefined jika tidak ada file diupload
 
-    const file_pengumuman = req.file ? req.file.filename : null;
+  try {
+    const { judul, content } = req.body;
+    // 'is_active' dari FormData akan berupa string '1' atau '0'
+    const is_active_from_body = req.body.is_active; 
+
+    // AMBIL created_by dari user yang terautentikasi
+    // Middleware verifyToken Anda HARUS menambahkan objek user ke req, misal: req.user = { id: userId, role: userRole, ... }
+    const created_by_user_id = req.user?.id; 
+
+    if (!created_by_user_id) {
+      console.error("CREATE PENGUMUMAN Error: User ID tidak ditemukan di req.user. Pastikan middleware verifyToken mengisi req.user.id.");
+      // Jika ada file yang terlanjur diupload Multer, hapus karena user tidak valid
+      if (req.file) {
+        const tempPath = path.join(PENGUMUMAN_FILES_DIR_FROM_ROOT, req.file.filename);
+        if(fs.existsSync(tempPath)) {
+            fs.unlinkSync(tempPath);
+            console.log("File sementara dihapus karena user ID tidak ditemukan:", req.file.filename);
+        }
+      }
+      return res.status(401).json({ message: "Autentikasi pengguna gagal atau ID pengguna tidak ditemukan." });
+    }
+
+    if (!judul || !content) {
+      if (req.file) { // Jika ada file yang terlanjur diupload Multer, hapus
+        const tempPath = path.join(PENGUMUMAN_FILES_DIR_FROM_ROOT, req.file.filename);
+        if(fs.existsSync(tempPath)) {
+            fs.unlinkSync(tempPath);
+            console.log("File sementara dihapus karena judul/konten kosong:", req.file.filename);
+        }
+      }
+      return res.status(400).json({ message: "Judul dan Konten tidak boleh kosong." });
+    }
+
+    // file_path untuk database, bisa null jika tidak ada file
+    const filePathInDB = req.file ? req.file.filename : null;
+    
+    // Konversi is_active dari string '1'/'0' (dari FormData) ke boolean/integer untuk database
+    const activeStatusForDB = (is_active_from_body === '1' || is_active_from_body === 1 || is_active_from_body === true) ? 1 : 0;
+
+    console.log("Data yang akan di-INSERT ke tabel pengumuman:", {
+        judul, content, filePathInDB, created_by_user_id, activeStatusForDB
+    });
 
     const [result] = await db.query(
-      `INSERT INTO pengumuman (judul, content, file_path, created_by, is_active) VALUES (?, ?, ?, ?, true)`,
-      [judul, content, file_pengumuman, created_by]
+      "INSERT INTO pengumuman (judul, content, file_path, created_by, is_active) VALUES (?, ?, ?, ?, ?)",
+      [judul, content, filePathInDB, created_by_user_id, activeStatusForDB] // Gunakan activeStatusForDB
     );
+
+    // Ambil data user pembuat untuk respons (opsional, tapi bagus untuk konsistensi)
+    const [userRows] = await db.query("SELECT user_id, nama_lengkap FROM user WHERE user_id = ?", [created_by_user_id]);
+    const creatorInfo = userRows.length > 0 ? { user_id: userRows[0].user_id, nama_lengkap: userRows[0].nama_lengkap } : { user_id: created_by_user_id, nama_lengkap: 'Tidak diketahui' };
+
 
     res.status(201).json({
       data: {
         id: result.insertId,
         judul,
         content,
-        file_pengumuman,
-        created_by,
-        is_active: true
+        file_path: filePathInDB, // Konsisten dengan GET
+        created_by: creatorInfo, // Kirim objek user
+        is_active: activeStatusForDB // Kirim status yang disimpan di DB
       },
       message: "Pengumuman berhasil dibuat",
     });
+
   } catch (error) {
+    console.error("ERROR DI CREATE ANNOUNCEMENT CONTROLLER:", error.message, error.stack);
+    // Jika ada file yang diupload tapi terjadi error saat proses DB, hapus file tersebut
+    if (req.file) {
+        const uploadedFilePath = path.join(PENGUMUMAN_FILES_DIR_FROM_ROOT, req.file.filename);
+        if (fs.existsSync(uploadedFilePath)) {
+            try {
+                fs.unlinkSync(uploadedFilePath);
+                console.log(`Rollback: File ${req.file.filename} yang diupload dihapus karena error DB: ${error.message}`);
+            } catch (rollbackErr) {
+                console.error(`Gagal melakukan rollback file ${req.file.filename}:`, rollbackErr);
+            }
+        }
+    }
     res.status(500).json({ message: "Gagal membuat pengumuman", error: error.message });
   }
 };

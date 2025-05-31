@@ -12,7 +12,7 @@ import DetailPenguman from '../../Components/Pengumuman/DetailPenguman';
 import EditPegumuman from '../../Components/Pengumuman/EditPengumuman';
 import truncateText from '../../utils/truncateText';
 import formatDate from '../../utils/formatDateView';
-import { Pen } from 'lucide-react';
+
 
 
 const Pengumuman = () => {
