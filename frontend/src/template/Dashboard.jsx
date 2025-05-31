@@ -1,28 +1,29 @@
 import React, { useState, useContext } from 'react';
-import { 
-  FaHouse,
-  FaBars, 
-  FaUser, 
-  FaArrowRightFromBracket, 
-  FaUserGear,
-  FaRegNewspaper,
-  FaRegCalendarDays, 
-  FaRegCalendarCheck,
-  FaLaptopFile,
-  FaLaptopMedical,
-  FaComputer  
+import {
+    FaHouse,
+    FaBars,
+    FaUser, // Tetap diimpor jika ModalProfil atau bagian lain mungkin menggunakannya
+    FaArrowRightFromBracket,
+    FaUserGear,
+    FaRegNewspaper,
+    FaRegCalendarDays,
+    FaRegCalendarCheck,
+    FaLaptopFile,
+    FaLaptopMedical,
+    FaComputer,
+    FaChevronDown // Ditambahkan untuk dropdown profil
 } from 'react-icons/fa6';
-import img from '../images/logo.png';
+import img from '../images/logo.png'; // Pastikan path ini benar
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-import { post } from '../utils/api';
-import { AuthContext } from '../Context/AuthContext';
+import { post } from '../utils/api'; // Pastikan path ini benar
+import { AuthContext } from '../Context/AuthContext'; // Pastikan path ini benar
 
-// ... (ModalProfil dan definisi menu lainnya tetap sama) ...
 const ModalProfil = ({ modal }) => {
+    // Implementasi ModalProfil Anda jika ada, atau biarkan kosong jika belum
     return (
         <div>
-            {/* Modal profil content */}
+            {/* Contoh: {modal.showYourProfile && <div>Konten Modal Profil Anda</div>} */}
         </div>
     );
 };
@@ -31,7 +32,8 @@ const Dashboard = ({ title, children }) => {
     const navigate = useNavigate();
     const { state, dispatch } = useContext(AuthContext);
 
-    const userName = state?.user || "User";
+    const userName = state?.user || "User"; // Mengambil dari state.user (sesuaikan jika nama properti berbeda)
+    const fullName = state?.fullName || "User"; // Mengambil dari state.fullName jika ada
     const userRole = state?.role;
 
     const Logout = async () => {
@@ -39,7 +41,7 @@ const Dashboard = ({ title, children }) => {
             await post("/auth/logout");
             dispatch({ type: "LOGOUT" });
             localStorage.removeItem("token");
-            localStorage.removeItem("userName");
+            localStorage.removeItem("userName"); // Mungkin Anda menyimpan state.user sebagai userName di localStorage
             localStorage.removeItem("role");
             navigate("/");
         } catch (error) {
@@ -48,42 +50,42 @@ const Dashboard = ({ title, children }) => {
     };
 
     const menuKepalaLab = [
-        { name: 'Dashboard', ic: <FaHouse />, to: '/home' },
-        { name: 'Pengajuan Jadwal Lab', ic: <FaRegCalendarCheck />, to: '/ortu' },
-        { name: 'Kelola Data Perangkat', ic: <FaLaptopFile />, to: '/siswa' },
+        { name: 'Dashboard', ic: <FaHouse />, to: '/dashboard-kepala-lab' }, // Sesuaikan path
+        { name: 'Pengajuan Jadwal Lab', ic: <FaRegCalendarCheck />, to: '/kepala-lab/pengajuan-jadwal' },
+        { name: 'Kelola Data Perangkat', ic: <FaLaptopFile />, to: '/kepala-lab/kelola-perangkat' },
     ];
 
     const menuKoordinatorLab = [
-        { name: 'Dashboard', ic: <FaHouse />, to: '/home' },
-        { name: 'Kelola Data Lab', ic: <FaComputer />, to: '/ortu' },
-        { name: 'Kelola Pengumuman', ic: <FaRegNewspaper  />, to: '/siswa' },
+        { name: 'Dashboard', ic: <FaHouse />, to: '/dashboard-koordinator-lab' }, // Sesuaikan path
+        { name: 'Kelola Data Lab', ic: <FaComputer />, to: '/koordinator-lab/kelola-lab' },
+        { name: 'Kelola Pengumuman', ic: <FaRegNewspaper />, to: '/koordinator-lab/kelola-pengumuman' },
     ];
 
     const menuTeknisi = [
-        { name: 'Dashboard', ic: <FaHouse />, to: '/home' },
-        { name: 'Perbaikan Perangkat', ic:  <FaLaptopMedical />, to: '/home' },
-        { name: 'Pengecekan Perangkat', ic:  <FaLaptopMedical />, to: '/home' },
+        { name: 'Dashboard', ic: <FaHouse />, to: '/dashboard-teknisi' }, // Sesuaikan path
+        { name: 'Perbaikan Perangkat', ic: <FaLaptopMedical />, to: '/teknisi/perbaikan' },
+        { name: 'Pengecekan Perangkat', ic: <FaLaptopMedical />, to: '/teknisi/pengecekan' },
     ];
 
     const menuGuru = [
-        { name: 'Dashboard', ic: <FaHouse />, to: '/registrator' },
-        { name: 'Pengajuan Jadwal Lab', ic: <FaRegCalendarDays />, to: '/daftar-ulang' },
+        { name: 'Dashboard', ic: <FaHouse />, to: '/dashboard-guru' }, // Sesuaikan path
+        { name: 'Pengajuan Jadwal Lab', ic: <FaRegCalendarDays />, to: '/guru/pengajuan-jadwal' },
     ];
 
     const menuAdmin = [
         { name: 'Dashboard', ic: <FaHouse />, to: '/dashboard' },
         { type: 'divider' },
-        { name: 'Pemeriksaan Perangkat', ic: <FaLaptopMedical />, to: '/ortu' },
-        { name: 'Kelola Data Perangkat', ic: <FaLaptopFile />, to: '/siswa' },
+        { name: 'Pemeriksaan Perangkat', ic: <FaLaptopMedical />, to: '/admin/pemeriksaan-perangkat' },
+        { name: 'Kelola Data Perangkat', ic: <FaLaptopFile />, to: '/admin/kelola-perangkat' },
         { type: 'divider' },
-        { name: 'Data Lab', ic: <FaComputer />, to: '/medical' },
-        { name: 'Jadwal lab', ic: <FaRegCalendarDays />, to: '/user' },
+        { name: 'Data Lab', ic: <FaComputer />, to: '/admin/data-lab' },
+        { name: 'Jadwal Lab', ic: <FaRegCalendarDays />, to: '/admin/jadwal-lab' },
         { type: 'divider' },
-        { name: 'Perbaikan Perangkat', ic:  <FaLaptopMedical />, to: '/logging' },
-        { name: 'Pengecekan Perangkat', ic:  <FaLaptopMedical />, to: '/landing-page' },
+        { name: 'Perbaikan Perangkat', ic: <FaLaptopMedical />, to: '/admin/perbaikan-perangkat' },
+        { name: 'Pengecekan Perangkat', ic: <FaLaptopMedical />, to: '/admin/pengecekan-perangkat' },
         { type: 'divider' },
-        { name: 'Kelola User', ic: <FaUserGear />, to: '/daftar-ulang' },
-        { name: 'Kelola Pengumuman', ic: <FaRegNewspaper  />, to: '/daftar-ulang' },
+        { name: 'Kelola User', ic: <FaUserGear />, to: '/admin/kelola-user' },
+        { name: 'Kelola Pengumuman', ic: <FaRegNewspaper />, to: '/admin/kelola-pengumuman' },
         { type: 'divider' },
     ];
 
@@ -103,29 +105,26 @@ const Dashboard = ({ title, children }) => {
 
     function tanggal() {
         const date = new Date();
-        let day = date.getDate();
-        let month = date.getMonth() + 1;
-        let year = date.getFullYear();
-        return `${day}-${month}-${year}`;
+        const options = { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' };
+        // Menggunakan toLocaleDateString untuk format yang lebih baik dan penanganan bulan
+        return new Intl.DateTimeFormat('id-ID', options).format(date);
     }
 
     const [showProfile, setShowProfile] = useState(false);
-    const [showYourProfile, setShowYourProfile] = useState(false);
+    const [showYourProfile, setShowYourProfile] = useState(false); // Untuk ModalProfil jika digunakan
     const [showSide, setShowSide] = useState(true);
 
     function handleSide() {
         setShowSide(!showSide);
     }
 
-    // Tentukan lebar sidebar yang baru, misalnya w-72 atau w-80
-    const sidebarWidthClass = 'w-72'; // atau 'w-80' jika perlu lebih lebar
-    const mainContentMarginClass = 'lg:ml-72'; // sesuaikan dengan sidebarWidthClass
+    const sidebarWidthClass = 'w-72'; // Lebar sidebar yang baru (misal: 18rem atau 288px)
+    const mainContentMarginClass = 'lg:ml-72'; // Margin konten utama disesuaikan
 
     return (
         <>
             <ModalProfil modal={{ showYourProfile, setShowYourProfile }} />
             <div>
-                {/* ... (Navbar tetap sama) ... */}
                 <nav className="fixed top-0 z-50 w-full h-[69px] bg-white border-b border-maroon">
                     <div className="h-full px-3 py-4 lg:px-5 lg:pl-3">
                         <div className="flex items-center justify-between">
@@ -133,55 +132,75 @@ const Dashboard = ({ title, children }) => {
                                 <button
                                     className="inline-flex items-center p-2 text-sm rounded-lg text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
                                     onClick={handleSide}
+                                    aria-controls="logo-sidebar" // Untuk aksesibilitas
+                                    aria-expanded={showSide}     // Untuk aksesibilitas
                                 >
+                                    <span className="sr-only">Buka/tutup sidebar</span>
                                     <FaBars />
                                 </button>
                                 <div className="ml-2 items-center hidden lg:flex">
                                     <img
                                         src={img}
-                                        className="w-[32px] bg-white me-3"
-                                        alt="Logo"
+                                        className="w-[32px] me-3" // bg-white dihapus jika logo sudah transparan
+                                        alt="Logo SMK Letris Indonesia 2"
                                     />
                                     <span className="self-center text-xl font-bold text-gray-800 sm:text-2xl whitespace-nowrap">
                                         SMK LETRIS INDONESIA 2
                                     </span>
                                 </div>
                             </div>
+
                             <div className="flex items-center">
-                                <div className="flex items-center ms-3">
+                                <div className="relative flex items-center ms-3"> {/* Tambahkan 'relative' */}
                                     <div>
                                         <button
                                             onClick={() => setShowProfile(!showProfile)}
                                             type="button"
-                                            className="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300"
+                                            className="flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-maroon"
+                                            id="user-menu-button"
+                                            aria-expanded={showProfile}
+                                            aria-haspopup="true"
                                         >
-                                            <FaUser className="pt-2 w-8 h-8 rounded-full bg-white text-gray-400" />
+                                            <span className="sr-only">Buka menu pengguna</span>
+                                            <span className='text-md'>{fullName}</span>
+                                            <FaChevronDown className="ml-2 -mr-1 h-4 w-3 text-gray-900" aria-hidden="true" />
                                         </button>
                                     </div>
-                                    <div className={`${showProfile ? 'absolute block' : 'hidden'} w-[240px] z-50 my-4 text-base list-none bg-white divide-y divide-gray-800 rounded shadow right-4 top-12 border-[0.6px] border-gray-900`}>
-                                        <div className="px-4 py-3">
-                                            <p className="text-sm text-gray-900">{userName}</p>
-                                            <p className="text-sm text-gray-600">{userRole || 'User'}</p>
+                                    {showProfile && (
+                                        <div
+                                            className="absolute origin-top-right right-0 mt-18 w-60 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+                                            role="menu"
+                                            aria-orientation="vertical"
+                                            aria-labelledby="user-menu-button"
+                                            tabIndex="-1"
+                                        >
+                                            <div className="py-1 hover:cursor-pointer hover:bg-maroon" role="none">
+                                                <button
+                                                    onClick={() => {
+                                                        Logout();
+                                                        setShowProfile(false); // Tutup dropdown setelah logout
+                                                    }}
+                                                    className="w-full text-left flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:text-white "
+                                                    role="menuitem"
+                                                    tabIndex="-1"
+                                                    id="user-menu-item-0"
+                                                >
+                                                    <span>Log out</span>
+                                                    <FaArrowRightFromBracket className="h-4 w-4" />
+                                                </button>
+                                            </div>
                                         </div>
-                                        <ul>
-                                            <li
-                                                className="flex items-center justify-between px-4 py-2 text-gray-700 cursor-pointer hover:text-white hover:bg-maroon"
-                                                onClick={Logout}
-                                            >
-                                                <span className="block text-sm">Log out</span>
-                                                <FaArrowRightFromBracket />
-                                            </li>
-                                        </ul>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
                     </div>
                 </nav>
 
-
-                <aside className={`${showSide ? sidebarWidthClass : 'w-0'} fixed top-0 left-0 z-40 h-screen transition-all duration-300 bg-gray-800 overflow-hidden border-r border-maroon`}>
-                    <div className="min-h-full mt-1 px-4 pt-20 flex flex-col justify-between pb-4 overflow-y-auto bg-white ">
+                <aside id="logo-sidebar" className={`${showSide ? sidebarWidthClass : 'w-0'} fixed top-0 left-0 z-40 h-screen pt-[69px] transition-transform ${showSide ? 'translate-x-0' : '-translate-x-full'} bg-gray-800 overflow-hidden border-r border-maroon`} aria-label="Sidebar">
+                    {/* Mengubah pt sedikit dan transisi, serta bg-gray-800 untuk area transisi */}
+                    {/* Tambahkan kelas custom-scrollbar jika Anda menambahkan CSS untuk itu */}
+                    <div className="h-full px-4 pb-4 pt-4 overflow-y-auto bg-white custom-scrollbar"> 
                         <ul className="pb-4 space-y-2 font-medium text-sm">
                             {data.map((item, index) => {
                                 if (item.type === 'divider' && userRole === "Admin") {
@@ -190,13 +209,13 @@ const Dashboard = ({ title, children }) => {
                                 if (item.to) {
                                     return (
                                         <li key={item.name || index} className='cursor-pointer'>
-                                            <Link to={item.to}>
-                                                <div className={`flex hover:shadow-lg hover:bg-white items-center gap-2 p-2 text-white rounded-lg group ${item.name === title ? 'shadow-lg py-2.5' : ''}`}>
-                                                    <span className={`${item.name === title ? 'bg-maroon text-white' : 'bg-white text-gray-900'} flex items-center shadow-md justify-center p-3 transition group-hover:bg-maroon group-hover:text-white duration-75 rounded-lg`}>
+                                            <Link to={item.to} className="block"> {/* Link sebagai block untuk area klik penuh */}
+                                                <div className={`flex hover:shadow-lg hover:bg-gray-50 items-center gap-2 p-2 text-gray-900 rounded-lg group ${item.name === title ? 'bg-gray-100 shadow-lg py-2.5' : 'hover:bg-gray-100'}`}>
+                                                    {/* Perubahan warna dasar dan hover */}
+                                                    <span className={`${item.name === title ? 'bg-maroon text-white' : 'bg-gray-100 text-gray-900 group-hover:bg-maroon group-hover:text-white'} flex items-center shadow-md justify-center p-3 transition-colors duration-150 rounded-lg`}>
                                                         {item.ic}
                                                     </span>
-                                                    {/* Pastikan typo 'm7-3' menjadi 'ml-3' jika itu yang dimaksud */}
-                                                    <span className={`${item.name === title ? 'text-black' : 'text-gray-600 group-hover:text-black'} font-medium ml-3`}>{item.name}</span>
+                                                    <span className={`${item.name === title ? 'text-maroon font-semibold' : 'text-gray-700 group-hover:text-gray-900'} font-medium ml-3 whitespace-nowrap`}>{item.name}</span>
                                                 </div>
                                             </Link>
                                         </li>
@@ -205,14 +224,16 @@ const Dashboard = ({ title, children }) => {
                                 return null;
                             })}
                         </ul>
-                        <div className="px-4 py-1 text-white bg-white rounded-lg">
+                        <div className="mt-auto px-4 py-2 bg-white rounded-lg border-t border-gray-200"> {/* mt-auto untuk mendorong ke bawah */}
                             <p className="font-bold text-center text-maroon">{tanggal()}</p>
                         </div>
                     </div>
                 </aside>
 
-                <div className={`p-4 mt-[69px] bg-neutral-100/20 transition-all duration-300 ${showSide ? mainContentMarginClass : 'ml-0'}`}>
-                    <div className="border-gray-200 min-h-[620px]">
+                <div className={`p-4 mt-[69px] bg-gray-50 transition-all duration-300 ${showSide ? mainContentMarginClass : 'ml-0'}`}>
+                    {/* Ganti bg-neutral-100/20 menjadi bg-gray-50 atau warna netral lain */}
+                    <div className="border-gray-200 rounded-lg min-h-[calc(100vh-69px-2rem)] p-4 bg-white shadow-sm"> 
+                        {/* Tambah padding, bg-white, dan shadow untuk area konten jika diinginkan */}
                         {children}
                     </div>
                 </div>
