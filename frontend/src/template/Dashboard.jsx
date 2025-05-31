@@ -1,11 +1,9 @@
 import React, { useState, useContext } from 'react';
-import { FaHouse, FaGraduationCap, 
+import { 
+  FaHouse,
   FaBars, 
   FaUser, 
-  FaFileMedical, 
-  FaDatabase, 
   FaArrowRightFromBracket, 
-  FaClockRotateLeft, 
   FaUserGear,
   FaRegNewspaper,
   FaRegCalendarDays, 
@@ -51,13 +49,13 @@ const Dashboard = ({ title, children }) => {
 
     const menuKepalaLab = [
         { name: 'Dashboard', ic: <FaHouse />, to: '/home' },
-        { name: 'Pengajuan Jadwal Lab', ic: < FaRegCalendarCheck />, to: '/ortu' },
-        { name: 'Kelola Data Perangkat', ic: <FaGraduationCap />, to: '/siswa' },
+        { name: 'Pengajuan Jadwal Lab', ic: <FaRegCalendarCheck />, to: '/ortu' },
+        { name: 'Kelola Data Perangkat', ic: <FaLaptopFile />, to: '/siswa' },
     ];
 
     const menuKoordinatorLab = [
         { name: 'Dashboard', ic: <FaHouse />, to: '/home' },
-        { name: 'Kelola Data Lab', ic: <FaUser />, to: '/ortu' },
+        { name: 'Kelola Data Lab', ic: <FaComputer />, to: '/ortu' },
         { name: 'Kelola Pengumuman', ic: <FaRegNewspaper  />, to: '/siswa' },
     ];
 
@@ -183,7 +181,7 @@ const Dashboard = ({ title, children }) => {
 
 
                 <aside className={`${showSide ? sidebarWidthClass : 'w-0'} fixed top-0 left-0 z-40 h-screen transition-all duration-300 bg-gray-800 overflow-hidden border-r border-maroon`}>
-                    <div className="h-full mt-1 px-4 pt-20 flex flex-col justify-between pb-4 overflow-y-auto bg-white ">
+                    <div className="min-h-full mt-1 px-4 pt-20 flex flex-col justify-between pb-4 overflow-y-auto bg-white ">
                         <ul className="pb-4 space-y-2 font-medium text-sm">
                             {data.map((item, index) => {
                                 if (item.type === 'divider' && userRole === "Admin") {
