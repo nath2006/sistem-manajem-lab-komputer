@@ -21,7 +21,6 @@ function App() {
           
           {/*Protected Routes*/}
           <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard-guru" element={<GuruPage />} />
             <Route path="/dashboard-teknisi" element={<TeknisiPage />} />
             <Route path="/dashboard-koordinator-lab" element={<KoordinatorLabPage />} />
             <Route path="/dashboard-kepala-lab" element={<KepalaLabPage />} />
@@ -33,6 +32,15 @@ function App() {
             {/* Add more admin routes here */}
           </Route>
 
+        {/* Kepala Lab Routes*/}
+        <Route element={<KepalaLabPage />}>
+          <Route path="/dashboard-kepala-lab" element={<KepalaLabPage />} />
+        </Route>
+
+          {/* Guru Routes */}     
+          <Route element={<GuruPage />}>
+            <Route path="/dashboard-guru" element={<GuruPage />} />
+          </Route>
 
           {/* Default redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />

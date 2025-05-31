@@ -1,7 +1,10 @@
 import React from 'react'
+import Dashboard from '../../template/Dashboard'
 
-export default function GuruPage() {
+export default function KepalaLabPage() {
   return (
-    <div>GuruPage</div>
+    <>
+    <Dashboard> </Dashboard>
+    </>
   )
 }
