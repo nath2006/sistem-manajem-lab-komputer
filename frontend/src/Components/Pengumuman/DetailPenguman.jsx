@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { get } from "../../utils/api";
-import InfoItem from "../DetailModal/InfoItem";
-import InfoSection from "../DetailModal/InfoSection";
-import ModalContainer from "../DetailModal/ModalContainer";
-import LoadingSpinner from "../DetailModal/LoadingSpinner";
+import InfoItem from "../DetailModal/InfoItem"; 
+import InfoSection from "../DetailModal/InfoSection"; 
+import ModalContainer from "../DetailModal/ModalContainer"; 
+import LoadingSpinner from "../DetailModal/LoadingSpinner"; 
+
+import formatDate from '../../utils/formatDateView'; 
 
 const DetailPenguman = ({ id, onClose }) => {
-  const [userData, setUserData] = useState(null);
+  const [pengumumanData, setPengumumanData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+ 
+  const ASSET_BASE_URL = import.meta.env.VITE_ASSET_BASE_URL || 'http://localhost:5500/Uploads/Pengumuman/';
+
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchPengumumanData = async () => {
       try {
-        const response = await get(`/pengumuman/detail/${id}`);
-        setUserData(response.data);
+        const response = await get(`/pengumuman/${id}`);
+        setPengumumanData(response.data);
       } catch (err) {
         setError("Gagal mengambil data pengumuman");
         console.error("Gagal mengambil data:", err);
@@ -23,7 +28,14 @@ const DetailPenguman = ({ id, onClose }) => {
       }
     };
 
-    fetchUserData();
+    if (id) { 
+      setLoading(true);
+      fetchPengumumanData();
+    } else {
+      setError("ID Pengumuman tidak valid.");
+      setLoading(false);
+      console.warn("DetailPenguman: ID is undefined, skipping fetch.");
+    }
   }, [id]);
 
   return (
@@ -39,31 +51,30 @@ const DetailPenguman = ({ id, onClose }) => {
           <p>{error}</p>
         </div>
       ) : (
-        userData && (
-          <div className="space-y-8">
-            <InfoSection title="Informasi Pribadi">
-              <InfoItem label="Nama Lengkap" value={userData.nama_lengkap} />
-              <InfoItem label="Username" value={userData.username} />
-              <InfoItem
-                label="Role"
+        pengumumanData && ( 
+          <div className="space-y-6"> 
+            <InfoSection title="Informasi Pengumuman">
+              <InfoItem label="Judul" value={pengumumanData.judul || '-'} />
+              <InfoItem label="Konten" value={
+                <div className="whitespace-pre-wrap break-words"> 
+                  {pengumumanData.content || '-'}
+                </div>
+              } />
+              <InfoItem 
+                label="File Pendukung" 
                 value={
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                      userData.role === "Admin"
-                        ? "bg-red-100 text-red-800"
-                        : userData.role === "Guru"
-                        ? "bg-green-100 text-green-800"
-                        : userData.role === "Teknisi"
-                        ? "bg-blue-100 text-blue-800"
-                        : userData.role === "Kepala Lab"
-                        ? "bg-indigo-100 text-indigo-800"
-                        : userData.role === "Koordinator Lab"
-                        ? "bg-purple-100 text-purple-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {userData.role || "Unknown"}
-                  </span>
+                  pengumumanData.file_path ? (
+                    <a
+                      href={`${ASSET_BASE_URL}${pengumumanData.file_path}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      {pengumumanData.file_path.split('/').pop() || 'Lihat File'} 
+                    </a>
+                  ) : (
+                    'Tidak ada file'
+                  )
                 }
               />
               <InfoItem
@@ -71,45 +82,30 @@ const DetailPenguman = ({ id, onClose }) => {
                 value={
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      userData.is_active
+                      pengumumanData.is_active
                         ? "bg-green-100 text-green-800"
-                        : "bg-gray-300 text-gray-800"
+                        : "bg-red-100 text-red-800" 
                     }`}
                   >
-                    {userData.is_active ? "Online" : "Offline"}
+                    {pengumumanData.is_active ? "Aktif" : "Tidak Aktif"} 
                   </span>
                 }
               />
             </InfoSection>
 
-            <InfoSection title="Informasi Akun">
+            <InfoSection title="Detail Pembuatan"> {/* Judul section diganti */}
               <InfoItem
-                label="Terakhir Login"
-                value={new Date(userData.last_login).toLocaleString("id-ID")}
+                label="Dibuat Oleh"
+                value={pengumumanData.created_by?.nama_lengkap || 'Tidak Diketahui'}
               />
               <InfoItem
                 label="Tanggal Dibuat"
-                value={new Date(userData.created_at).toLocaleDateString(
-                  "id-ID"
-                )}
+                // Menggunakan fungsi formatDate yang sama dengan di list view
+                value={formatDate(pengumumanData.created_at) || '-'} 
               />
             </InfoSection>
 
-            {userData.additional_info && (
-              <InfoSection title="Informasi Tambahan">
-                {Object.entries(userData.additional_info).map(
-                  ([key, value]) => (
-                    <InfoItem
-                      key={key}
-                      label={key
-                        .replace(/_/g, " ")
-                        .replace(/\b\w/g, (l) => l.toUpperCase())}
-                      value={value || "Tidak ada informasi"}
-                    />
-                  )
-                )}
-              </InfoSection>
-            )}
+            {/* Section "Informasi Tambahan" (additional_info) dihilangkan karena tidak ada di skema pengumuman */}
           </div>
         )
       )}

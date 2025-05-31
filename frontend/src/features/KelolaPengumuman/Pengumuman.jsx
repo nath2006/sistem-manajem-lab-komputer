@@ -12,9 +12,10 @@ import DetailPenguman from '../../Components/Pengumuman/DetailPenguman';
 import EditPegumuman from '../../Components/Pengumuman/EditPengumuman';
 import truncateText from '../../utils/truncateText';
 import formatDate from '../../utils/formatDateView';
+import { Pen } from 'lucide-react';
 
 
-const User = () => {
+const Pengumuman = () => {
     useTitle('Kelola Data Pengumuman');
     const location = useLocation();
     const navigate = useNavigate();
@@ -50,15 +51,15 @@ const User = () => {
     };
 
     const handleDelete = DeleteConfirmation({
-        onDelete: (id) => deleteData(`/user/delete/${id}`),
-        itemName: 'data user',
+        onDelete: (id) => deleteData(`/pengumuman/delete/${id}`),
+        itemName: 'data Pengumuman',
         onSuccess: (id) => {
-            setData(data.filter(item => item.user_id !== id));
-            setSuccessMsg('Data user berhasil dihapus');
+            setData(data.filter(item => item.id !== id));
+            setSuccessMsg('Data Pengumuman berhasil dihapus');
         },
         onError: (error) => {
-            console.error("Error deleting user:", error);
-            setErrorMsg('Gagal menghapus data user');
+            console.error("Error deleting Pengumuman:", error);
+            setErrorMsg('Gagal menghapus data Pengumuman');
         }
     });
 
@@ -79,7 +80,7 @@ const User = () => {
             setIsLoading(false);
         } catch (err) {
             // setErrorMsg('Gagal Mengambil Data');
-            console.error("Error fetching user data:", err);
+            console.error("Error fetching pengumuman data:", err);
             setIsLoading(false);
         }
     };
@@ -95,67 +96,45 @@ const User = () => {
         return () => clearInterval(refreshData);
     }, []);
 
-    const renderUserRow = (item, index) => {
-    // Asumsi base URL untuk file Anda, sesuaikan jika perlu
-    const ASSET_BASE_URL = import.meta.env.VITE_ASSET_BASE_URL || 'http://localhost:5500/Uploads/Pengumuman/'; 
+   const renderPengumumanRow = (item, index) => {
+  const ASSET_BASE_URL = import.meta.env.VITE_ASSET_BASE_URL || 'http://localhost:5500/Uploads/Pengumuman/';
 
-    return (
-      <tr className="bg-white border-b" key={item.pengumuman_id || index}> 
-        <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-          {item.judul}
-        </th>
-        <td className="px-6 py-4 text-gray-900">{truncateText(item.content, 50)}</td> {/* Batasi konten jadi 50 karakter */}
-        <td className="px-6 py-4 text-gray-900">
-          {item.file_path ? (
-            <a
-              href={`${ASSET_BASE_URL}${item.file_path}`} // Gabungkan base URL dengan file_path
-              target="_blank" // Buka di tab baru
-              rel="noopener noreferrer" // Keamanan untuk target="_blank"
-              className="text-red-900 hover:text-red-700 cursor-pointer"
-            >
-              Lihat File {/* Atau tampilkan nama file jika tersedia: item.file_path.split('/').pop() */}
-            </a>
-          ) : (
-            'Tidak ada file'
+  return (
+    <tr className="bg-white border-b" key={item.id || index}>
+      <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{item.judul}</th>
+      <td className="px-6 py-4 text-gray-900">{truncateText(item.content, 50)}</td>
+      <td className="px-6 py-4 text-gray-900">
+        {item.file_path ? (
+          <a 
+          href={`${ASSET_BASE_URL}${item.file_path}`}
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-red-900 hover:text-red-700 cursor-pointer">Lihat File</a>
+        ) : (
+          'Tidak ada file'
+        )}
+      </td>
+      <td className="px-6 py-4 text-gray-900">{formatDate(item.created_at)}</td>
+      <td className="px-6 py-4 text-gray-900">{item.created_by?.nama_lengkap || 'Tidak Diketahui'}</td>
+      <td className="px-6 py-4 text-gray-900">
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.is_active === 1 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          {item.is_active === 1 ? 'Aktif' : 'Tidak Aktif'}
+        </span>
+      </td>
+      <td className='flex justify-center items-center py-6 px-5'>
+        <div className='flex items-center justify-between gap-x-5'>
+          <button onClick={() => handleOpenModal(item.id)} className="text-red-700 hover:text-red-500 cursor-pointer"><FaEye size={18} /></button>
+          {isAuth && (
+            <>
+              <button onClick={() => handleOpenEditModal(item.id)} className="text-red-700 hover:text-red-500 cursor-pointer"><FaFilePen size={18} /></button>
+              <button onClick={() => handleDelete(item.id)} className="text-red-700 hover:text-red-500 cursor-pointer"><FaTrash size={18}/></button>
+            </>
           )}
-        </td>
-        <td className="px-6 py-4 text-gray-900">{formatDate(item.created_at)}</td> {/* Format tanggal */}
-        <td className="px-6 py-4 text-gray-900">
-          {item.created_by?.nama_lengkap || 'Tidak Diketahui'}
-        </td>
-        <td className="px-6 py-4 text-gray-900">
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-            item.is_active === 1 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
-          }`}>
-            {item.is_active === 1 ? 'Aktif' : 'Tidak Aktif'}
-          </span>
-        </td>
-        <td className='flex justify-center items-center py-6 px-5'>
-          <div className='flex items-center justify-between gap-x-5'>
-            {/* Ganti item.user_id menjadi item.pengumuman_id atau ID unik pengumuman */}
-            <button onClick={() => handleOpenModal(item.pengumuman_id)} className="text-red-700 hover:text-red-500 cursor-pointer">
-              <FaEye size={18} />
-            </button>
-            {isAuth && (
-              <>
-                <button onClick={() => handleOpenEditModal(item.pengumuman_id)} className="text-red-700 hover:text-red-500 cursor-pointer">
-                  <FaFilePen size={18} />
-                </button>
-                <button
-                  onClick={() => handleDelete(item.pengumuman_id)} // Pastikan handleDelete dikonfigurasi untuk pengumuman
-                  className="text-red-700 hover:text-red-500 cursor-pointer"
-                >
-                  <FaTrash size={18}/>
-                </button>
-              </>
-            )}
-          </div>
-        </td>
-      </tr>
-    );
-  }
+        </div>
+      </td>
+    </tr>
+  );
+}
 
     return (
         <Dashboard title="Kelola Data Pengumuman">
@@ -175,7 +154,7 @@ const User = () => {
                     to="/add-pengumuman"
                     data={isLoading ? [] : data}
                     itemsPerPage={5}
-                    renderRow={renderUserRow}
+                    renderRow={renderPengumumanRow}
                 >
                     {isLoading && (
                         <tr>
@@ -194,4 +173,4 @@ const User = () => {
     )
 }
 
-export default User
+export default Pengumuman;
