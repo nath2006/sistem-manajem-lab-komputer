@@ -11,6 +11,8 @@ import KepalaLabPage from "./pages/KepalaLab/KepalaLabDashboard";
 import User from "./features/KelolaUser/User";
 import AddUser from "./Components/User/AddUser";
 
+import Pengumuman from "./features/KelolaPengumuman/Pengumuman";
+
 function App() {
   return (
     //  <RouterProvider router={router} />
@@ -24,6 +26,8 @@ function App() {
           {/*Protected Routes*/}
           <Route element={<ProtectedRoute />}>
             <Route path="/add-user" element={<AddUser />} />
+            <Route path="/kelola-pengumuman" element={<Pengumuman />} />
+
             {/*Admin Routes*/}
             <Route element={<AdminRoute />}>
               <Route path="/dashboard" element={<AdminPage />} />

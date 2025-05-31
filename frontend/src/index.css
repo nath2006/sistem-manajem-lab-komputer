@@ -8,9 +8,7 @@
 }
 
 
-a{
-    color: rgb(186, 229, 245)
-}
+
 .select-option:hover option:hover{
     background-color: #f87171; /* Tailwind class: bg-red-500 */
     color: #fff; 

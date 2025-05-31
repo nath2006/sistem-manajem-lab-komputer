@@ -75,7 +75,7 @@ const Dashboard = ({ title, children }) => {
     {
       name: "Kelola Pengumuman",
       ic: <FaRegNewspaper />,
-      to: "/koordinator-lab/kelola-pengumuman",
+      to: "/kelola-pengumuman",
     },
   ];
 
@@ -136,7 +136,7 @@ const Dashboard = ({ title, children }) => {
     {
       name: "Kelola Pengumuman",
       ic: <FaRegNewspaper />,
-      to: "/admin/kelola-pengumuman",
+      to: "/kelola-pengumuman",
     },
     { type: "divider" },
   ];
