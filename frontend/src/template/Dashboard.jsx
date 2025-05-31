@@ -230,10 +230,9 @@ const Dashboard = ({ title, children }) => {
                     </div>
                 </aside>
 
-                <div className={`p-4 mt-[69px] bg-gray-50 transition-all duration-300 ${showSide ? mainContentMarginClass : 'ml-0'}`}>
+                <div className={`p-4 mt-[69px] bg-white transition-all duration-300 ${showSide ? mainContentMarginClass : 'ml-0'}`}>
                     {/* Ganti bg-neutral-100/20 menjadi bg-gray-50 atau warna netral lain */}
-                    <div className="border-gray-200 rounded-lg min-h-[calc(100vh-69px-2rem)] p-4 bg-white shadow-sm"> 
-                        {/* Tambah padding, bg-white, dan shadow untuk area konten jika diinginkan */}
+                    <div className="bg-white "> 
                         {children}
                     </div>
                 </div>
