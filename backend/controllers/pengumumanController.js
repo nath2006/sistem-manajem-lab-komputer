@@ -109,8 +109,6 @@ export const getAllAnnouncements = async (req, res) => {
         pengumuman p
       JOIN 
         user u ON p.created_by = u.user_id
-      WHERE 
-        p.is_active = true 
       ORDER BY 
         p.created_at DESC;
     `;
