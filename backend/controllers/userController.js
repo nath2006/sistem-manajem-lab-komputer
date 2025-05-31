@@ -79,18 +79,15 @@ export const getUserById = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, password, nama_lengkap, email, role, is_active } = req.body; // Tambahkan is_active jika dikirim dari frontend
+    const { username, password, nama_lengkap, email, role, is_online } = req.body; 
 
-    let query = "UPDATE user SET username = ?, nama_lengkap = ?, email = ?, role = ?";
-    const queryParams = [username, nama_lengkap, email, role];
+    let query = "UPDATE user SET username = ?, nama_lengkap = ?, email = ?, role = ?, is_online = ?"; // Tambahkan is_online di sini
+    const queryParams = [username, nama_lengkap, email, role, is_online];
 
-    // Tambahkan is_active ke query jika ada
-    // Backend Anda mungkin mengharapkan 'is_active' atau 'is_online'
-    // Sesuaikan nama field di bawah ini dengan skema database Anda
-    // if (is_active !== undefined) { // Atau periksa field lain seperti is_online
-    //    query += ", is_active = ?"; // atau is_online = ?
-    //    queryParams.push(is_active); // Kirim 1 atau 0
-    // }
+    if (is_online !== undefined) { // Atau periksa field lain seperti is_online
+       query += ", is_online = ?"; // atau is_online = ?
+       queryParams.push(is_online); // Kirim 1 atau 0
+    }
 
 
     if (password && password.trim() !== "") {

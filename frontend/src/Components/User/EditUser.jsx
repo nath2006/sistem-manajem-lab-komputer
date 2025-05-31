@@ -199,7 +199,7 @@ const EditUser = ({ id, onClose, onUpdate }) => {
               <label className="flex items-center">
                 <input
                   type="checkbox"
-                  name="is_active"
+                  name="is_online"
                   checked={formData.is_online}
                   onChange={handleChange}
                   className="mr-2 h-5 w-5 text-red-500 focus:ring-red-400"
