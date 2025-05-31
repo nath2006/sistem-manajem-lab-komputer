@@ -111,7 +111,7 @@ const User = () => {
                   ? 'bg-indigo-100 text-indigo-800' 
                   : item.role === 'Koordinator Lab'
                   ? 'bg-purple-100 text-purple-800' 
-                  : 'bg-gray-100 text-gray-800' 
+                  : 'bg-gray-100 text-gray-800' // Default jika role tidak dikenali
               }`}
             >
               {item.role || 'Unknown'}

@@ -84,21 +84,55 @@ export const getAllAnnouncements = async (req, res) => {
   }
 };
 
-// Get Pengumuman By ID
+// Get Pengumuman by ID
 export const getAnnouncementById = async (req, res) => {
   try {
     const { id } = req.params;
-    const [rows] = await db.query("SELECT *, file_path AS file_pengumuman FROM pengumuman WHERE id = ?", [id]);
+    const query = `
+      SELECT 
+        p.id,
+        p.judul,
+        p.content,
+        p.file_path,  -- Menggunakan file_path standar
+        p.created_at,
+        p.is_active,
+        p.created_by AS created_by_user_id, -- ID user yang membuat pengumuman
+        u.nama_lengkap AS creator_nama_lengkap -- Nama lengkap user dari tabel user
+      FROM 
+        pengumuman p
+      JOIN 
+        user u ON p.created_by = u.user_id
+      WHERE 
+        p.id = ?;
+    `;
+    const [rows] = await db.query(query, [id]);
 
     if (rows.length === 0) {
       return res.status(404).json({ message: "Pengumuman tidak ditemukan" });
     }
 
+    const announcement = rows[0];
+
+    // Mengubah struktur data agar created_by menjadi objek
+    const formattedData = {
+      id: announcement.id,
+      judul: announcement.judul,
+      content: announcement.content,
+      file_path: announcement.file_path,
+      created_at: announcement.created_at,
+      is_active: announcement.is_active,
+      created_by: { // Membuat objek nested untuk created_by
+        user_id: announcement.created_by_user_id,
+        nama_lengkap: announcement.creator_nama_lengkap
+      }
+    };
+
     res.status(200).json({
-      data: rows[0],
+      data: formattedData, // Kirim data pengumuman tunggal yang sudah diformat
       message: "Berhasil mengambil pengumuman",
     });
   } catch (error) {
+    console.error("Error fetching announcement by ID:", error); // Tambahkan console.error
     res.status(500).json({ message: "Gagal mengambil pengumuman", error: error.message });
   }
 };

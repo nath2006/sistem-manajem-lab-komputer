@@ -8,8 +8,8 @@ import Notification from '../../Components/Notification/Notif';
 import useTitle from '../../utils/useTitle';
 import { AuthContext } from '../../Context/AuthContext';
 import DeleteConfirmation from '../../components/Notification/DeleteConfirmation';
-import DetailUser from '../../Components/User/DetailUser';
-import EditUser from '../../Components/User/EditUser';
+import DetailPenguman from '../../Components/Pengumuman/DetailPenguman';
+import EditPegumuman from '../../Components/Pengumuman/EditPengumuman';
 import truncateText from '../../utils/truncateText';
 import formatDate from '../../utils/formatDateView';
 
@@ -135,12 +135,12 @@ const User = () => {
         <td className='flex justify-center items-center py-6 px-5'>
           <div className='flex items-center justify-between gap-x-5'>
             {/* Ganti item.user_id menjadi item.pengumuman_id atau ID unik pengumuman */}
-            <button onClick={() => handleOpenModal(item.pengumuman_id)} className="text-blue-700 hover:text-blue-500 cursor-pointer">
+            <button onClick={() => handleOpenModal(item.pengumuman_id)} className="text-red-700 hover:text-red-500 cursor-pointer">
               <FaEye size={18} />
             </button>
             {isAuth && (
               <>
-                <button onClick={() => handleOpenEditModal(item.pengumuman_id)} className="text-yellow-600 hover:text-yellow-400 cursor-pointer">
+                <button onClick={() => handleOpenEditModal(item.pengumuman_id)} className="text-red-700 hover:text-red-500 cursor-pointer">
                   <FaFilePen size={18} />
                 </button>
                 <button
@@ -186,8 +186,8 @@ const User = () => {
                     )}
                 </Tabel>
 
-                {showModal && <DetailUser id={selectedId} onClose={() => setShowModal(false)} />}
-                {showEditModal && <EditUser id={selectedId} onClose={() => setShowEditModal(false)} onUpdate={fetchData} />}
+                {showModal && <DetailPenguman id={selectedId} onClose={() => setShowModal(false)} />}
+                {showEditModal && <EditPegumuman id={selectedId} onClose={() => setShowEditModal(false)} onUpdate={fetchData} />}
             
             </div>
         </Dashboard>
