@@ -2,11 +2,11 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./Context/AuthContext";
 import { ProtectedRoute, AdminRoute } from "./utils/Middleware/ProtectedRoute";
 import LoginPage from "./pages/authentication/authLoginCover";
-import AdminPage from "./pages/admin";
-import GuruPage from "./pages/Guru";
-import TeknisiPage from "./pages/Teknisi";
-import KoordinatorLabPage from "./pages/KoordinatorLab";
-import KepalaLabPage from "./pages/KepalaLab";
+import AdminPage from "./pages/admin/AdminDashboard";
+import GuruPage from "./pages/Guru/GuruDashboard";
+import TeknisiPage from "./pages/Teknisi/TeknisiDashboard";
+import KoordinatorLabPage from "./pages/KoordinatorLab/KoordinatorLabDashboard";
+import KepalaLabPage from "./pages/KepalaLab/KepalaLabDashboard";
 
 function App() {
   return (

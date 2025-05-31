@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect} from "react";
 import { 
   FaUser,
   FaLaptopFile,
   FaComputer,
   FaRegNewspaper 
 } from "react-icons/fa6"; 
-import Dashboard from "../../template/Dashboard";
+import Dashboard from "../../Layouts/Dashboard";
 import Footer from "../../components/Footer";
 import useTitle from "../../utils/useTitle";
 import CardStatAdmin from "../../components/cardDashboard/CardStatAdmin";
 import { get } from "../../utils/api"; 
 
 const DasboardAdmin = () => {
-  
+  useTitle("Dashboard Admin - SIM Lab Komputer");
 
   // State untuk menyimpan data dari API baru
   const [dashboardStats, setDashboardStats] = useState(null);
