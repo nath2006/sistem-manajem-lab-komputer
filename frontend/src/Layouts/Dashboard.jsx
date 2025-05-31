@@ -333,7 +333,7 @@ const Dashboard = ({ title, children }) => {
         </aside>
 
         <div
-          className={`p-4 mt-[69px] bg-gray-100 transition-all duration-300 ${
+          className={`p-4 mt-[69px] bg-gray-50 transition-all duration-300 ${
             showSide ? mainContentMarginClass : "ml-0"
           }`}
         >

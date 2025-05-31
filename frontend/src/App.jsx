@@ -9,6 +9,7 @@ import KoordinatorLabPage from "./pages/KoordinatorLab/KoordinatorLabDashboard";
 import KepalaLabPage from "./pages/KepalaLab/KepalaLabDashboard";
 
 import User from "./features/KelolaUser/User";
+import AddUser from "./Components/User/AddUser";
 
 function App() {
   return (
@@ -22,11 +23,11 @@ function App() {
 
           {/*Protected Routes*/}
           <Route element={<ProtectedRoute />}>
-
+            <Route path="/add-user" element={<AddUser />} />
             {/*Admin Routes*/}
             <Route element={<AdminRoute />}>
               <Route path="/dashboard" element={<AdminPage />} />
-              <Route path='/user' element={<User />} />
+              <Route path="/user" element={<User />} />
             </Route>
 
             {/* Kepala Lab Routes*/}
