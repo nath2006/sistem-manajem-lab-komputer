@@ -2,6 +2,9 @@ import db from "../config/db.js";
 import path from "path";
 import fs from "fs";
 
+const PENGUMUMAN_FILES_DIR_FROM_ROOT = path.join(process.cwd(), 'uploads', 'pengumuman');
+
+
 // Create Pengumuman
 export const createAnnouncement = async (req, res) => {
   try {
@@ -139,40 +142,83 @@ export const getAnnouncementById = async (req, res) => {
 
 // Update Pengumuman
 export const updateAnnouncement = async (req, res) => {
+  console.log("UPDATE PENGUMUMAN - REQ.PARAMS:", req.params);
+  console.log("UPDATE PENGUMUMAN - REQ.BODY:", req.body);
+  console.log("UPDATE PENGUMUMAN - REQ.FILE:", req.file); // SANGAT PENTING UNTUK DEBUG
+
   try {
     const { id } = req.params;
-    const {
-      judul,
-      content,
-      is_active
-    } = req.body;
+    const { judul, content, is_active } = req.body;
 
-    const [oldRows] = await db.query("SELECT * FROM pengumuman WHERE id = ?", [id]);
+    if (!judul || !content) {
+      // Jika ada file yang terlanjur diupload Multer karena validasi gagal, hapus
+      if (req.file) {
+        const tempPath = path.join(PENGUMUMAN_FILES_DIR_FROM_ROOT, req.file.filename);
+        if(fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+      }
+      return res.status(400).json({ message: "Judul dan Konten tidak boleh kosong." });
+    }
+
+    const [oldRows] = await db.query("SELECT file_path FROM pengumuman WHERE id = ?", [id]);
     if (oldRows.length === 0) {
+      if (req.file) { // Hapus file yang terupload jika pengumuman tidak ada
+        const tempPath = path.join(PENGUMUMAN_FILES_DIR_FROM_ROOT, req.file.filename);
+        if(fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+      }
       return res.status(404).json({ message: "Pengumuman tidak ditemukan" });
     }
 
-    const oldFile = oldRows[0].file_path;
-    let newFile = oldFile;
+    const oldFileBasename = oldRows[0].file_path; // Ini hanya nama file, mis: "File-Lama-20250101.pdf"
+    let newFileBasename = oldFileBasename;
 
     if (req.file) {
-      newFile = req.file.filename;
-      if (oldFile) {
-        const oldPath = path.join("uploads/pengumuman", oldFile);
-        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+      newFileBasename = req.file.filename; // Nama file baru dari Multer
+
+      if (oldFileBasename && oldFileBasename !== newFileBasename) {
+        const oldFileSystemPath = path.join(PENGUMUMAN_FILES_DIR_FROM_ROOT, oldFileBasename);
+        if (fs.existsSync(oldFileSystemPath)) {
+          try {
+            fs.unlinkSync(oldFileSystemPath);
+            console.log(`File lama ${oldFileBasename} berhasil dihapus.`);
+          } catch (unlinkErr) {
+            console.error(`Gagal menghapus file lama ${oldFileBasename}:`, unlinkErr);
+            // Pertimbangkan apakah akan melanjutkan atau mengembalikan error
+          }
+        }
       }
     }
 
+    const activeStatus = (is_active === '1' || is_active === 1 || is_active === true) ? 1 : 0;
+
     await db.query(
       `UPDATE pengumuman SET judul = ?, content = ?, file_path = ?, is_active = ? WHERE id = ?`,
-      [judul, content, newFile, is_active ?? true, id]
+      [judul, content, newFileBasename, activeStatus, id]
     );
 
     res.status(200).json({
-      data: { id, judul, content, file_pengumuman: newFile, is_active },
+      data: { 
+        id: parseInt(id, 10), 
+        judul, 
+        content, 
+        file_path: newFileBasename, // Konsisten dengan nama kolom DB dan GET
+        is_active: activeStatus 
+      },
       message: "Pengumuman berhasil diperbarui",
     });
   } catch (error) {
+    console.error("Error updating announcement:", error);
+    // Jika ada file baru yang diupload tapi terjadi error saat proses DB, hapus file tersebut
+    if (req.file && error) { // Hanya hapus jika ada error dan req.file ada
+        const uploadedFilePath = path.join(PENGUMUMAN_FILES_DIR_FROM_ROOT, req.file.filename);
+        if (fs.existsSync(uploadedFilePath)) {
+            try {
+                fs.unlinkSync(uploadedFilePath);
+                console.log(`Rollback: File ${req.file.filename} yang baru diupload dihapus karena error: ${error.message}`);
+            } catch (rollbackErr) {
+                console.error(`Gagal melakukan rollback file ${req.file.filename}:`, rollbackErr);
+            }
+        }
+    }
     res.status(500).json({ message: "Gagal memperbarui pengumuman", error: error.message });
   }
 };

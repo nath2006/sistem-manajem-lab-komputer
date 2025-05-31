@@ -1,65 +1,128 @@
+// EditPengumuman.js
 import React, { useState, useEffect } from "react";
-import { get, put } from "../../utils/api";
-import ModalContainer from "../DetailModal/ModalContainer";
-import LoadingSpinner from "../DetailModal/LoadingSpinner";
+import { get, putWithFile } from "../../utils/api"; // Pastikan path ini benar
+import ModalContainer from "../DetailModal/ModalContainer"; // Pastikan path ini benar
+import LoadingSpinner from "../DetailModal/LoadingSpinner"; // Pastikan path ini benar
 
-const EditUser = ({ id, onClose, onUpdate }) => {
-  const [formData, setFormData] = useState(null);
+const EditPengumuman = ({ id, onClose, onUpdate }) => {
+  const [formData, setFormData] = useState({
+    judul: "",
+    content: "",
+    is_active: true,
+  });
+  const [currentFilePath, setCurrentFilePath] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null); // Ini untuk objek File aktual
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [password, setPassword] = useState(""); // Tambahan untuk password
+
+  const ASSET_BASE_URL = import.meta.env.VITE_ASSET_BASE_URL || 'http://localhost:5500'; // Sesuaikan port jika backend di 5000
+  const PENGUMUMAN_ASSET_SUBFOLDER = '/uploads/pengumuman/'; // Pastikan konsisten dengan backend static serving
 
   useEffect(() => {
-    const fetchDetail = async () => {
+    const fetchDetailPengumuman = async () => {
+      if (!id) {
+        setError("ID Pengumuman tidak valid.");
+        setLoading(false);
+        console.warn("EditPengumuman - fetchDetail: ID tidak valid, fetch dibatalkan.");
+        return;
+      }
+      console.log(`EditPengumuman - fetchDetail: Memulai fetch untuk ID ${id}`);
+      setLoading(true);
       try {
-        const response = await get(`/user/detail/${id}`);
-        setFormData({
-          nama_lengkap: response.data.nama_lengkap,
-          username: response.data.username,
-          email: response.data.email,
-          role: response.data.role,
-          is_online: Boolean(response.data.is_online),
-        });
+        const response = await get(`/pengumuman/${id}`);
+        console.log("EditPengumuman - fetchDetail: Respons API GET:", response);
+        if (response.data) {
+          setFormData({
+            judul: response.data.judul || "",
+            content: response.data.content || "",
+            is_active: response.data.is_active === 1 || response.data.is_active === true,
+          });
+          setCurrentFilePath(response.data.file_path);
+          console.log("EditPengumuman - fetchDetail: Data form di-set, currentFilePath:", response.data.file_path);
+        } else {
+          setError("Data pengumuman tidak ditemukan dari API.");
+          console.warn("EditPengumuman - fetchDetail: Data tidak ditemukan di respons API.");
+        }
       } catch (error) {
-        console.error("Gagal mengambil data:", error);
-        setError("Gagal mengambil data user");
+        console.error("EditPengumuman - fetchDetail: Gagal mengambil data pengumuman:", error.response?.data || error.message || error);
+        setError("Gagal mengambil data pengumuman");
       } finally {
         setLoading(false);
       }
     };
-    fetchDetail();
+    fetchDetailPengumuman();
   }, [id]);
 
   const handleChange = (e) => {
-    const value =
-      e.target.type === "checkbox" ? e.target.checked : e.target.value;
-    setFormData((prev) => ({ ...prev, [e.target.name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    console.log("EditPengumuman - handleFileChange: File dipilih dari input:", file);
+    if (file) {
+      console.log("EditPengumuman - handleFileChange: Apakah file instance dari File?", file instanceof File);
+      console.log("EditPengumuman - handleFileChange: Tipe file:", file.type);
+      console.log("EditPengumuman - handleFileChange: Ukuran file:", file.size);
+    }
+    setSelectedFile(file || null); // Set ke null jika e.target.files kosong atau file tidak valid
   };
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
+    if (!formData.judul.trim() || !formData.content.trim()) {
+      setError("Judul dan Konten tidak boleh kosong.");
+      return;
+    }
     setSaving(true);
     setError("");
 
+    console.log("EditPengumuman - handleSubmit: Memulai submit...");
+    console.log("EditPengumuman - handleSubmit: formData state:", formData);
+    console.log("EditPengumuman - handleSubmit: selectedFile state sebelum append:", selectedFile);
+
+    const dataToSubmit = new FormData();
+    dataToSubmit.append("judul", formData.judul);
+    dataToSubmit.append("content", formData.content);
+    dataToSubmit.append("is_active", formData.is_active ? 1 : 0);
+
+    if (selectedFile && selectedFile instanceof File) { // Pastikan selectedFile adalah objek File
+      dataToSubmit.append("file_pengumuman", selectedFile, selectedFile.name); // Key "file_pengumuman"
+      console.log("EditPengumuman - handleSubmit: File ditambahkan ke FormData dengan key 'file_pengumuman':", selectedFile);
+    } else if (selectedFile) {
+      console.warn("EditPengumuman - handleSubmit: selectedFile ada, tapi bukan instance dari File. Tidak di-append.", selectedFile);
+    } else {
+      console.log("EditPengumuman - handleSubmit: Tidak ada file baru yang dipilih (selectedFile null atau undefined).");
+    }
+
+    console.log("EditPengumuman - handleSubmit: Isi FormData yang akan dikirim:");
+    for (let pair of dataToSubmit.entries()) {
+      console.log(`FormData Entry: ${pair[0]} =`, pair[1]);
+    }
+
     try {
-      // Data yang akan dikirim ke backend
-      const dataToSubmit = {
-        ...formData,
-        is_active: formData.is_active ? 1 : 0,
-      };
-
-      // Jika user mengisi password, tambahkan ke data yang dikirim
-      if (password.trim()) {
-        dataToSubmit.password = password;
-      }
-
-      await put(`/user/update/${id}`, dataToSubmit);
+      // Pastikan fungsi 'put' di utils/api.js dikonfigurasi untuk mengirim FormData dengan benar
+      // Parameter ketiga 'true' biasanya menandakan bahwa 'dataToSubmit' adalah FormData
+      console.log("EditPengumuman - handleSubmit: Memanggil put API...");
+      const response = await putWithFile(`/pengumuman/update/${id}`, dataToSubmit, true);
+      console.log("EditPengumuman - handleSubmit: Respons API PUT:", response);
       onUpdate();
       onClose();
     } catch (error) {
-      console.error("Gagal menyimpan data:", error);
-      setError("Gagal mengubah data user");
+      console.error("EditPengumuman - handleSubmit: Gagal menyimpan data pengumuman:", error.response?.data || error.message || error);
+      let errorMessage = "Gagal mengubah data pengumuman.";
+      if (error.response && error.response.data && error.response.data.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      setError(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -67,7 +130,7 @@ const EditUser = ({ id, onClose, onUpdate }) => {
 
   if (loading) {
     return (
-      <ModalContainer title="Edit User" onClose={onClose}>
+      <ModalContainer title="Edit Pengumuman" onClose={onClose}>
         <LoadingSpinner />
       </ModalContainer>
     );
@@ -77,16 +140,16 @@ const EditUser = ({ id, onClose, onUpdate }) => {
     <button
       onClick={handleSubmit}
       disabled={saving}
-      className="w-full px-5 py-2 text-sm font-semibold text-center rounded-md bg-red-500 text-white active:scale-95 focus:outline-none"
+      className="w-full px-5 py-2 text-sm font-semibold text-center rounded-md bg-red-600 hover:bg-red-700 text-white active:scale-95 focus:outline-none"
     >
-      {saving ? "Menyimpan..." : "Simpan"}
+      {saving ? "Menyimpan..." : "Simpan Perubahan"}
     </button>
   );
 
   const secondaryButton = (
     <button
       onClick={onClose}
-      className="w-full px-5 py-2 text-sm font-semibold text-center bg-white border-2 rounded-md text-red-500 border-red-500 active:scale-95 focus:outline-none"
+      className="w-full px-5 py-2 text-sm font-semibold text-center bg-white border-2 rounded-md text-gray-700 border-gray-300 hover:bg-gray-50 active:scale-95 focus:outline-none"
     >
       Batal
     </button>
@@ -94,147 +157,84 @@ const EditUser = ({ id, onClose, onUpdate }) => {
 
   return (
     <ModalContainer
-      title="Edit User"
-      subtitle="Edit informasi user"
+      title="Edit Pengumuman"
+      subtitle="Edit informasi pengumuman"
       onClose={onClose}
       primaryButton={primaryButton}
       secondaryButton={secondaryButton}
     >
-      <form onSubmit={handleSubmit} className="space-y-6 text-gray-600">
+      <form onSubmit={handleSubmit} className="space-y-5 text-gray-700">
         {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
             {error}
           </div>
         )}
 
-        <div className="border-b pb-4">
-          <h3 className="text-lg font-semibold mb-4">Informasi User</h3>
-          <div className="grid grid-cols-1 gap-4">
-            <div className="mb-4">
-              <label
-                htmlFor="nama_lengkap"
-                className="block mb-2 font-medium text-md"
-              >
-                Nama Lengkap
-              </label>
-              <input
-                type="text"
-                id="nama_lengkap"
-                name="nama_lengkap"
-                value={formData.nama_lengkap || ""}
-                onChange={handleChange}
-                className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12"
-                placeholder="Masukan Nama Lengkap"
-                required
-              />
+        <div>
+          <label htmlFor="judul" className="block mb-1.5 font-medium text-sm">Judul Pengumuman</label>
+          <input
+            type="text"
+            id="judul"
+            name="judul"
+            value={formData.judul}
+            onChange={handleChange}
+            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            placeholder="Masukan Judul Pengumuman"
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="content" className="block mb-1.5 font-medium text-sm">Konten</label>
+          <textarea
+            id="content"
+            name="content"
+            rows="4"
+            value={formData.content}
+            onChange={handleChange}
+            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            placeholder="Masukan Isi Pengumuman"
+            required
+          ></textarea>
+        </div>
+        
+        <div>
+          <label htmlFor="file" className="block mb-1.5 font-medium text-sm">File Pendukung (Opsional)</label>
+          {currentFilePath && !selectedFile && (
+            <div className="mb-2 text-xs text-gray-600">
+              File saat ini: <a href={`${ASSET_BASE_URL}${PENGUMUMAN_ASSET_SUBFOLDER}${currentFilePath}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{currentFilePath.split('/').pop() || currentFilePath}</a>
             </div>
-            <div className="mb-4">
-              <label
-                htmlFor="username"
-                className="block mb-2 font-medium text-md"
-              >
-                Username
-              </label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                value={formData.username || ""}
-                onChange={handleChange}
-                className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12"
-                placeholder="Masukan Username"
-                required
-              />
-            </div>
-            <div className="mb-4">
-              <label htmlFor="email" className="block mb-2 font-medium text-md">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email || ""}
-                onChange={handleChange}
-                className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12"
-                placeholder="Masukan Email"
-                required
-              />
-            </div>
-            <div className="mb-4">
-              <label htmlFor="role" className="block mb-2 font-medium text-md">
-                Role
-              </label>
-              <select
-                id="role"
-                name="role"
-                value={formData.role || ""}
-                onChange={handleChange}
-                className={`select-option border-[2px] border-gray-300 h-12 ${
-                  formData.role ? "text-black" : "text-gray-400"
-                } text-sm rounded-md focus:ring-maroon outline-none focus:border-maroon block w-full p-2.5`}
-                required
-              >
-                <option value="" disabled className="text-gray-400">
-                  Pilih Role
-                </option>
-                <option value="Admin" className="text-gray-500">
-                  Admin
-                </option>
-                <option value="Guru" className="text-gray-500">
-                  Guru
-                </option>
-                <option value="Teknisi" className="text-gray-500">
-                  Teknisi
-                </option>
-                <option value="Kepala Lab" className="text-gray-500">
-                  Kepala Lab
-                </option>
-                <option value="Koordinator Lab" className="text-gray-500">
-                  Koordinator Lab
-                </option>
-              </select>
-            </div>
-            <div className="mb-4">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  name="is_online"
-                  checked={formData.is_online}
-                  onChange={handleChange}
-                  className="mr-2 h-5 w-5 text-red-500 focus:ring-red-400"
-                />
-                <span className="text-gray-700 font-medium">
-                  Status Onlines
-                </span>
-              </label>
-            </div>
-            {/* Input Password */}
-            <div className="mb-4">
-              <label
-                htmlFor="password"
-                className="block mb-2 font-medium text-md"
-              >
-                Password Baru (Opsional)
-              </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12"
-                placeholder="Masukan Password Baru"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Kosongkan jika tidak ingin mengubah password
-              </p>
-            </div>
-          </div>
+          )}
+          {selectedFile && (
+             <div className="mb-2 text-xs text-gray-500">File baru dipilih: {selectedFile.name} ({Math.round(selectedFile.size / 1024)} KB)</div>
+          )}
+          <input
+            type="file"
+            id="file"
+            // name="file_pengumuman_input" // Atribut name HTML tidak terlalu krusial jika FormData di-append manual
+            onChange={handleFileChange}
+            className="block w-full text-sm text-gray-900 border border-gray-300 rounded-md cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Kosongkan jika tidak ingin mengubah file. File baru akan menggantikan file lama.
+          </p>
+        </div>
+
+        <div className="pt-2">
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              name="is_active"
+              checked={formData.is_active}
+              onChange={handleChange}
+              className="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium">Jadikan Pengumuman Aktif</span>
+          </label>
         </div>
       </form>
     </ModalContainer>
   );
 };
 
-export default EditUser;
+export default EditPengumuman;

@@ -1,3 +1,4 @@
+// routes/pengumumanRoutes.js
 import express from "express";
 import {
   createAnnouncement,
@@ -7,7 +8,7 @@ import {
   deleteAnnouncement,
 } from "../controllers/pengumumanController.js";
 import { verifyToken, authorizeRoles } from "../middleware/authMiddleware.js";
-import { multerUpload } from "../utils/multer.js";
+import { multerUpload } from "../utils/multer.js"; // Impor dari lokasi yang benar
 
 const router = express.Router();
 
@@ -17,14 +18,14 @@ router.get("/:id", verifyToken, getAnnouncementById);
 router.post("/create",
   verifyToken,
   authorizeRoles(["Admin", "Koordinator Lab"]),
-  multerUpload.single("file_pengumuman"),
+  multerUpload.single("file_pengumuman"), // Key ini cocok dengan frontend
   createAnnouncement
 );
 
 router.put("/update/:id",
   verifyToken,
   authorizeRoles(["Admin", "Koordinator Lab"]),
-  multerUpload.single("file_pengumuman"),
+  multerUpload.single("file_pengumuman"), // Key ini cocok dengan frontend
   updateAnnouncement
 );
 
