@@ -8,6 +8,8 @@ import TeknisiPage from "./pages/Teknisi/TeknisiDashboard";
 import KoordinatorLabPage from "./pages/KoordinatorLab/KoordinatorLabDashboard";
 import KepalaLabPage from "./pages/KepalaLab/KepalaLabDashboard";
 
+import User from "./features/KelolaUser/User";
+
 function App() {
   return (
     //  <RouterProvider router={router} />
@@ -24,6 +26,7 @@ function App() {
             {/*Admin Routes*/}
             <Route element={<AdminRoute />}>
               <Route path="/dashboard" element={<AdminPage />} />
+              <Route path='/user' element={<User />} />
             </Route>
 
             {/* Kepala Lab Routes*/}

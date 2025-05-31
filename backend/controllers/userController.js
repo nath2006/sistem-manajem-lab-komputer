@@ -79,18 +79,34 @@ export const getUserById = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, password, nama_lengkap, email, role } = req.body;
+    const { username, password, nama_lengkap, email, role, is_active } = req.body; // Tambahkan is_active jika dikirim dari frontend
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    let query = "UPDATE user SET username = ?, nama_lengkap = ?, email = ?, role = ?";
+    const queryParams = [username, nama_lengkap, email, role];
 
-    const [result] = await db.query(
-      "UPDATE user SET username = ?, password = ?, nama_lengkap = ?, email = ?, role = ? WHERE user_id = ?",
-      [username, hashedPassword, nama_lengkap, email, role, id]
-    );
+    // Tambahkan is_active ke query jika ada
+    // Backend Anda mungkin mengharapkan 'is_active' atau 'is_online'
+    // Sesuaikan nama field di bawah ini dengan skema database Anda
+    // if (is_active !== undefined) { // Atau periksa field lain seperti is_online
+    //    query += ", is_active = ?"; // atau is_online = ?
+    //    queryParams.push(is_active); // Kirim 1 atau 0
+    // }
+
+
+    if (password && password.trim() !== "") {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      query += ", password = ?";
+      queryParams.push(hashedPassword);
+    }
+
+    query += " WHERE user_id = ?";
+    queryParams.push(id);
+
+    const [result] = await db.query(query, queryParams);
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ 
-        message: 'User Tidak Ditemukan' 
+      return res.status(404).json({
+        message: 'User Tidak Ditemukan'
       });
     }
 
@@ -98,14 +114,13 @@ export const updateUser = async (req, res) => {
       message: 'User Berhasil Diupdate'
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ 
-      message: 'Mengupdate User Gagal' ,
+    console.error("Error updating user:", error); // Logging yang lebih detail
+    res.status(500).json({
+      message: 'Mengupdate User Gagal',
       error: error.message,
     });
   }
 };
-
 
 // Hapus User
 export const deleteUser = async (req, res) => {

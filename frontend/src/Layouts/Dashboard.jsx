@@ -132,7 +132,7 @@ const Dashboard = ({ title, children }) => {
       to: "/admin/pengecekan-perangkat",
     },
     { type: "divider" },
-    { name: "Kelola User", ic: <FaUserGear />, to: "/admin/kelola-user" },
+    { name: "Kelola User", ic: <FaUserGear />, to: "/user" },
     {
       name: "Kelola Pengumuman",
       ic: <FaRegNewspaper />,
@@ -333,12 +333,12 @@ const Dashboard = ({ title, children }) => {
         </aside>
 
         <div
-          className={`p-4 mt-[69px] bg-gray-50 transition-all duration-300 ${
+          className={`p-4 mt-[69px] bg-gray-100 transition-all duration-300 ${
             showSide ? mainContentMarginClass : "ml-0"
           }`}
         >
           {/* Ganti bg-neutral-100/20 menjadi bg-gray-50 atau warna netral lain */}
-          <div className="border-gray-200 rounded-lg min-h-[calc(100vh-69px-2rem)]  bg-white ">
+          <div className="bg-white ">
             {/* Tambah padding, bg-white, dan shadow untuk area konten jika diinginkan */}
             {children}
           </div>
