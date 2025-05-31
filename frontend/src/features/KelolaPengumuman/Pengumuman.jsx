@@ -132,7 +132,7 @@ const User = () => {
             {item.is_active === 1 ? 'Aktif' : 'Tidak Aktif'}
           </span>
         </td>
-        <td className='flex justify-center items-center py-6'>
+        <td className='flex justify-center items-center py-6 px-5'>
           <div className='flex items-center justify-between gap-x-5'>
             {/* Ganti item.user_id menjadi item.pengumuman_id atau ID unik pengumuman */}
             <button onClick={() => handleOpenModal(item.pengumuman_id)} className="text-blue-700 hover:text-blue-500 cursor-pointer">
