@@ -92,7 +92,7 @@ export const createAnnouncement = async (req, res) => {
   }
 };
 
-// Get All Pengumuman Aktif
+// Get All Pengumuman 
 export const getAllAnnouncements = async (req, res) => {
   try {
     const query = `
@@ -107,6 +107,56 @@ export const getAllAnnouncements = async (req, res) => {
         u.nama_lengkap AS creator_nama_lengkap -- Nama lengkap user dari tabel user
       FROM 
         pengumuman p
+      JOIN 
+        user u ON p.created_by = u.user_id
+      ORDER BY 
+        p.created_at DESC;
+    `;
+    const [rows] = await db.query(query);
+
+    // Mengubah struktur data agar created_by menjadi objek yang berisi user_id dan nama_lengkap
+    const formattedData = rows.map(item => {
+      return {
+        id: item.id,
+        judul: item.judul,
+        content: item.content,
+        file_path: item.file_path,
+        created_at: item.created_at,
+        is_active: item.is_active,
+        created_by: { // Membuat objek nested untuk created_by
+          user_id: item.created_by_user_id,
+          nama_lengkap: item.creator_nama_lengkap
+        }
+      };
+    });
+
+    res.status(200).json({
+      data: formattedData, // Kirim data yang sudah diformat
+      message: "Berhasil mengambil semua pengumuman aktif",
+    });
+  } catch (error) {
+    console.error("Error fetching active announcements:", error); // Tambahkan console.error untuk debugging di backend
+    res.status(500).json({ message: "Gagal mengambil data pengumuman", error: error.message });
+  }
+};
+
+// Get All Pengumuman Aktif
+export const getAllActiveAnnouncements = async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        p.id,
+        p.judul,
+        p.content,
+        p.file_path,  -- Menggunakan file_path standar, frontend Anda menggunakan ini
+        p.created_at,
+        p.is_active,
+        p.created_by AS created_by_user_id, -- ID user yang membuat pengumuman
+        u.nama_lengkap AS creator_nama_lengkap -- Nama lengkap user dari tabel user
+      FROM 
+        pengumuman p
+      WHERE
+        p.is_active = 1 
       JOIN 
         user u ON p.created_by = u.user_id
       ORDER BY 
