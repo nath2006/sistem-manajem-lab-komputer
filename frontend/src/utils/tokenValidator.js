@@ -1,5 +1,4 @@
-/* eslint-disable no-unused-vars */
-
+// utils/tokenValidator.js
 import { jwtDecode } from 'jwt-decode';
 
 export const verifyToken = (token) => {
@@ -20,7 +19,6 @@ export const verifyToken = (token) => {
       email: decoded.email
     };
   } catch (error) {
-  
     return null;
   }
 };

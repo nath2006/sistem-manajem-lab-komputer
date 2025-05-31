@@ -1,10 +1,10 @@
 import React, { useContext, useState, useEffect } from "react";
 import { Card } from "flowbite-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { post } from "../../../utils/api";
+import { post } from "../../utils/api";
 import Notification from "../../Components/Notification/Notif";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../../../Context/AuthContext";
+import { AuthContext } from "../../Context/AuthContext";
 
 const LoginPage = () => {
   const { state, dispatch } = useContext(AuthContext);
@@ -27,7 +27,7 @@ const LoginPage = () => {
       } else if (state.role === "Teknisi") {
         navigate('/dashboard-teknisi');
       } else {
-        navigate('/home');
+        navigate('/login');
       }
     }
   }, [state.isAuthenticated, state.role, navigate]);

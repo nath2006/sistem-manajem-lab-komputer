@@ -64,7 +64,12 @@ export const login = async (req, res) => {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    });    
+    
+    await db.query(
+      "UPDATE user SET is_online = 1 WHERE user_id = ?",
+      [user.user_id]
+    );
 
     return res.status(200).json({
       msg: 'Login successful',
@@ -126,7 +131,25 @@ export const refreshToken = (req, res) => {
   )
 }
 
-export const logout = (req, res) => {
-  res.clearCookie('refreshToken');
-  return res.status(200).json({ message: 'Logout successful' });
+export const logout = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ msg: "Unauthorized" });
+    }
+
+    await db.query("UPDATE user SET is_online = 0 WHERE user_id = ?", [userId]);
+  
+    res.clearCookie('refreshToken');
+    
+    return res.status(200).json({ message: 'Logout successful' });
+  
+  } catch (error) {
+    return res.status(500).json({
+      msg: "Logout Failed",
+      error: error.message,
+    });
+  }
+
 }
