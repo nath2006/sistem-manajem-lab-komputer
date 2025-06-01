@@ -10,6 +10,7 @@ import GuruPage from "./pages/Guru/GuruDashboard";
 import TeknisiPage from "./pages/Teknisi/TeknisiDashboard";
 import KoordinatorLabPage from "./pages/KoordinatorLab/KoordinatorLabDashboard";
 import KepalaLabPage from "./pages/KepalaLab/KepalaLabDashboard";
+import TeknisiDashboard from "./pages/Teknisi/TeknisiDashboard";
 
 // Features
 import User from "./features/KelolaUser/User";

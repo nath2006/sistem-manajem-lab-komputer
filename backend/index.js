@@ -23,7 +23,7 @@ import perbaikanRoutes from './router/perbaikanRoutes.js';
 // Perhatikan potensi typo: 'pengajunLab' mungkin seharusnya 'pengajuanLabRoutes'
 import pengajunLab from './router/pengajuanLabRoutes.js'; 
 import dashboardAdminRoutes from './router/dashboardAdminRoutes.js';
-
+import dashboardTeknisiRoutes from './router/dashboardTeknisiRoutes.js';
 dotenv.config();
 
 const app = express();
@@ -56,13 +56,14 @@ app.use("/api/user", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/lab", labRoutes);
 app.use("/api/perangkat", deviceRoutes);
-app.use("/api/pemeriksaan", pemeriksaanRouter); // Pastikan nama impor dan file konsisten
+app.use("/api/pemeriksaan", pemeriksaanRouter); 
 app.use("/api/pengumuman", pengumumanRouter);
 app.use("/api/pengecekan", pengecekanRouter);
 app.use("/api/laporan/perangkat", laporanPerangkat);
 app.use("/api/perbaikan", perbaikanRoutes);
-app.use("/api/pengajuan", pengajunLab); // Pastikan nama impor dan file konsisten
-app.use("/api/dashboard", dashboardAdminRoutes); // Menghilangkan slash di akhir untuk konsistensi
+app.use("/api/pengajuan", pengajunLab); 
+app.use("/api/dashboard", dashboardAdminRoutes); 
+app.use("/api/dashboard", dashboardTeknisiRoutes); 
 
 // Rute index (misalnya untuk '/' atau rute fallback lainnya)
 // Pastikan indexRoutes.js diekspor dengan benar dan menangani rute yang sesuai.
