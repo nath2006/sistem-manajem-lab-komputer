@@ -263,7 +263,7 @@ export const deleteDevice = async (req, res) => {
     // Cek apakah error karena foreign key constraint (misalnya jika perangkat masih dirujuk)
     if (error.code === 'ER_ROW_IS_REFERENCED_2' || error.errno === 1451) {
         return res.status(400).json({
-            message: 'Gagal menghapus data perangkat karena masih digunakan di data lain (misalnya pemeriksaan, pengecekan, atau perbaikan).',
+            message: `karena data ini masih digunakan di data lain (misalnya pemeriksaan, pengecekan, atau perbaikan)  !!!MOHON UNLINK DARI DATA YANG TERTAUT!!!.`,
             error: error.message
         });
     }
