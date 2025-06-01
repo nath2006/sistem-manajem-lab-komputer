@@ -1,4 +1,3 @@
-// EditPengecekan.jsx
 import React, { useState, useEffect, useContext } from "react";
 import { get, put } from "../../utils/api"; // Menggunakan 'put' untuk JSON, atau sesuaikan jika 'putWithFile' bisa handle FormData tanpa file
 import ModalContainer from "../DetailModal/ModalContainer";

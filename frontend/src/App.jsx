@@ -22,6 +22,9 @@ import AddLaboratorium from "./Components/DataLab/AddLabaratorium";
 import Pengecekan from "./features/KelolaPengecekan/PengecekanPerangkat";
 import AddPengecekan from "./Components/Pengecekan/AddPengecekan";
 
+import Perbaikan from "./features/KelolaPerbaikan/Perbaikan";
+
+
 function App() {
   return (
     <AuthProvider>
@@ -68,6 +71,7 @@ function App() {
             <Route element={<RoleRoute allowedRoles={["Admin","Teknisi"]} />}>
               <Route path="/kelola-pengecekan" element={<Pengecekan />} />
               <Route path="/dashboard-teknisi" element={<TeknisiPage />} />
+              <Route path="/kelola-perbaikan" element={<Perbaikan />} />
             </Route>
 
             {/* Koordinator Lab */}

@@ -85,7 +85,7 @@ const Dashboard = ({ title, children }) => {
     {
       name: "Perbaikan Perangkat",
       ic: <FaLaptopMedical />,
-      to: "/teknisi/perbaikan",
+      to: "/kelola-perbaikan",
     },
     {
       name: "Pengecekan Perangkat",
@@ -124,7 +124,7 @@ const Dashboard = ({ title, children }) => {
     {
       name: "Perbaikan Perangkat",
       ic: <FaLaptopMedical />,
-      to: "/admin/perbaikan-perangkat",
+      to: "/kelola-perbaikan",
     },
     {
       name: "Pengecekan Perangkat",

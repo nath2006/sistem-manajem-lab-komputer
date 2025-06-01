@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { postWithFile } from "../../utils/api"; // GANTI: Impor postWithFile
 import Dashboard from "../../Layouts/Dashboard";
 import useTitle from "../../utils/useTitle";
-import FormContainer from "../../components/FormContainer";
+import FormContainer from "../FormContainer";
 
 const AddPengumuman = () => {
   useTitle("Tambah Pengumuman - Dashboard"); // GANTI: Judul halaman

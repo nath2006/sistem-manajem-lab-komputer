@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { post } from "../../utils/api";
 import Dashboard from "../../Layouts/Dashboard";
 import useTitle from "../../utils/useTitle";
-import FormContainer from "../../components/FormContainer";
+import FormContainer from "../FormContainer";
 import { FaEye, FaEyeSlash } from "react-icons/fa6";
 
 const AddUser = () => {

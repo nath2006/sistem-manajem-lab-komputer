@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { get } from "../../utils/api";
-import InfoItem from "../../components/DetailModal/InfoItem";
-import InfoSection from "../../components/DetailModal/InfoSection";
-import ModalContainer from "../../components/DetailModal/ModalContainer";
-import LoadingSpinner from "../../components/DetailModal/LoadingSpinner";
+import InfoItem from "../DetailModal/InfoItem";
+import InfoSection from "..//DetailModal/InfoSection";
+import ModalContainer from "..//DetailModal/ModalContainer";
+import LoadingSpinner from "../DetailModal/LoadingSpinner";
 
 const DetailUser = ({ id, onClose }) => {
   const [userData, setUserData] = useState(null);

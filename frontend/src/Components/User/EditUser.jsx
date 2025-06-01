@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { get, put } from "../../utils/api";
-import ModalContainer from "../../components/DetailModal/ModalContainer";
-import LoadingSpinner from "../../components/DetailModal/LoadingSpinner";
+import ModalContainer from "../DetailModal/ModalContainer";
+import LoadingSpinner from "../DetailModal/LoadingSpinner";
 
 const EditUser = ({ id, onClose, onUpdate }) => {
   const [formData, setFormData] = useState(null);

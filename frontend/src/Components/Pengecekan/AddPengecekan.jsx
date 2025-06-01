@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { post, get } from "../../utils/api";
 import Dashboard from "../../Layouts/Dashboard";
 import useTitle from "../../utils/useTitle";
-import FormContainer from "../../components/FormContainer";
+import FormContainer from "../FormContainer";
 import { AuthContext } from "../../Context/AuthContext";
 
 const AddPengecekan = () => {
