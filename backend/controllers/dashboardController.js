@@ -71,40 +71,31 @@ export const getDashboardStats = async (req, res) => {
   }
 };
 
-/**
- * @desc    Get all labs with their respective lab heads
- * @route   GET /api/labs-with-heads  (Contoh route, sesuaikan di file routing Anda)
- * @access  Private (misalnya, Admin atau role tertentu)
- */
+// Backend - getLabsWithHeads (Modifikasi)
 export const getLabsWithHeads = async (req, res) => {
   try {
     const query = `
       SELECT 
-        l.lab_id,
-        l.nama_lab,
-        l.lokasi,
-        u.nama_lengkap AS nama_kepala_lab,
+        l.lab_id, l.nama_lab, l.lokasi, 
+        u.nama_lengkap AS nama_kepala_lab, 
         u.user_id AS kepala_lab_user_id
       FROM 
         laboratorium l
-      JOIN 
+      LEFT JOIN 
         user u ON l.kepala_lab_id = u.user_id
       ORDER BY 
         l.nama_lab ASC;
     `;
     const [rows] = await db.query(query);
 
-    if (rows.length === 0) {
-      return res.status(404).json({
-        message: "Tidak ada data laboratorium yang ditemukan.",
-        data: [],
-      });
-    }
-
+    // Selalu kembalikan status 200 OK.
+    // Pesan disesuaikan jika data kosong.
+    // `data` akan menjadi array kosong jika tidak ada lab.
     res.status(200).json({
-      message: "Berhasil mengambil data laboratorium beserta kepala lab.",
-      data: rows,
+      message: rows.length === 0 ? "Tidak ada data laboratorium yang ditemukan." : "Berhasil mengambil data laboratorium beserta kepala lab.",
+      data: rows, // rows akan berupa [] jika tidak ada data
     });
+
   } catch (error) {
     console.error("Error in getLabsWithHeads function:", error);
     res.status(500).json({
