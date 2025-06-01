@@ -247,7 +247,7 @@ const handlePrintData = () => {
 
   return (
     <Dashboard title="Data Perbaikan Perangkat">
-      <div className="flex flex-col justify-between w-full min-h-[calc(100vh-110px)] px-4 py-6 md:px-6 lg:px-8">
+      <div className="px-2">
         {(successMsg && !errorMsg) && (
           <Notification type="success" message={successMsg} onClose={() => setSuccessMsg('')} />
         )}
