@@ -32,8 +32,7 @@ const Dashboard = ({ title, children }) => {
   const navigate = useNavigate();
   const { state, dispatch } = useContext(AuthContext);
 
- 
-  const fullName = state?.fullName || "User"; 
+  const fullName = state?.fullName || "User";
   const userRole = state?.role;
 
   const Logout = async () => {
@@ -41,7 +40,7 @@ const Dashboard = ({ title, children }) => {
       await post("/auth/logout");
       dispatch({ type: "LOGOUT" });
       localStorage.removeItem("token");
-      localStorage.removeItem("userName"); 
+      localStorage.removeItem("userName");
       localStorage.removeItem("role");
       navigate("/");
     } catch (error) {
@@ -117,9 +116,14 @@ const Dashboard = ({ title, children }) => {
       ic: <FaLaptopFile />,
       to: "/admin/kelola-perangkat",
     },
+    { name: "Jadwal Lab", ic: <FaRegCalendarDays />, to: "/admin/jadwal-lab" },
     { type: "divider" },
     { name: "Data Lab", ic: <FaComputer />, to: "/kelola/data-lab" },
-    { name: "Jadwal Lab", ic: <FaRegCalendarDays />, to: "/admin/jadwal-lab" },
+    {
+      name: "Kelola Pengumuman",
+      ic: <FaRegNewspaper />,
+      to: "/kelola-pengumuman",
+    },
     { type: "divider" },
     {
       name: "Perbaikan Perangkat",
@@ -133,12 +137,6 @@ const Dashboard = ({ title, children }) => {
     },
     { type: "divider" },
     { name: "Kelola User", ic: <FaUserGear />, to: "/user" },
-    {
-      name: "Kelola Pengumuman",
-      ic: <FaRegNewspaper />,
-      to: "/kelola-pengumuman",
-    },
-    { type: "divider" },
   ];
 
   let data = [];
