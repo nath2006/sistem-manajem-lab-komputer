@@ -2,7 +2,6 @@ import React, { useState, useContext } from "react";
 import {
   FaHouse,
   FaBars,
-  FaUser, // Tetap diimpor jika ModalProfil atau bagian lain mungkin menggunakannya
   FaArrowRightFromBracket,
   FaUserGear,
   FaRegNewspaper,
@@ -11,7 +10,9 @@ import {
   FaLaptopFile,
   FaLaptopMedical,
   FaComputer,
-  FaChevronDown, // Ditambahkan untuk dropdown profil
+  FaChevronDown,
+  FaCalendarCheck,
+  FaCalendarDay
 } from "react-icons/fa6";
 import img from "../images/logo.png"; // Pastikan path ini benar
 import { Link } from "react-router-dom";
@@ -52,10 +53,15 @@ const Dashboard = ({ title, children }) => {
     { name: "Dashboard", ic: <FaHouse />, to: "/dashboard-kepala-lab" },
     { type: "divider" },
     {
-      name: "Pengajuan Jadwal Lab",
-      ic: <FaRegCalendarCheck />,
-      to: "/kepala-lab/pengajuan-jadwal",
+      name: "Pengajuan  Jadwal Lab",
+      ic: <FaCalendarCheck />,
+      to: "/kelola-jadwal-lab",
     },
+    { name: "Jadwal Lab", 
+      ic: < FaRegCalendarDays/>, 
+      to: "/jadwal-lab" 
+    },
+        { type: "divider" },
     {
       name: "Pemeriksaan Perangkat",
       ic: <FaLaptopMedical />,
@@ -102,7 +108,7 @@ const Dashboard = ({ title, children }) => {
     { name: "Dashboard", ic: <FaHouse />, to: "/dashboard-guru" },
     { type: "divider" },
     {
-      name: "Pengajuan Jadwal Lab",
+      name: "Pengajuan Pengajuan Jadwal Lab",
       ic: <FaRegCalendarDays />,
       to: "/guru/pengajuan-jadwal",
     },
@@ -121,7 +127,8 @@ const Dashboard = ({ title, children }) => {
       ic: <FaLaptopFile />,
       to: "/kelola-perangkat",
     },
-    { name: "Jadwal Lab", ic: <FaRegCalendarDays />, to: "/admin/jadwal-lab" },
+    { name: "Pengajuan Jadwal Lab", ic: <FaRegCalendarCheck />, to: "/kelola-jadwal" },
+    { name: "Jadwal Lab", ic: < FaRegCalendarDays/>, to: "/jadwal-lab" },
     { type: "divider" },
     { name: "Data Lab", ic: <FaComputer />, to: "/kelola/data-lab" },
     {

@@ -306,44 +306,49 @@ export const rejectPengajuan = async (req, res) => {
   }
 };
 
-// Mendapatkan statistik pengajuan untuk dashboard
 export const getStatistikPengajuan = async (req, res) => {
     try {
-        const userId = req.user.user_id;
-        const userRole = req.user.role;
-        const { lab_id: queryLabId } = req.query; // Untuk filter Admin
+        // Mengambil userId dan userRole sesuai dengan bagaimana authMiddleware menyediakannya
+        const userId = req.user_id;
+        const userRole = req.user.role; // Karena req.user adalah decoded token
+        const { lab_id: queryLabId } = req.query;
 
-        let whereClauses = []; // Array untuk menampung kondisi WHERE
-        const params = []; // Array untuk parameter query
+        if (!userId || !userRole) {
+            console.error("Error di getStatistikPengajuan: userId atau userRole tidak ditemukan dari token.");
+            return res.status(401).json({ error: "Unauthorized - Informasi pengguna tidak lengkap." });
+        }
 
-        // Menentukan join dan kondisi where berdasarkan peran dan filter
+        let whereClauses = [];
+        const params = [];
         let joinLaboratorium = '';
+
         if (userRole === "Admin") {
             if (queryLabId && queryLabId !== "all" && queryLabId !== "") {
-                // Jika Admin memfilter berdasarkan lab_id, tidak perlu join khusus untuk filter ini
-                // kecuali jika kepala_lab_id juga ada di tabel pengajuan_lab (kurang umum)
                 whereClauses.push(`p.lab_id = ?`);
                 params.push(queryLabId);
             }
-            // Jika Admin tidak memfilter atau memilih "Semua Lab", maka statistik dari semua lab.
         } else if (userRole === "Kepala Lab") {
             joinLaboratorium = `JOIN laboratorium l ON p.lab_id = l.lab_id`;
             whereClauses.push(`l.kepala_lab_id = ?`);
             params.push(userId);
         } else {
-            // Peran lain tidak diizinkan mengakses statistik ini melalui endpoint ini
             return res.status(403).json({ error: "Akses ditolak untuk melihat statistik ini." });
         }
         
-        // Gabungkan semua kondisi WHERE dengan 'AND' jika ada lebih dari satu
         const finalWhereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
+        // KOMENTAR DIPINDAHKAN KE LUAR STRING QUERY
+        // Query untuk mengambil statistik:
+        // - menunggu: Jumlah pengajuan dengan status 'Menunggu'
+        // - disetujui: Jumlah pengajuan dengan status 'Disetujui'
+        // - ditolak: Jumlah pengajuan dengan status 'Ditolak'
+        // - total_filter: Jumlah total pengajuan yang sesuai dengan filter yang diterapkan
         const query = `
             SELECT
                 SUM(CASE WHEN p.status = 'Menunggu' THEN 1 ELSE 0 END) AS menunggu,
                 SUM(CASE WHEN p.status = 'Disetujui' THEN 1 ELSE 0 END) AS disetujui,
                 SUM(CASE WHEN p.status = 'Ditolak' THEN 1 ELSE 0 END) AS ditolak,
-                COUNT(p.pengajuan_id) AS total_filter // Jumlah total pengajuan sesuai filter yang diterapkan
+                COUNT(p.pengajuan_id) AS total_filter 
             FROM pengajuan_lab p
             ${joinLaboratorium}
             ${finalWhereClause}
@@ -351,7 +356,6 @@ export const getStatistikPengajuan = async (req, res) => {
         
         const [stats] = await db.query(query, params);
         
-        // Mengembalikan 0 jika tidak ada data, bukan null
         const resultStats = {
             menunggu: stats[0]?.menunggu || 0,
             disetujui: stats[0]?.disetujui || 0,
@@ -361,7 +365,7 @@ export const getStatistikPengajuan = async (req, res) => {
         res.json(resultStats);
 
     } catch (error) {
-        console.error("Error fetching statistik pengajuan:", error);
+        console.error("Error fetching statistik pengajuan:", error); // Ini akan menampilkan error SQL jika ada
         res.status(500).json({ error: "Server error", details: error.message });
     }
 };

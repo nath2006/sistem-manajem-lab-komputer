@@ -30,6 +30,8 @@ import AddPerangkat from "./Components/Perangkat/AddPerangkat";
 import AddPemeriksaan from "./Components/Pemeriksaan/AddPemeriksaan";
 import Pemeriksaan from "./features/PemeriksaanPerangkat/Pemeriksaan";
 
+import JadwalLab from "./features/KelolaJadwalLab/PengajuanJadwalLab";
+
 function App() {
   return (
     <AuthProvider>
@@ -69,6 +71,8 @@ function App() {
               <Route path="/add-perangkat" element={<AddPerangkat />} />
               <Route path="/add-pemeriksaan" element={<AddPemeriksaan />} />
               <Route path="/kelola-pemeriksaan-perangkat" element={<Pemeriksaan />} />
+
+              <Route path="/kelola-jadwal-lab" element={<JadwalLab />} />
             </Route>
 
             {/* Guru */}
