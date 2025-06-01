@@ -132,7 +132,7 @@ const MainDashboard = () => {
             <th className="py-3 px-4 text-white border-b text-left">Nama Lab</th>
             <th className="py-3 px-4 text-white border-b text-left">Kepala Lab</th>
             <th className="py-3 px-4 text-white border-b text-left">Lokasi</th>
-            <th className="py-3 px-4 text-white border-b text-left rounded-tr-lg">Kapasitas</th>
+            <th className="py-3 px-4 text-white border-b text-left rounded-tr-lg">Kapasitasnpm </th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
