@@ -110,7 +110,12 @@ const Dashboard = ({ title, children }) => {
     {
       name: "Pengajuan  Jadwal Lab",
       ic: <FaCalendarCheck />,
-      to: "/guru/pengajuan-jadwal",
+      to: "/pengajuan-jadwal-lab",
+    },
+     {
+      name: "Cek Status Pengajuan Jadwal ",
+      ic: <FaCalendarCheck />,
+      to: "/pengajuan-jadwal-lab/status",
     },
     { name: "Jadwal Lab", 
       ic: < FaRegCalendarDays/>, 

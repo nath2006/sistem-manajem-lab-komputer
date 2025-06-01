@@ -413,7 +413,7 @@ export default function LihatJadwalLab() {
         </div>
         
         {/* Tombol Cetak hanya muncul jika lab valid (sudah dipilih/ditentukan) dan tidak sedang loading */}
-        {isLabValidForDisplay && !isLoading && (
+        {isLabValidForDisplay && !isLoading &&  (
             <div className="flex justify-end mb-4">
                 <button onClick={handleCetakJadwal}
                     className="px-4 py-2 bg-teal-500 text-white rounded-md hover:bg-teal-600 flex items-center gap-2 text-sm"

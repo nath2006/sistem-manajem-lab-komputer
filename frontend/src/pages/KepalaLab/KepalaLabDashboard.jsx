@@ -1,33 +1,34 @@
 // src/pages/KepalaLab/KepalaLabPage.js
-import React, { useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../../Context/AuthContext'; // Sesuaikan path jika perlu
-import Dashboard from '../../Layouts/Dashboard'; // Sesuaikan path jika perlu
-import Footer from '../../components/Footer'; // Sesuaikan path jika perlu
-import { getGreetingTime } from '../../utils/greetingTime'; // Sesuaikan path jika perlu
-import moment from 'moment';
-import useTitle from '../../utils/useTitle'; // Sesuaikan path jika perlu
-import { get } from '../../utils/api'; // Sesuaikan path jika perlu
+import React, { useContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../../Context/AuthContext"; // Sesuaikan path jika perlu
+import Dashboard from "../../Layouts/Dashboard"; // Sesuaikan path jika perlu
+import Footer from "../../components/Footer"; // Sesuaikan path jika perlu
+import { getGreetingTime } from "../../utils/greetingTime"; // Sesuaikan path jika perlu
+import moment from "moment";
+import useTitle from "../../utils/useTitle"; // Sesuaikan path jika perlu
+import { get } from "../../utils/api"; // Sesuaikan path jika perlu
 import {
   FaTasks,
   FaHourglassHalf,
   FaCheckCircle,
   FaTimesCircle,
-  FaClipboardList
+  FaClipboardList,
 } from "react-icons/fa";
 
 // Komponen baru untuk kartu statistik
-const StatisticItemCard = ({ IconComponent, count, label, iconColorClass = "text-gray-700" }) => (
+const StatisticItemCard = ({
+  IconComponent,
+  count,
+  label,
+  iconColorClass = "text-gray-700",
+}) => (
   <div className="p-4 py-5 bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col items-center justify-center text-center">
     <div className={`mb-2 text-3xl md:text-4xl ${iconColorClass}`}>
       <IconComponent />
     </div>
-    <p className="text-2xl md:text-3xl font-bold text-gray-800">
-      {count}
-    </p>
-    <p className="text-xs md:text-sm text-gray-500 mt-1 capitalize">
-      {label}
-    </p>
+    <p className="text-2xl md:text-3xl font-bold text-gray-800">{count}</p>
+    <p className="text-xs md:text-sm text-gray-500 mt-1 capitalize">{label}</p>
   </div>
 );
 
@@ -56,12 +57,19 @@ export default function KepalaLabPage() {
       console.log("KepalaLabPage - Full API Response object:", response);
       if (response) {
         console.log("KepalaLabPage - API Response data:", response.data);
-        console.log("KepalaLabPage - Type of API Response data:", typeof response.data);
+        console.log(
+          "KepalaLabPage - Type of API Response data:",
+          typeof response.data
+        );
       }
       // --- AKHIR LOGGING UNTUK DEBUG ---
 
       // Periksa apakah response ada dan response.data adalah objek non-null
-      if (response && typeof response.data === 'object' && response.data !== null) {
+      if (
+        response &&
+        typeof response.data === "object" &&
+        response.data !== null
+      ) {
         // Pastikan properti yang diharapkan ada dan parse, default ke 0 jika NaN atau hilang
         setPengajuanStats({
           menunggu: parseInt(response.data.menunggu, 10) || 0,
@@ -71,24 +79,44 @@ export default function KepalaLabPage() {
         });
       } else {
         // Di sinilah error spesifik Anda kemungkinan besar dipicu
-        console.error("KepalaLabPage - API response.data is not a valid object or is null. Response:", response);
-        if (isInitialLoad) setErrorStats("Format data statistik tidak valid atau data tidak ditemukan.");
-        setPengajuanStats({ menunggu: 0, disetujui: 0, ditolak: 0, total_filter: 0 }); // Reset stats
+        console.error(
+          "KepalaLabPage - API response.data is not a valid object or is null. Response:",
+          response
+        );
+        if (isInitialLoad)
+          setErrorStats(
+            "Format data statistik tidak valid atau data tidak ditemukan."
+          );
+        setPengajuanStats({
+          menunggu: 0,
+          disetujui: 0,
+          ditolak: 0,
+          total_filter: 0,
+        }); // Reset stats
       }
     } catch (err) {
       console.error("KepalaLabPage - Error fetching pengajuan stats:", err);
       // Log objek error untuk melihat apakah ada detail lebih lanjut (misalnya, err.response)
-      console.error("KepalaLabPage - Detailed error object:", err.response || err.message || err);
+      console.error(
+        "KepalaLabPage - Detailed error object:",
+        err.response || err.message || err
+      );
 
       if (isInitialLoad) {
         // Coba dapatkan pesan yang lebih spesifik dari objek error
-        const message = err.response?.data?.message || 
-                        (typeof err.response?.data === 'string' ? err.response.data : null) || // Jika response.data adalah string error
-                        err.message || 
-                        "Gagal mengambil data statistik pengajuan.";
+        const message =
+          err.response?.data?.message ||
+          (typeof err.response?.data === "string" ? err.response.data : null) || // Jika response.data adalah string error
+          err.message ||
+          "Gagal mengambil data statistik pengajuan.";
         setErrorStats(message);
       }
-      setPengajuanStats({ menunggu: 0, disetujui: 0, ditolak: 0, total_filter: 0 }); // Reset stats saat error
+      setPengajuanStats({
+        menunggu: 0,
+        disetujui: 0,
+        ditolak: 0,
+        total_filter: 0,
+      }); // Reset stats saat error
     } finally {
       if (isInitialLoad) setIsLoadingStats(false);
     }
@@ -102,10 +130,6 @@ export default function KepalaLabPage() {
     // return () => clearInterval(interval);
   }, []); // Dependency array kosong agar hanya berjalan sekali saat mount
 
-  const handleNavigateToAccPengajuan = () => {
-    navigate('/kelola-jadwal-lab'); // Sesuaikan dengan routing Anda
-  };
-
   return (
     <>
       <Dashboard title={`Dashboard Kepala Lab`}>
@@ -117,26 +141,26 @@ export default function KepalaLabPage() {
                 Selamat {getGreetingTime(moment())}, {userName}!
               </h1>
               <p className="text-gray-600">
-                Selamat datang di dashboard Kepala Laboratorium. Berikut adalah ringkasan dan akses cepat untuk Anda.
+                Semoga harimu menyenangkan dan produktif!
               </p>
             </div>
 
             {/* Shortcut ACC Pengajuan */}
             <div className="mb-8 md:mb-12 group">
-                         <div 
-                           className="h-[70px] max-w-full bg-gradient-to-r from-red-500 to-red-600 rounded-xl shadow-lg hover:shadow-xl hover:cursor-pointer transition-all duration-300 ease-in-out transform hover:-translate-y-1 active:translate-y-0"
-                           onClick={() => navigate('/kelola-jadwal-lab')}
-                         >
-                           <div className="flex justify-start items-center h-full mx-4 sm:mx-6">
-                             <div className="p-3 bg-white/20 rounded-full mr-4">
-                               <FaCheckCircle size={20} className='text-white'/>
-                             </div>
-                             <h1 className="text-white text-md sm:text-lg font-semibold">Cek Pengajuan Lab</h1>
-                           </div>
-                         </div>
-                       </div>
-
-
+              <div
+                className="h-[70px] max-w-full bg-gradient-to-r from-red-500 to-red-600 rounded-xl shadow-lg hover:shadow-xl hover:cursor-pointer transition-all duration-300 ease-in-out transform hover:-translate-y-1 active:translate-y-0"
+                onClick={() => navigate("/kelola-jadwal-lab")}
+              >
+                <div className="flex justify-start items-center h-full mx-4 sm:mx-6">
+                  <div className="p-3 bg-white/20 rounded-full mr-4">
+                    <FaCheckCircle size={20} className="text-white" />
+                  </div>
+                  <h1 className="text-white text-md sm:text-lg font-semibold">
+                    Cek Pengajuan Lab
+                  </h1>
+                </div>
+              </div>
+            </div>
           </div>
           <Footer />
         </div>

@@ -33,6 +33,10 @@ import Pemeriksaan from "./features/PemeriksaanPerangkat/Pemeriksaan";
 import PengajuanJadwalLab from "./features/KelolaJadwalLab/PengajuanJadwalLab";
 import JadwalLab from "./features/LihatJadwalLab/JadwalLab";
 
+import PengajuanJadwalLabPageGuru from "./features/PengajuanJadwalLab/PengajuanJadwalLab";
+import AddJadwalLab from "./Components/KelolaJadwalLab/AddJadwalLab";
+import PengecekanStatus from "./Components/KelolaJadwalLab/PengecekanStatus";
+
 function App() {
   return (
     <AuthProvider>
@@ -74,12 +78,20 @@ function App() {
               <Route path="/kelola-pemeriksaan-perangkat" element={<Pemeriksaan />} />
 
               <Route path="/kelola-jadwal-lab" element={<PengajuanJadwalLab />} />
-              <Route path="/jadwal-lab" element={<JadwalLab />} />
+              {/* <Route path="/jadwal-lab" element={<JadwalLab />} /> */}
+            </Route>
+
+            {/* Admin. Kepala Lab, guru*/}
+            <Route element={<RoleRoute allowedRoles={["Admin","Guru","Kepala Lab"]} />}>
+               <Route path="/jadwal-lab" element={<JadwalLab />} />
             </Route>
 
             {/* Guru */}
             <Route element={<RoleRoute allowedRoles={["Guru"]} />}>
-              <Route path="/dashboard-guru" element={<GuruPage />} />
+                <Route path="/pengajuan-jadwal-lab" element={<AddJadwalLab />} />
+                <Route path="/dashboard-guru" element={<GuruPage />} />
+               <Route path="/jadwal-lab" element={<JadwalLab />} />
+               <Route path="/pengajuan-jadwal-lab/status" element={<PengecekanStatus />} />
             </Route>
 
             {/* Teknisi */}
@@ -88,6 +100,7 @@ function App() {
               <Route path="/dashboard-teknisi" element={<TeknisiPage />} />
               <Route path="/kelola-perbaikan" element={<Perbaikan />} />
             </Route>
+
 
             {/* Koordinator Lab */}
             <Route element={<RoleRoute allowedRoles={["Koordinator Lab"]} />}>

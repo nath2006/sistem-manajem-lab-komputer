@@ -7,6 +7,7 @@ import { AuthContext } from '../../context/AuthContext';
 import Tabel from '../../Layouts/Table';
 import Swal from 'sweetalert2';
 import RejectPengajuanModal from '../../Components/KelolaJadwalLab/RejectModal'; // 1. IMPOR MODAL BARU (sesuaikan path)
+import AddJadwalLab from '../../Components/KelolaJadwalLab/AddJadwalLab';
 
 // Interval untuk auto-refresh data (dalam milidetik)
 const AUTO_REFRESH_INTERVAL_MS = 30000; // 30 detik
