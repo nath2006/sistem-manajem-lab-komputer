@@ -127,7 +127,7 @@ const Dashboard = ({ title, children }) => {
       ic: <FaLaptopFile />,
       to: "/kelola-perangkat",
     },
-    { name: "Pengajuan Jadwal Lab", ic: <FaRegCalendarCheck />, to: "/kelola-jadwal" },
+    { name: "Pengajuan Jadwal Lab", ic: <FaRegCalendarCheck />, to: "/kelola-jadwal-lab" },
     { name: "Jadwal Lab", ic: < FaRegCalendarDays/>, to: "/jadwal-lab" },
     { type: "divider" },
     { name: "Data Lab", ic: <FaComputer />, to: "/kelola/data-lab" },
