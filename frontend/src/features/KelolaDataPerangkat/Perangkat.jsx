@@ -1,8 +1,8 @@
 // Perangkat.jsx
-import React, { useState, useEffect, useContext, useCallback } from 'react'; // Tambahkan useCallback
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import Dashboard from '../../Layouts/Dashboard';
 import Tabel from '../../Layouts/Table';
-import { FaEye, FaTrash, FaFilePen } from "react-icons/fa6";
+import { FaEye, FaTrash, FaFilePen, FaPrint } from "react-icons/fa6"; // Tambahkan FaPrint
 import { get, deleteData } from '../../utils/api';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Notification from '../../Components/Notification/Notif';
@@ -12,8 +12,10 @@ import DeleteConfirmation from '../../components/Notification/DeleteConfirmation
 
 import DetailPerangkat from '../../Components/Perangkat/DetailPerangkat';
 import EditPerangkat from '../../Components/Perangkat/EditPerangkat';
-// AddPerangkat adalah halaman, jadi tidak diimpor di sini untuk modal
 import truncateText from '../../utils/truncateText';
+
+import jsPDF from 'jspdf'; // Impor jsPDF
+import autoTable from 'jspdf-autotable'; // Impor autoTable
 
 const Perangkat = () => {
   useTitle('Kelola Data Perangkat');
@@ -23,14 +25,12 @@ const Perangkat = () => {
   const { state: authState } = useContext(AuthContext);
   const userRole = authState?.role;
   const kepalaLabAssignedLabId = authState?.lab_id_kepala;
-console.log("Auth Context State:", authState); // Lihat seluruh authState
-console.log("User Role:", userRole);
-console.log("Kepala Lab Assigned Lab ID:", kepalaLabAssignedLabId);
+
   const [successMsg, setSuccessMsg] = useState(location.state?.successMsg || '');
   const [errorMsg, setErrorMsg] = useState(location.state?.errorMsg || '');
   
   const [allLabs, setAllLabs] = useState([]); 
-  const [selectedLabId, setSelectedLabId] = useState(location.state?.labId || ''); // Coba ambil dari state navigasi
+  const [selectedLabId, setSelectedLabId] = useState(location.state?.labId || '');
   
   const [dataPerangkat, setDataPerangkat] = useState([]); 
   const [isLoading, setIsLoading] = useState(true); 
@@ -43,15 +43,13 @@ console.log("Kepala Lab Assigned Lab ID:", kepalaLabAssignedLabId);
   const isKepalaLab = userRole === 'Kepala Lab';
   
   const canManageRowActions = isAdmin || isKepalaLab; 
-  
-  // Admin bisa tambah jika sudah pilih lab, atau jika belum pilih (akan pilih di halaman AddPerangkat)
-  // Kepala Lab selalu bisa tambah
   const canAccessAddPerangkatPage = isAdmin || (isKepalaLab && !!kepalaLabAssignedLabId);
+  const canPrintData = isAdmin || isKepalaLab; // Variabel untuk hak akses cetak
 
-  // Fetch daftar lab (untuk Admin memilih, dan untuk KaLab mendapatkan nama labnya)
+  // Fetch daftar lab
   useEffect(() => {
     const fetchLabs = async () => {
-      setIsLoading(true); // Set loading true di awal
+      setIsLoading(true);
       try {
         if (isAdmin) {
           const response = await get('/lab');
@@ -64,8 +62,8 @@ console.log("Kepala Lab Assigned Lab ID:", kepalaLabAssignedLabId);
         } else if (isKepalaLab && kepalaLabAssignedLabId) {
           const response = await get(`/lab/${kepalaLabAssignedLabId}`);
           if (response.data) {
-            setAllLabs([response.data]); // Simpan sebagai array untuk konsistensi
-            setSelectedLabId(kepalaLabAssignedLabId.toString()); // Otomatis set lab KaLab
+            setAllLabs([response.data]);
+            setSelectedLabId(kepalaLabAssignedLabId.toString());
           } else {
             setErrorMsg("Gagal memuat detail lab untuk Kepala Lab.");
           }
@@ -75,18 +73,15 @@ console.log("Kepala Lab Assigned Lab ID:", kepalaLabAssignedLabId);
         setErrorMsg("Gagal memuat data laboratorium.");
         setAllLabs([]);
       } finally {
-         // setIsLoading(false) akan dihandle oleh fetchPerangkatData atau kondisi lain
-         // Namun, jika bukan admin dan bukan kalab, atau kalab tanpa ID, loading harus false
-         if (!isAdmin && (!isKepalaLab || (isKepalaLab && !kepalaLabAssignedLabId))) {
-            setIsLoading(false);
-         }
+        if (!isAdmin && (!isKepalaLab || (isKepalaLab && !kepalaLabAssignedLabId))) {
+          setIsLoading(false);
+        }
       }
     };
     fetchLabs();
   }, [isAdmin, isKepalaLab, kepalaLabAssignedLabId]);
 
-
-  // Fungsi fetchPerangkatData yang di-memoize
+  // Fungsi fetchPerangkatData
   const fetchPerangkatData = useCallback(async (currentSelectedLabId) => {
     setIsLoading(true); 
     setDataPerangkat([]); 
@@ -103,16 +98,16 @@ console.log("Kepala Lab Assigned Lab ID:", kepalaLabAssignedLabId);
           if (labIdToFilter) { 
             perangkatToDisplay = response.data.filter(p => p.lab_id.toString() === labIdToFilter);
           } else { 
-            perangkatToDisplay = response.data; // Admin belum filter, tampilkan semua
+            perangkatToDisplay = response.data;
           }
         } else if (isKepalaLab) {
-          if (labIdToFilter) { // Harus selalu ada untuk KaLab
+          if (labIdToFilter) {
             perangkatToDisplay = response.data.filter(p => p.lab_id.toString() === labIdToFilter);
           } else {
-            perangkatToDisplay = []; // KaLab tanpa lab_id terdefinisi
+            perangkatToDisplay = [];
           }
-        } else { // Role lain (jika ada)
-          perangkatToDisplay = response.data; // Contoh: Teknisi lihat semua
+        } else { 
+          perangkatToDisplay = response.data;
         }
         setDataPerangkat(perangkatToDisplay);
       } else {
@@ -126,46 +121,38 @@ console.log("Kepala Lab Assigned Lab ID:", kepalaLabAssignedLabId);
     } finally {
       setIsLoading(false);
     }
-  }, [isAdmin, isKepalaLab, kepalaLabAssignedLabId]); // selectedLabId dihilangkan karena dikirim sebagai argumen
+  }, [isAdmin, isKepalaLab, kepalaLabAssignedLabId]);
 
-
-  // useEffect untuk memanggil fetchPerangkatData saat filter berubah atau role berubah
+  // useEffect untuk memanggil fetchPerangkatData
   useEffect(() => {
-    // Jika Admin, fetch berdasarkan selectedLabId (bisa kosong untuk "semua")
-    // Jika KaLab, fetch berdasarkan kepalaLabAssignedLabId (yang sudah diset ke selectedLabId)
-    // setIsLoading(true) sudah ada di dalam fetchPerangkatData
     if (isAdmin) {
-        fetchPerangkatData(selectedLabId);
+      fetchPerangkatData(selectedLabId);
     } else if (isKepalaLab) {
-       console.log("useEffect[fetchPerangkatData] - Untuk Kepala Lab, ID Lab:", kepalaLabAssignedLabId);
-        if (kepalaLabAssignedLabId) { // Pastikan KaLab punya ID lab
-            fetchPerangkatData(kepalaLabAssignedLabId.toString());
-        } else {
-            setIsLoading(false); // Jika KaLab tidak punya ID lab, hentikan loading
-            setDataPerangkat([]);
-        }
-    } else {
-        // Logika untuk role lain, misal Teknisi lihat semua perangkat
-        // fetchPerangkatData(''); // Panggil dengan string kosong untuk "semua" jika relevan
+      if (kepalaLabAssignedLabId) {
+        fetchPerangkatData(kepalaLabAssignedLabId.toString());
+      } else {
         setIsLoading(false);
         setDataPerangkat([]);
+      }
+    } else {
+      setIsLoading(false);
+      setDataPerangkat([]);
     }
   }, [selectedLabId, isAdmin, isKepalaLab, kepalaLabAssignedLabId, fetchPerangkatData]); 
 
-
+  // useEffect untuk notifikasi
   useEffect(() => {
     if (successMsg || errorMsg) {
       const timer = setTimeout(() => {
         setSuccessMsg('');
         setErrorMsg('');
-        if (location.state && location.state.successMsg) { // Hanya clear state navigasi jika ada successMsg
-             navigate(location.pathname, { replace: true, state: {} });
+        if (location.state && location.state.successMsg) {
+          navigate(location.pathname, { replace: true, state: {} });
         }
       }, 3000);
       return () => clearTimeout(timer);
     }
   }, [successMsg, errorMsg, location.pathname, navigate, location.state]);
-
 
   const handleLabChange = (e) => {
     setSelectedLabId(e.target.value); 
@@ -187,7 +174,6 @@ console.log("Kepala Lab Assigned Lab ID:", kepalaLabAssignedLabId);
     onSuccess: (deletedId) => {
       setDataPerangkat(prevData => prevData.filter(item => item.perangkat_id !== deletedId));
       setSuccessMsg('Data perangkat berhasil dihapus');
-      // fetchPerangkatData(selectedLabId); // Re-fetch setelah delete
     },
     onError: (error) => setErrorMsg('Gagal menghapus data perangkat. ' + (error.response?.data?.message || error.message || ''))
   });
@@ -212,7 +198,7 @@ console.log("Kepala Lab Assigned Lab ID:", kepalaLabAssignedLabId);
         <td className="px-4 py-2">
           {item.foto_perangkat ? (
             <img
-              src={`${ASSET_BASE_URL}${PERANGKAT_IMAGE_SUBFOLDER}${item.foto_perangkat}?t=${Date.now()}`}
+              src={`${ASSET_BASE_URL}${PERANGKAT_IMAGE_SUBFOLDER}${item.foto_perangkat}?t=${new Date().getTime()}`} // Tambahkan timestamp untuk cache busting
               alt={item.nama_perangkat || 'Foto Perangkat'}
               className="w-12 h-12 object-cover rounded shadow-md"
               onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/48x48?text=Err';}}
@@ -227,15 +213,15 @@ console.log("Kepala Lab Assigned Lab ID:", kepalaLabAssignedLabId);
         </th>
         <td className="px-6 py-4 text-gray-700 text-sm">{item.nama_lab || '-'}</td>
         <td className="px-6 py-4 text-sm">
-            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                item.status === 'Baik' ? 'bg-green-100 text-green-800' :
-                item.status === 'Rusak' ? 'bg-red-100 text-red-800' :
-                item.status === 'Perlu Perbaikan' ? 'bg-yellow-100 text-yellow-800' :
-                item.status === 'Dalam Perbaikan' ? 'bg-blue-100 text-blue-800' :
-                'bg-gray-100 text-gray-800'
-            }`}>
-                {item.status || 'N/A'}
-            </span>
+          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+              item.status === 'Baik' ? 'bg-green-100 text-green-800' :
+              item.status === 'Rusak' ? 'bg-red-100 text-red-800' :
+              item.status === 'Perlu Perbaikan' ? 'bg-yellow-100 text-yellow-800' :
+              item.status === 'Dalam Perbaikan' ? 'bg-blue-100 text-blue-800' :
+              'bg-gray-100 text-gray-800'
+          }`}>
+            {item.status || 'N/A'}
+          </span>
         </td>
         <td className="px-6 py-4 text-gray-700 text-sm">{truncateText(item.spesifikasi, 40) || '-'}</td>
         <td className='px-6 py-4 text-center'>
@@ -266,36 +252,97 @@ console.log("Kepala Lab Assigned Lab ID:", kepalaLabAssignedLabId);
   }
 
   const getLabNameById = (labId) => {
-    if (!labId || !allLabs.length) return '';
+    if (!labId || !allLabs.length) return `ID: ${labId || 'Semua'}`;
     const lab = allLabs.find(l => l.lab_id.toString() === labId.toString());
     return lab?.nama_lab || `ID: ${labId}`;
   };
   
   const addPerangkatPathObject = () => {
     if (!canAccessAddPerangkatPage) return null;
-
     let navState = {};
-    // Untuk Admin: jika sudah filter lab, kirim labId dan labName. Jika belum, kirim state kosong.
-    // Untuk Kepala Lab: selalu kirim labId dan labName yang diampunya.
     if (isAdmin) {
-        if (selectedLabId) { // Admin sudah filter
-            navState = { labId: selectedLabId, labName: getLabNameById(selectedLabId) };
-        } else { // Admin belum filter, AddPerangkat akan menampilkan dropdown lab
-            navState = { labId: null, labName: null }; 
-        }
+      if (selectedLabId) {
+        navState = { labId: selectedLabId, labName: getLabNameById(selectedLabId) };
+      } else {
+        navState = { labId: null, labName: null }; 
+      }
     } else if (isKepalaLab && kepalaLabAssignedLabId) {
-        navState = { labId: kepalaLabAssignedLabId.toString(), labName: getLabNameById(kepalaLabAssignedLabId) };
+      navState = { labId: kepalaLabAssignedLabId.toString(), labName: getLabNameById(kepalaLabAssignedLabId) };
     }
-    
-    // Tombol tambah hanya aktif jika Admin (boleh belum pilih lab) atau KaLab (lab sudah pasti)
     if (isAdmin || (isKepalaLab && kepalaLabAssignedLabId) ) {
-         return { pathname: "/add-perangkat", state: navState };
+      return { pathname: "/add-perangkat", state: navState };
     }
     return null;
   };
 
-  // Untuk mengirim labId yang benar ke modal EditPerangkat
   const labIdUntukEdit = isAdmin ? selectedLabId : (isKepalaLab ? kepalaLabAssignedLabId?.toString() : null);
+
+  const getCurrentTableTitle = () => {
+    if (isAdmin) {
+      return selectedLabId ? `Data Perangkat Lab: ${getLabNameById(selectedLabId)}` : "Data Perangkat (Semua Lab)";
+    }
+    return `Data Perangkat Lab: ${getLabNameById(kepalaLabAssignedLabId)}`;
+  };
+  
+  const formatDateForFilename = (date) => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  const handlePrintData = () => {
+    if (dataPerangkat.length === 0) {
+      alert("Tidak ada data perangkat untuk dicetak.");
+      return;
+    }
+
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 10;
+    const reportTitle = getCurrentTableTitle(); // Menggunakan judul tabel saat ini
+
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Laporan ${reportTitle}`, pageWidth / 2, margin + 5, { align: 'center' });
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, pageWidth / 2, margin + 10, { align: 'center' });
+
+    const tableColumn = ["No. Inventaris", "Nama Perangkat", "Lab", "Status", "Spesifikasi"];
+    
+    const tableRows = dataPerangkat.map(item => [
+      item.nomor_inventaris || '-',
+      item.nama_perangkat || '-',
+      item.nama_lab || '-', // Asumsi nama_lab sudah ada di dataPerangkat
+      item.status || 'N/A',
+      item.spesifikasi || '-', // Tidak menggunakan truncateText di sini
+    ]);
+
+    autoTable(doc, { 
+      head: [tableColumn],
+      body: tableRows,
+      startY: margin + 20,
+      theme: 'grid',
+      headStyles: { fillColor: [22, 160, 133] }, // Warna teal
+      styles: { fontSize: 8, cellPadding: 1.5, overflow: 'linebreak' },
+      columnStyles: {
+        0: { cellWidth: 35 }, // No. Inventaris
+        1: { cellWidth: 50 }, // Nama Perangkat
+        2: { cellWidth: 40 }, // Lab
+        3: { cellWidth: 30 }, // Status
+        4: { cellWidth: 'auto' }, // Spesifikasi (sisanya)
+      }
+    });
+    
+    const labNameForFile = selectedLabId ? getLabNameById(selectedLabId).replace(/\s+/g, '_') : (isKepalaLab ? getLabNameById(kepalaLabAssignedLabId).replace(/\s+/g, '_') : 'Semua_Lab');
+    doc.save(`Laporan_Perangkat_${labNameForFile}_${formatDateForFilename(new Date())}.pdf`);
+  };
 
 
   return (
@@ -304,38 +351,50 @@ console.log("Kepala Lab Assigned Lab ID:", kepalaLabAssignedLabId);
         {successMsg && <Notification type="success" message={successMsg} onClose={() => setSuccessMsg('')} />}
         {errorMsg && <Notification type="error" message={errorMsg} onClose={() => setErrorMsg('')} />}
 
-        {isAdmin && (
-            <div className="mb-4 flex justify-start items-center gap-3">
-                <div className="w-full sm:w-1/3">
-                    <label htmlFor="labFilter" className="sr-only">Filter berdasarkan Lab:</label>
-                    <select
-                        id="labFilter"
-                        value={selectedLabId}
-                        onChange={handleLabChange}
-                        className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
-                    >
-                        <option value="">Tampilkan Semua Perangkat</option> {/* Teks diubah */}
-                        {allLabs.map(lab => (
-                        <option key={lab.lab_id} value={lab.lab_id.toString()}>
-                            {lab.nama_lab}
-                        </option>
-                        ))}
-                    </select>
-                </div>
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
+          {isAdmin && (
+            <div className="w-full sm:w-1/3">
+              <label htmlFor="labFilter" className="sr-only">Filter berdasarkan Lab:</label>
+              <select
+                id="labFilter"
+                value={selectedLabId}
+                onChange={handleLabChange}
+                className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
+              >
+                <option value="">Tampilkan Semua Perangkat</option>
+                {allLabs.map(lab => (
+                  <option key={lab.lab_id} value={lab.lab_id.toString()}>
+                    {lab.nama_lab}
+                  </option>
+                ))}
+              </select>
             </div>
-        )}
-        {/* {isKepalaLab && kepalaLabAssignedLabId && allLabs.length > 0 && (
+          )}
+          {/* Jika bukan admin, berikan placeholder agar tombol print tetap di kanan */}
+          {!isAdmin && <div className="w-full sm:w-1/3"></div>}
+
+
+          {canPrintData && dataPerangkat.length > 0 && (
+            <div className="w-full sm:w-auto flex sm:justify-end">
+              <button
+                onClick={handlePrintData}
+                className="w-full sm:w-auto px-4 py-2.5 bg-teal-500 text-white rounded-md hover:bg-teal-600 flex items-center justify-center"
+                title="Cetak Data Perangkat ke PDF"
+              >
+                <FaPrint className="mr-2" /> Cetak Data
+              </button>
+            </div>
+          )}
+        </div>
+        
+        {/* {isKepalaLab && kepalaLabAssignedLabId && allLabs.length > 0 && !isAdmin && (
              <div className="mb-4 w-full sm:w-auto text-sm font-medium p-2.5 bg-gray-100 rounded-md">
-                Menampilkan Perangkat untuk Lab: {getLabNameById(kepalaLabAssignedLabId)}
-            </div>
+               Menampilkan Perangkat untuk Lab: {getLabNameById(kepalaLabAssignedLabId)}
+             </div>
         )} */}
 
         <Tabel
-          title={
-            isAdmin 
-              ? (selectedLabId ? `Data Perangkat Lab: ${getLabNameById(selectedLabId)}` : "Data Perangkat (Semua Lab)") 
-              : `Data Perangkat Lab: ${getLabNameById(kepalaLabAssignedLabId)}`
-          }
+          title={getCurrentTableTitle()}
           breadcrumbContext={userRole}
           headers={headTable}
           data={dataPerangkat}
@@ -373,12 +432,13 @@ console.log("Kepala Lab Assigned Lab ID:", kepalaLabAssignedLabId);
                 onClose={() => setShowEditModal(false)} 
                 onUpdate={(updatedData) => {
                     setSuccessMsg(updatedData.message || "Data perangkat berhasil diupdate.");
-                    fetchPerangkatData(selectedLabId); // Panggil fetchPerangkatData dengan selectedLabId saat ini
+                    // Memanggil fetchPerangkatData dengan ID lab yang sedang aktif/difilter
+                    const currentActiveLabId = isAdmin ? selectedLabId : kepalaLabAssignedLabId?.toString();
+                    fetchPerangkatData(currentActiveLabId); 
                     setShowEditModal(false);
                 }}
             />
         }
-        {/* Pemanggilan Modal AddPerangkat dihapus dari sini karena sudah jadi halaman */}
       </div>
     </Dashboard>
   );
