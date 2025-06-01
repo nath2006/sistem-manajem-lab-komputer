@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Dashboard from '../../Layouts/Dashboard';
 import Tabel from '../../Layouts/Table';
-import { FaEye, FaTrash, FaFilePen, FaPrint } from "react-icons/fa6"; // Tambah ikon FaPrint
+import { FaEye, FaTrash, FaFilePen, FaPrint } from "react-icons/fa6";
 import { get, deleteData } from '../../utils/api';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Notification from '../../Components/Notification/Notif';
@@ -23,7 +23,7 @@ const Perbaikan = () => {
 
   const [successMsg, setSuccessMsg] = useState(location.state?.successMsg || '');
   const [errorMsg, setErrorMsg] = useState(location.state?.errorMsg || '');
-  const [data, setData] = useState([]); // Data perbaikan untuk tabel dan PDF
+  const [data, setData] = useState([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
 
@@ -33,11 +33,10 @@ const Perbaikan = () => {
   const { state: authState } = useContext(AuthContext);
   const userRole = authState?.role;
 
-  // Hak Akses
   const canViewDetail = true;
   const canEditPerbaikan = userRole === 'Admin' || userRole === 'Teknisi';
   const canDeletePerbaikan = userRole === 'Admin';
-  const canPrintData = userRole === 'Admin' || userRole === 'Teknisi'; // Admin & Teknisi bisa cetak
+  const canPrintData = userRole === 'Admin' || userRole === 'Teknisi';
 
   useEffect(() => {
     if (successMsg || errorMsg) {
@@ -103,7 +102,7 @@ const Perbaikan = () => {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return dateString;
     const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Bulan dimulai dari 0
+    const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
@@ -120,16 +119,21 @@ const handlePrintData = () => {
         format: 'a4'
     });
 
-    // ... (kode untuk judul dan tanggal cetak tetap sama) ...
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 10;
+
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text("Laporan Data Perbaikan Perangkat", doc.internal.pageSize.getWidth() / 2, 10 + 5, { align: 'center' });
+    doc.text("Laporan Data Perbaikan Perangkat", pageWidth / 2, margin + 5, { align: 'center' });
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, doc.internal.pageSize.getWidth() / 2, 10 + 10, { align: 'center' });
+    doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, pageWidth / 2, margin + 10, { align: 'center' });
 
-
-    const tableColumn = ["ID", "Teknisi", "Perangkat", "Lab", "Tgl Perbaikan", "Tindakan", "Hasil", "Catatan", "ID Pengecekan"];
+    // --- PERUBAHAN DI SINI ---
+    // Hapus "ID Pengecekan" dari header PDF
+    const tableColumn = ["ID", "Teknisi", "Perangkat", "Lab", "Tgl Perbaikan", "Tindakan", "Hasil", "Catatan"];
+    
+    // Hapus item.pengecekan_id dari data baris PDF
     const tableRows = data.map(item => [
         item.perbaikan_id || '-',
         item.nama_user || '-',
@@ -139,24 +143,24 @@ const handlePrintData = () => {
         item.tindakan || '-',
         item.hasil_perbaikan || 'N/A',
         item.catatan_tambahan || '-',
-        item.pengecekan_id || 'N/A'
+        // item.pengecekan_id || 'N/A' // Ini Dihapus/Dikomentari
     ]);
+    // --- AKHIR PERUBAHAN PDF ---
 
-    // VVV UBAH CARA PEMANGGILAN AUTO TABLE DI SINI VVV
-    autoTable(doc, { // Menggunakan fungsi autoTable yang diimpor, dengan doc sebagai argumen pertama
+    autoTable(doc, { 
         head: [tableColumn],
         body: tableRows,
-        startY: 10 + 20, // Sesuaikan dengan margin Anda
+        startY: margin + 20,
         theme: 'grid',
-        headStyles: { fillColor: [170, 25, 25] },
+        headStyles: { fillColor: [170, 25, 25] }, // Warna merah maroon
         styles: { fontSize: 8, cellPadding: 1.5, overflow: 'linebreak' },
-        // columnStyles: { ... } // jika perlu
     });
-    // ^^^ UBAH CARA PEMANGGILAN AUTO TABLE DI SINI ^^^
-
+    
     doc.save(`laporan_perbaikan_perangkat_${formatDateForPDF(new Date())}.pdf`);
 };
 
+  // --- PERUBAHAN DI SINI ---
+  // Hapus "ID Pengecekan Asal" dari header tabel HTML
   const headTable = [
     { judul: "ID Perbaikan" },
     { judul: "Teknisi" },
@@ -166,9 +170,10 @@ const handlePrintData = () => {
     { judul: "Tindakan" },
     { judul: "Hasil" },
     { judul: "Catatan" },
-    { judul: "ID Pengecekan Asal" },
+    // { judul: "ID Pengecekan Asal" }, // Ini Dihapus/Dikomentari
     { judul: "Aksi" }
   ];
+  // --- AKHIR PERUBAHAN HEADER HTML ---
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -202,7 +207,7 @@ const handlePrintData = () => {
             </span>
         </td>
         <td className="px-6 py-4 text-gray-700 text-sm">{truncateText(item.catatan_tambahan, 25) || '-'}</td>
-        <td className="px-6 py-4 text-gray-700 text-center text-sm">{item.pengecekan_id || 'N/A'}</td>
+        {/* <td className="px-6 py-4 text-gray-700 text-center text-sm">{item.pengecekan_id || 'N/A'}</td> // Ini Dihapus/Dikomentari */}
         <td className='px-6 py-4 text-center'>
           <div className='flex items-center justify-center space-x-1'>
             {canViewDetail && (
@@ -250,7 +255,6 @@ const handlePrintData = () => {
           <Notification type="error" message={errorMsg} onClose={() => setErrorMsg('')} />
         )}
 
-        {/* Tombol Cetak Data ditambahkan di sini, di atas komponen Tabel */}
         {canPrintData && data.length > 0 && (
             <div className="mb-4 flex justify-end">
                 <button
@@ -262,23 +266,21 @@ const handlePrintData = () => {
                 </button>
             </div>
         )}
-        {/* Jika Admin, bisa ada tombol Tambah (tapi perbaikan biasanya dari pengecekan) */}
-        {/* Untuk kasus ini, kita asumsikan tombol tambah data perbaikan tidak ada di halaman ini */}
-
 
         <Tabel
           title="Riwayat Perbaikan Perangkat"
           breadcrumbContext={userRole}
-          headers={headTable}
-          to={null} // Tombol Tambah utama Tabel tidak digunakan
-          buttonText="" // Teks tombol dikosongkan
+          headers={headTable} // headTable yang sudah dimodifikasi
+          to={null} 
+          buttonText="" 
           data={data}
           itemsPerPage={10}
-          renderRow={renderPerbaikanRow}
+          renderRow={renderPerbaikanRow} // renderPerbaikanRow yang sudah dimodifikasi
         >
+          {/* Loading dan No Data state tetap sama */}
           {isInitialLoading && (
             <tr>
-              <td colSpan={headTable.length} className="text-center py-20 text-gray-500">
+              <td colSpan={headTable.length} className="text-center py-20 text-gray-500"> {/* colSpan disesuaikan */}
                 <div className="flex flex-col justify-center items-center">
                   <svg className="animate-spin h-10 w-10 text-blue-600 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -291,7 +293,7 @@ const handlePrintData = () => {
           )}
           {!isInitialLoading && data.length === 0 && (
             <tr>
-              <td colSpan={headTable.length} className="text-center py-20 text-gray-500 text-lg">
+              <td colSpan={headTable.length} className="text-center py-20 text-gray-500 text-lg"> {/* colSpan disesuaikan */}
                 Tidak ada data perbaikan yang ditemukan.
               </td>
             </tr>
