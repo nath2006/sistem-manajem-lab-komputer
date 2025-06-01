@@ -9,6 +9,7 @@ export const AuthContext = createContext();
 const initialState = {
   isAuthenticated: false,
   user: null,
+  userId: null,
   fullName: null,
   token: null,
   role: null,
@@ -21,6 +22,7 @@ const authReducer = (state, action) => {
       return {
         isAuthenticated: true,
         user: action.payload.username,
+        userId: action.payload.userId,
         fullName: action.payload.fullName,
         token: action.payload.token,
         role: action.payload.role,
@@ -64,6 +66,7 @@ export const AuthProvider = ({ children }) => {
             type: "LOGIN_SUCCESS",
             payload: {
               fullName: userData.fullName,
+              userId: userData.userId,
               username: userData.username,
               token: token,
               role: userData.role,

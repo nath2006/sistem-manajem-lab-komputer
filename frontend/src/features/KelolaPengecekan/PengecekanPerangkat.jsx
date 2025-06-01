@@ -31,7 +31,7 @@ const Pengecekan = () => {
 
   const { state: authState } = useContext(AuthContext);
   const userRole = authState?.role;
-  const loggedInUserId = authState?.user?.user_id;
+  const loggedInUserId = authState?.userId;
 
   // --- Penyesuaian Hak Akses ---
   const canViewDetail = true; // Semua role yang masuk halaman ini bisa lihat detail
