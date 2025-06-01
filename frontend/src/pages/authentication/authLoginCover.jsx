@@ -52,10 +52,12 @@ const LoginPage = () => {
         dispatch({
           type: "LOGIN_SUCCESS",
           payload: {
-            token: response.data.token,
-            fullName: response.data.fullName,
+            userId: response.data.userId, 
             username: response.data.username,
+            fullName: response.data.fullName,
             role: response.data.role,
+            lab_id_kepala: response.data.lab_id_kepala || null, 
+            token: response.data.token,
           },
         });
       }

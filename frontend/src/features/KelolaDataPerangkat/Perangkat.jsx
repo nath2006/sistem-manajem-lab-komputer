@@ -1,8 +1,8 @@
 // Perangkat.jsx
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react'; // Tambahkan useCallback
 import Dashboard from '../../Layouts/Dashboard';
 import Tabel from '../../Layouts/Table';
-import { FaEye, FaTrash, FaFilePen, FaPlus } from "react-icons/fa6"; // FaFilter tidak digunakan, FaPlus untuk tambah
+import { FaEye, FaTrash, FaFilePen } from "react-icons/fa6";
 import { get, deleteData } from '../../utils/api';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Notification from '../../Components/Notification/Notif';
@@ -12,7 +12,7 @@ import DeleteConfirmation from '../../components/Notification/DeleteConfirmation
 
 import DetailPerangkat from '../../Components/Perangkat/DetailPerangkat';
 import EditPerangkat from '../../Components/Perangkat/EditPerangkat';
-import AddPerangkat from '../../Components/Perangkat/AddPerangkat';
+// AddPerangkat adalah halaman, jadi tidak diimpor di sini untuk modal
 import truncateText from '../../utils/truncateText';
 
 const Perangkat = () => {
@@ -22,13 +22,15 @@ const Perangkat = () => {
 
   const { state: authState } = useContext(AuthContext);
   const userRole = authState?.role;
-  const kepalaLabAssignedLabId = authState?.user?.lab_id_kepala; 
-
+  const kepalaLabAssignedLabId = authState?.lab_id_kepala;
+console.log("Auth Context State:", authState); // Lihat seluruh authState
+console.log("User Role:", userRole);
+console.log("Kepala Lab Assigned Lab ID:", kepalaLabAssignedLabId);
   const [successMsg, setSuccessMsg] = useState(location.state?.successMsg || '');
   const [errorMsg, setErrorMsg] = useState(location.state?.errorMsg || '');
   
   const [allLabs, setAllLabs] = useState([]); 
-  const [selectedLabId, setSelectedLabId] = useState(''); 
+  const [selectedLabId, setSelectedLabId] = useState(location.state?.labId || ''); // Coba ambil dari state navigasi
   
   const [dataPerangkat, setDataPerangkat] = useState([]); 
   const [isLoading, setIsLoading] = useState(true); 
@@ -36,18 +38,22 @@ const Perangkat = () => {
   const [selectedPerangkatId, setSelectedPerangkatId] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
 
   const isAdmin = userRole === 'Admin';
   const isKepalaLab = userRole === 'Kepala Lab';
-  const canManagePerangkat = isAdmin || isKepalaLab; 
+  
+  const canManageRowActions = isAdmin || isKepalaLab; 
+  
+  // Admin bisa tambah jika sudah pilih lab, atau jika belum pilih (akan pilih di halaman AddPerangkat)
+  // Kepala Lab selalu bisa tambah
+  const canAccessAddPerangkatPage = isAdmin || (isKepalaLab && !!kepalaLabAssignedLabId);
 
+  // Fetch daftar lab (untuk Admin memilih, dan untuk KaLab mendapatkan nama labnya)
   useEffect(() => {
     const fetchLabs = async () => {
-      // Hanya Admin yang perlu fetch semua lab untuk dropdown filter
-      if (isAdmin) {
-        setIsLoading(true); // Set loading true di awal fetchLabs untuk Admin
-        try {
+      setIsLoading(true); // Set loading true di awal
+      try {
+        if (isAdmin) {
           const response = await get('/lab');
           if (response.data && Array.isArray(response.data)) {
             setAllLabs(response.data);
@@ -55,109 +61,114 @@ const Perangkat = () => {
             setAllLabs([]);
             setErrorMsg("Gagal memuat daftar laboratorium.");
           }
-        } catch (err) {
-          console.error("Error fetching labs for admin:", err);
-          setErrorMsg("Gagal memuat daftar laboratorium.");
-          setAllLabs([]);
-        } 
-        // Jangan set setIsLoading(false) di sini agar fetchPerangkatData yang mengontrolnya
-      } else if (isKepalaLab) {
-        if (kepalaLabAssignedLabId) {
-          setSelectedLabId(kepalaLabAssignedLabId.toString());
-          // Untuk Kepala Lab, kita juga bisa fetch nama lab spesifiknya jika diperlukan untuk tampilan
-          // Tapi karena data perangkat akan di-fetch dan punya nama_lab, mungkin tidak perlu fetch lab terpisah.
-        } else {
-          console.warn("ID Lab untuk Kepala Lab tidak ditemukan.");
-          setErrorMsg("Informasi lab untuk Kepala Lab tidak ditemukan.");
-          setIsLoading(false); // Set loading false jika KaLab tidak punya info lab
+        } else if (isKepalaLab && kepalaLabAssignedLabId) {
+          const response = await get(`/lab/${kepalaLabAssignedLabId}`);
+          if (response.data) {
+            setAllLabs([response.data]); // Simpan sebagai array untuk konsistensi
+            setSelectedLabId(kepalaLabAssignedLabId.toString()); // Otomatis set lab KaLab
+          } else {
+            setErrorMsg("Gagal memuat detail lab untuk Kepala Lab.");
+          }
         }
-      } else {
-          // Untuk role lain (misal Teknisi yang mungkin hanya view), kita langsung fetch semua perangkat
-          // Untuk saat ini, kita asumsikan role lain tidak masuk halaman ini atau punya logika berbeda
-          // setIsLoading(false); // Jika ada, akan dihandle oleh fetchPerangkatData
+      } catch (err) {
+        console.error("Error fetching labs:", err);
+        setErrorMsg("Gagal memuat data laboratorium.");
+        setAllLabs([]);
+      } finally {
+         // setIsLoading(false) akan dihandle oleh fetchPerangkatData atau kondisi lain
+         // Namun, jika bukan admin dan bukan kalab, atau kalab tanpa ID, loading harus false
+         if (!isAdmin && (!isKepalaLab || (isKepalaLab && !kepalaLabAssignedLabId))) {
+            setIsLoading(false);
+         }
       }
     };
     fetchLabs();
-  }, [isAdmin, isKepalaLab, kepalaLabAssignedLabId]); // Hanya bergantung pada role
+  }, [isAdmin, isKepalaLab, kepalaLabAssignedLabId]);
 
 
-  // Fetch data perangkat
-  useEffect(() => {
-    const fetchPerangkatData = async () => {
-      setIsLoading(true); // Selalu set loading true di awal fetch perangkat
-      setDataPerangkat([]); // Kosongkan data sebelumnya agar tidak ada flicker data lama
-      setErrorMsg(''); // Reset error
+  // Fungsi fetchPerangkatData yang di-memoize
+  const fetchPerangkatData = useCallback(async (currentSelectedLabId) => {
+    setIsLoading(true); 
+    setDataPerangkat([]); 
+    setErrorMsg(''); 
 
-      try {
-        let perangkatToDisplay = [];
-        const response = await get('/perangkat'); // Selalu fetch semua perangkat
+    try {
+      let perangkatToDisplay = [];
+      const response = await get('/perangkat'); 
 
-        if (response.data && Array.isArray(response.data)) {
-          if (isAdmin) {
-            if (selectedLabId) { // Jika Admin sudah memilih lab, filter
-              perangkatToDisplay = response.data.filter(p => p.lab_id.toString() === selectedLabId);
-            } else { // Jika Admin belum memilih lab, tampilkan SEMUA perangkat
-              perangkatToDisplay = response.data;
-            }
-          } else if (isKepalaLab) {
-            if (selectedLabId) { // Kepala Lab, filter berdasarkan lab yang diampu (selectedLabId sudah diset)
-              perangkatToDisplay = response.data.filter(p => p.lab_id.toString() === selectedLabId);
-            } else {
-              // Seharusnya KaLab selalu punya selectedLabId dari useEffect fetchLabs
-              // Jika tidak, tampilkan kosong atau error
-              console.warn("Kepala Lab tidak memiliki selectedLabId untuk filter perangkat.");
-              perangkatToDisplay = [];
-            }
-          } else {
-            // Untuk role lain yang mungkin bisa lihat semua (misal Teknisi jika diizinkan)
-            // perangkatToDisplay = response.data; 
-            // Untuk saat ini, kita anggap hanya Admin dan KaLab yang utama di sini
-            perangkatToDisplay = [];
+      if (response.data && Array.isArray(response.data)) {
+        const labIdToFilter = currentSelectedLabId || (isKepalaLab ? kepalaLabAssignedLabId?.toString() : '');
+
+        if (isAdmin) {
+          if (labIdToFilter) { 
+            perangkatToDisplay = response.data.filter(p => p.lab_id.toString() === labIdToFilter);
+          } else { 
+            perangkatToDisplay = response.data; // Admin belum filter, tampilkan semua
           }
-          setDataPerangkat(perangkatToDisplay);
-        } else {
-          setErrorMsg("Data perangkat tidak ditemukan atau format respons salah.");
+        } else if (isKepalaLab) {
+          if (labIdToFilter) { // Harus selalu ada untuk KaLab
+            perangkatToDisplay = response.data.filter(p => p.lab_id.toString() === labIdToFilter);
+          } else {
+            perangkatToDisplay = []; // KaLab tanpa lab_id terdefinisi
+          }
+        } else { // Role lain (jika ada)
+          perangkatToDisplay = response.data; // Contoh: Teknisi lihat semua
         }
-      } catch (err) {
-        console.error("Error fetching perangkat data:", err);
-        setErrorMsg("Gagal mengambil data perangkat. " + (err.response?.data?.message || err.message || ''));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    // Logika kapan harus fetch:
-    // 1. Jika Admin (dropdown lab sudah dimuat atau selectedLabId berubah)
-    // 2. Jika Kepala Lab dan ID labnya sudah teridentifikasi (selectedLabId sudah diset)
-    if (isAdmin) {
-        // Admin: fetch saat selectedLabId berubah (termasuk saat pertama kali "" atau dipilih)
-        // atau saat komponen pertama kali mount (selectedLabId masih "") untuk load semua
-        fetchPerangkatData();
-    } else if (isKepalaLab && selectedLabId) {
-        // Kepala Lab: fetch hanya jika selectedLabId (lab yg diampu) sudah ada
-        fetchPerangkatData();
-    } else if (isKepalaLab && !kepalaLabAssignedLabId) {
-        // Jika KaLab, tapi ID lab tidak ada di context, jangan fetch & tampilkan error (sudah dihandle)
-        setIsLoading(false);
+        setDataPerangkat(perangkatToDisplay);
+      } else {
         setDataPerangkat([]);
-    } else if (!isAdmin && !isKepalaLab) {
-        // Role lain, jika ada, mungkin punya logika fetch sendiri atau tidak fetch sama sekali
-        // fetchPerangkatData(); // Jika Teknisi misal boleh lihat semua
+        setErrorMsg("Data perangkat tidak ditemukan atau format respons salah.");
+      }
+    } catch (err) {
+      console.error("Error fetching perangkat data:", err);
+      setErrorMsg("Gagal mengambil data perangkat. " + (err.response?.data?.message || err.message || ''));
+      setDataPerangkat([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isAdmin, isKepalaLab, kepalaLabAssignedLabId]); // selectedLabId dihilangkan karena dikirim sebagai argumen
+
+
+  // useEffect untuk memanggil fetchPerangkatData saat filter berubah atau role berubah
+  useEffect(() => {
+    // Jika Admin, fetch berdasarkan selectedLabId (bisa kosong untuk "semua")
+    // Jika KaLab, fetch berdasarkan kepalaLabAssignedLabId (yang sudah diset ke selectedLabId)
+    // setIsLoading(true) sudah ada di dalam fetchPerangkatData
+    if (isAdmin) {
+        fetchPerangkatData(selectedLabId);
+    } else if (isKepalaLab) {
+       console.log("useEffect[fetchPerangkatData] - Untuk Kepala Lab, ID Lab:", kepalaLabAssignedLabId);
+        if (kepalaLabAssignedLabId) { // Pastikan KaLab punya ID lab
+            fetchPerangkatData(kepalaLabAssignedLabId.toString());
+        } else {
+            setIsLoading(false); // Jika KaLab tidak punya ID lab, hentikan loading
+            setDataPerangkat([]);
+        }
+    } else {
+        // Logika untuk role lain, misal Teknisi lihat semua perangkat
+        // fetchPerangkatData(''); // Panggil dengan string kosong untuk "semua" jika relevan
         setIsLoading(false);
         setDataPerangkat([]);
     }
-    
-    // Setup refresh interval jika diperlukan
-    // const refreshIntervalTime = parseInt(import.meta.env.VITE_REFRESH_INTERVAL, 10) || 300000;
-    // const intervalId = setInterval(fetchPerangkatData, refreshIntervalTime);
-    // return () => clearInterval(intervalId);
+  }, [selectedLabId, isAdmin, isKepalaLab, kepalaLabAssignedLabId, fetchPerangkatData]); 
 
-  }, [selectedLabId, isAdmin, isKepalaLab, kepalaLabAssignedLabId]); // Dependensi penting
+
+  useEffect(() => {
+    if (successMsg || errorMsg) {
+      const timer = setTimeout(() => {
+        setSuccessMsg('');
+        setErrorMsg('');
+        if (location.state && location.state.successMsg) { // Hanya clear state navigasi jika ada successMsg
+             navigate(location.pathname, { replace: true, state: {} });
+        }
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMsg, errorMsg, location.pathname, navigate, location.state]);
 
 
   const handleLabChange = (e) => {
     setSelectedLabId(e.target.value); 
-    // Tidak perlu setDataPerangkat([]) di sini, useEffect akan menangani re-fetch berdasarkan selectedLabId baru
   };
 
   const handleOpenDetailModal = (id) => {
@@ -170,25 +181,13 @@ const Perangkat = () => {
     setShowEditModal(true);
   };
   
-  const handleOpenAddModal = () => {
-    if (isAdmin && !selectedLabId) { // Jika Admin, WAJIB pilih lab dulu
-        alert("Admin: Silakan pilih laboratorium terlebih dahulu untuk menambahkan perangkat.");
-        return;
-    }
-    // Untuk Kepala Lab, selectedLabId seharusnya sudah terisi otomatis dari lab yang diampunya
-    if (isKepalaLab && !selectedLabId) {
-        alert("Kepala Lab: Informasi lab Anda tidak ditemukan, tidak bisa menambah perangkat.");
-        return;
-    }
-    setShowAddModal(true);
-  };
-
   const handleDelete = DeleteConfirmation({
     onDelete: (id) => deleteData(`/perangkat/delete/${id}`),
     itemName: 'data perangkat',
     onSuccess: (deletedId) => {
       setDataPerangkat(prevData => prevData.filter(item => item.perangkat_id !== deletedId));
       setSuccessMsg('Data perangkat berhasil dihapus');
+      // fetchPerangkatData(selectedLabId); // Re-fetch setelah delete
     },
     onError: (error) => setErrorMsg('Gagal menghapus data perangkat. ' + (error.response?.data?.message || error.message || ''))
   });
@@ -207,13 +206,14 @@ const Perangkat = () => {
   ];
 
   const renderPerangkatRow = (item, index) => {
+    if (!item) return null; 
     return (
       <tr className="bg-white border-b hover:bg-gray-50" key={item.perangkat_id || index}>
         <td className="px-4 py-2">
           {item.foto_perangkat ? (
             <img
               src={`${ASSET_BASE_URL}${PERANGKAT_IMAGE_SUBFOLDER}${item.foto_perangkat}?t=${Date.now()}`}
-              alt={item.nama_perangkat}
+              alt={item.nama_perangkat || 'Foto Perangkat'}
               className="w-12 h-12 object-cover rounded shadow-md"
               onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/48x48?text=Err';}}
             />
@@ -245,7 +245,7 @@ const Perangkat = () => {
               className="p-2 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-100" title="Lihat Detail">
               <FaEye size={18} />
             </button>
-            {canManagePerangkat && (
+            {canManageRowActions && (
               <>
                 <button
                   onClick={() => handleOpenEditModal(item.perangkat_id)}
@@ -265,10 +265,38 @@ const Perangkat = () => {
     );
   }
 
-  // Menentukan labId yang akan digunakan untuk AddPerangkat modal
-  // Jika Admin, gunakan selectedLabId (yang harus sudah dipilih).
-  // Jika Kepala Lab, gunakan kepalaLabAssignedLabId (lab yang diampunya).
-  const labIdForAddModal = isAdmin ? selectedLabId : (isKepalaLab ? kepalaLabAssignedLabId?.toString() : null);
+  const getLabNameById = (labId) => {
+    if (!labId || !allLabs.length) return '';
+    const lab = allLabs.find(l => l.lab_id.toString() === labId.toString());
+    return lab?.nama_lab || `ID: ${labId}`;
+  };
+  
+  const addPerangkatPathObject = () => {
+    if (!canAccessAddPerangkatPage) return null;
+
+    let navState = {};
+    // Untuk Admin: jika sudah filter lab, kirim labId dan labName. Jika belum, kirim state kosong.
+    // Untuk Kepala Lab: selalu kirim labId dan labName yang diampunya.
+    if (isAdmin) {
+        if (selectedLabId) { // Admin sudah filter
+            navState = { labId: selectedLabId, labName: getLabNameById(selectedLabId) };
+        } else { // Admin belum filter, AddPerangkat akan menampilkan dropdown lab
+            navState = { labId: null, labName: null }; 
+        }
+    } else if (isKepalaLab && kepalaLabAssignedLabId) {
+        navState = { labId: kepalaLabAssignedLabId.toString(), labName: getLabNameById(kepalaLabAssignedLabId) };
+    }
+    
+    // Tombol tambah hanya aktif jika Admin (boleh belum pilih lab) atau KaLab (lab sudah pasti)
+    if (isAdmin || (isKepalaLab && kepalaLabAssignedLabId) ) {
+         return { pathname: "/add-perangkat", state: navState };
+    }
+    return null;
+  };
+
+  // Untuk mengirim labId yang benar ke modal EditPerangkat
+  const labIdUntukEdit = isAdmin ? selectedLabId : (isKepalaLab ? kepalaLabAssignedLabId?.toString() : null);
+
 
   return (
     <Dashboard title="Kelola Data Perangkat">
@@ -276,9 +304,9 @@ const Perangkat = () => {
         {successMsg && <Notification type="success" message={successMsg} onClose={() => setSuccessMsg('')} />}
         {errorMsg && <Notification type="error" message={errorMsg} onClose={() => setErrorMsg('')} />}
 
-        <div className="mb-4 flex flex-col sm:flex-row justify-between items-center gap-3">
-            {isAdmin && (
-                <div className="w-full sm:w-1/3"> {/* Beri lebar agar tidak terlalu panjang */}
+        {isAdmin && (
+            <div className="mb-4 flex justify-start items-center gap-3">
+                <div className="w-full sm:w-1/3">
                     <label htmlFor="labFilter" className="sr-only">Filter berdasarkan Lab:</label>
                     <select
                         id="labFilter"
@@ -286,7 +314,7 @@ const Perangkat = () => {
                         onChange={handleLabChange}
                         className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
                     >
-                        <option value="">Tampilkan Semua Lab</option> {/* Opsi untuk menampilkan semua */}
+                        <option value="">Tampilkan Semua Perangkat</option> {/* Teks diubah */}
                         {allLabs.map(lab => (
                         <option key={lab.lab_id} value={lab.lab_id.toString()}>
                             {lab.nama_lab}
@@ -294,40 +322,27 @@ const Perangkat = () => {
                         ))}
                     </select>
                 </div>
-            )}
-            {isKepalaLab && kepalaLabAssignedLabId && allLabs.find(l => l.lab_id.toString() === kepalaLabAssignedLabId.toString()) && (
-                <div className="w-full sm:w-auto text-sm font-medium p-2.5 bg-gray-100 rounded-md">
-                    Lab yang Dikelola: {allLabs.find(l => l.lab_id.toString() === kepalaLabAssignedLabId.toString())?.nama_lab || 'N/A'}
-                </div>
-            )}
-             {/* Flex-grow untuk mendorong tombol ke kanan jika ada space */}
-            <div className="flex-grow hidden sm:block"></div>
-
-            {/* Tombol Tambah Perangkat */}
-            {/* Admin: bisa tambah JIKA SUDAH pilih lab. KaLab: selalu bisa tambah untuk labnya */}
-            {canManagePerangkat && ((isAdmin && selectedLabId) || isKepalaLab) && (
-                 <button
-                    onClick={handleOpenAddModal}
-                    className="w-full sm:w-auto px-4 py-2.5 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center text-sm"
-                >
-                    <FaPlus className="mr-2" /> Tambah Perangkat
-                </button>
-            )}
-        </div>
+            </div>
+        )}
+        {/* {isKepalaLab && kepalaLabAssignedLabId && allLabs.length > 0 && (
+             <div className="mb-4 w-full sm:w-auto text-sm font-medium p-2.5 bg-gray-100 rounded-md">
+                Menampilkan Perangkat untuk Lab: {getLabNameById(kepalaLabAssignedLabId)}
+            </div>
+        )} */}
 
         <Tabel
           title={
             isAdmin 
-              ? (selectedLabId ? `Data Perangkat Lab: ${allLabs.find(l=>l.lab_id.toString() === selectedLabId)?.nama_lab || 'Dipilih'}` : "Data Perangkat (Semua Lab)") 
-              : `Data Perangkat Lab Anda` // Judul untuk Kepala Lab
+              ? (selectedLabId ? `Data Perangkat Lab: ${getLabNameById(selectedLabId)}` : "Data Perangkat (Semua Lab)") 
+              : `Data Perangkat Lab: ${getLabNameById(kepalaLabAssignedLabId)}`
           }
           breadcrumbContext={userRole}
           headers={headTable}
           data={dataPerangkat}
           itemsPerPage={10}
           renderRow={renderPerangkatRow}
-          to={null}
-          buttonText=""
+          to={addPerangkatPathObject()} 
+          buttonText={(isAdmin || (isKepalaLab && !!kepalaLabAssignedLabId)) ? "Tambah Perangkat" : ""}
         >
           {isLoading && (
             <tr>
@@ -342,7 +357,7 @@ const Perangkat = () => {
           {!isLoading && dataPerangkat.length === 0 && (
             <tr>
               <td colSpan={headTable.length} className="text-center py-20 text-gray-500 text-lg">
-                {isAdmin && !selectedLabId ? "Pilih lab untuk melihat perangkat, atau data semua lab kosong." : "Tidak ada data perangkat ditemukan untuk lab ini."}
+                {isAdmin && !selectedLabId ? "Tidak ada perangkat di semua lab, atau pilih lab untuk filter." : "Tidak ada data perangkat ditemukan untuk lab ini."}
               </td>
             </tr>
           )}
@@ -351,69 +366,19 @@ const Perangkat = () => {
         {showDetailModal && selectedPerangkatId && 
             <DetailPerangkat id={selectedPerangkatId} onClose={() => setShowDetailModal(false)} />
         }
-        {showEditModal && selectedPerangkatId && canManagePerangkat && 
+        {showEditModal && selectedPerangkatId && canManageRowActions && 
             <EditPerangkat 
                 id={selectedPerangkatId} 
-                labIdUntukEdit={isAdmin ? selectedLabId : kepalaLabAssignedLabId?.toString()} // Kirim labId yang relevan
+                labIdUntukEdit={labIdUntukEdit} 
                 onClose={() => setShowEditModal(false)} 
-                onUpdate={() => { // Lebih baik fetch ulang data spesifik setelah update
-                    const currentLabToFetch = isAdmin ? selectedLabId : kepalaLabAssignedLabId;
-                    if (currentLabToFetch || isAdmin) { // Jika admin tanpa filter, fetch semua
-                        const fetchPerangkatDataAfterUpdate = async () => {
-                            setIsLoading(true);
-                            try {
-                                const response = await get('/perangkat'); 
-                                if (response.data && Array.isArray(response.data)) {
-                                  if (currentLabToFetch && isAdmin) { // Admin dengan lab dipilih
-                                    setDataPerangkat(response.data.filter(p => p.lab_id.toString() === currentLabToFetch.toString()));
-                                  } else if (isKepalaLab && currentLabToFetch) { // Kepala Lab
-                                    setDataPerangkat(response.data.filter(p => p.lab_id.toString() === currentLabToFetch.toString()));
-                                  } else if (isAdmin && !currentLabToFetch) { // Admin, semua lab
-                                    setDataPerangkat(response.data);
-                                  } else {
-                                    setDataPerangkat([]);
-                                  }
-                                } else { setDataPerangkat([]); }
-                              } catch (err) { setDataPerangkat([]); } finally { setIsLoading(false); }
-                        };
-                        fetchPerangkatDataAfterUpdate();
-                    }
+                onUpdate={(updatedData) => {
+                    setSuccessMsg(updatedData.message || "Data perangkat berhasil diupdate.");
+                    fetchPerangkatData(selectedLabId); // Panggil fetchPerangkatData dengan selectedLabId saat ini
+                    setShowEditModal(false);
                 }}
             />
         }
-        {/* Pastikan labIdForAddModal dikirim dengan benar */}
-        {showAddModal && labIdForAddModal && canManagePerangkat &&
-            <AddPerangkat 
-                labId={labIdForAddModal} 
-                onClose={() => setShowAddModal(false)} 
-                onSuccess={() => {
-                    setShowAddModal(false);
-                    setSuccessMsg("Perangkat baru berhasil ditambahkan.");
-                    // Re-fetch data perangkat
-                    const currentLabToFetch = isAdmin ? selectedLabId : kepalaLabAssignedLabId;
-                     if (currentLabToFetch || isAdmin) { 
-                        const fetchPerangkatDataAfterAdd = async () => {
-                            setIsLoading(true);
-                            try {
-                                const response = await get('/perangkat'); 
-                                if (response.data && Array.isArray(response.data)) {
-                                  if (currentLabToFetch && isAdmin) {
-                                    setDataPerangkat(response.data.filter(p => p.lab_id.toString() === currentLabToFetch.toString()));
-                                  } else if (isKepalaLab && currentLabToFetch) {
-                                     setDataPerangkat(response.data.filter(p => p.lab_id.toString() === currentLabToFetch.toString()));
-                                  } else if (isAdmin && !currentLabToFetch) { // Admin, semua lab
-                                    setDataPerangkat(response.data);
-                                  } else {
-                                    setDataPerangkat([]);
-                                  }
-                                } else { setDataPerangkat([]); }
-                              } catch (err) { setDataPerangkat([]); } finally { setIsLoading(false); }
-                        };
-                        fetchPerangkatDataAfterAdd();
-                    }
-                }}
-            />
-        }
+        {/* Pemanggilan Modal AddPerangkat dihapus dari sini karena sudah jadi halaman */}
       </div>
     </Dashboard>
   );

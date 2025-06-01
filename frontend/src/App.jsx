@@ -26,6 +26,7 @@ import AddPengecekan from "./Components/Pengecekan/AddPengecekan";
 import Perbaikan from "./features/KelolaPerbaikan/Perbaikan";
 
 import Perangkat from "./features/KelolaDataPerangkat/Perangkat";
+import AddPerangkat from "./Components/Perangkat/AddPerangkat";
 
 function App() {
   return (
@@ -63,6 +64,7 @@ function App() {
             <Route element={<RoleRoute allowedRoles={["Admin","Kepala Lab"]} />}>
               <Route path="/dashboard-kepala-lab" element={<KepalaLabPage />} />
               <Route path="/kelola-perangkat" element={<Perangkat />} />
+              <Route path="/add-perangkat" element={<AddPerangkat />} />
             </Route>
 
             {/* Guru */}
