@@ -24,6 +24,8 @@ import perbaikanRoutes from './router/perbaikanRoutes.js';
 import pengajunLab from './router/pengajuanLabRoutes.js'; 
 import dashboardAdminRoutes from './router/dashboardAdminRoutes.js';
 import dashboardTeknisiRoutes from './router/dashboardTeknisiRoutes.js';
+import { getJadwalLabMingguan } from './controllers/jadwalLabController.js';
+
 dotenv.config();
 
 const app = express();
@@ -64,6 +66,7 @@ app.use("/api/perbaikan", perbaikanRoutes);
 app.use("/api/pengajuan", pengajunLab); 
 app.use("/api/dashboard", dashboardAdminRoutes); 
 app.use("/api/dashboard", dashboardTeknisiRoutes); 
+app.use("/api/jadwal-lab", getJadwalLabMingguan); // Pastikan ini sesuai dengan rute yang Anda inginkan
 
 // Rute index (misalnya untuk '/' atau rute fallback lainnya)
 // Pastikan indexRoutes.js diekspor dengan benar dan menangani rute yang sesuai.
