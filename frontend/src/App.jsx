@@ -20,6 +20,7 @@ import Lab from "./features/KelolaLaboratorium/Laboratorium";
 import AddLaboratorium from "./Components/DataLab/AddLabaratorium";
 
 import Pengecekan from "./features/KelolaPengecekan/PengecekanPerangkat";
+import AddPengecekan from "./Components/Pengecekan/AddPengecekan";
 
 function App() {
   return (
@@ -50,6 +51,7 @@ function App() {
               <Route path="/add-laboratorium" element={<AddLaboratorium />} />
               <Route path="/kelola-pengumuman" element={<Pengumuman />} />
               <Route path="/add-pengumuman" element={<AddPengumuman />} />
+              <Route path="/add-pengecekan" element={<AddPengecekan />} />
             </Route>
 
             {/* Kepala Lab */}
