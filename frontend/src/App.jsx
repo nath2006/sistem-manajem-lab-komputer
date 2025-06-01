@@ -30,7 +30,8 @@ import AddPerangkat from "./Components/Perangkat/AddPerangkat";
 import AddPemeriksaan from "./Components/Pemeriksaan/AddPemeriksaan";
 import Pemeriksaan from "./features/PemeriksaanPerangkat/Pemeriksaan";
 
-import JadwalLab from "./features/KelolaJadwalLab/PengajuanJadwalLab";
+import PengajuanJadwalLab from "./features/KelolaJadwalLab/PengajuanJadwalLab";
+import JadwalLab from "./features/LihatJadwalLab/JadwalLab";
 
 function App() {
   return (
@@ -72,7 +73,8 @@ function App() {
               <Route path="/add-pemeriksaan" element={<AddPemeriksaan />} />
               <Route path="/kelola-pemeriksaan-perangkat" element={<Pemeriksaan />} />
 
-              <Route path="/kelola-jadwal-lab" element={<JadwalLab />} />
+              <Route path="/kelola-jadwal-lab" element={<PengajuanJadwalLab />} />
+              <Route path="/jadwal-lab" element={<JadwalLab />} />
             </Route>
 
             {/* Guru */}
