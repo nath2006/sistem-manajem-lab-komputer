@@ -1,4 +1,3 @@
-// Perbaikan.jsx
 import React, { useState, useEffect, useContext } from 'react';
 import Dashboard from '../../Layouts/Dashboard';
 import Tabel from '../../Layouts/Table';

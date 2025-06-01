@@ -27,6 +27,8 @@ import Perbaikan from "./features/KelolaPerbaikan/Perbaikan";
 
 import Perangkat from "./features/KelolaDataPerangkat/Perangkat";
 import AddPerangkat from "./Components/Perangkat/AddPerangkat";
+import AddPemeriksaan from "./Components/Pemeriksaan/AddPemeriksaan";
+import Pemeriksaan from "./features/PemeriksaanPerangkat/Pemeriksaan";
 
 function App() {
   return (
@@ -60,11 +62,13 @@ function App() {
               <Route path="/add-pengecekan" element={<AddPengecekan />} />
             </Route>
 
-            {/* Kepala Lab */}
+            {/* Shared: Admin + Kepala Lab */}
             <Route element={<RoleRoute allowedRoles={["Admin","Kepala Lab"]} />}>
               <Route path="/dashboard-kepala-lab" element={<KepalaLabPage />} />
               <Route path="/kelola-perangkat" element={<Perangkat />} />
               <Route path="/add-perangkat" element={<AddPerangkat />} />
+              <Route path="/add-pemeriksaan" element={<AddPemeriksaan />} />
+              <Route path="/kelola-pemeriksaan-perangkat" element={<Pemeriksaan />} />
             </Route>
 
             {/* Guru */}

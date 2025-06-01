@@ -57,6 +57,11 @@ const Dashboard = ({ title, children }) => {
       to: "/kepala-lab/pengajuan-jadwal",
     },
     {
+      name: "Pemeriksaan Perangkat",
+      ic: <FaLaptopMedical />,
+      to: "/kelola-pemeriksaan-perangkat",
+    },
+    {
       name: "Kelola Data Perangkat",
       ic: <FaLaptopFile />,
       to: "/kelola-perangkat",
@@ -109,7 +114,7 @@ const Dashboard = ({ title, children }) => {
     {
       name: "Pemeriksaan Perangkat",
       ic: <FaLaptopMedical />,
-      to: "/admin/pemeriksaan-perangkat",
+      to: "/kelola-pemeriksaan-perangkat",
     },
     {
       name: "Kelola Data Perangkat",
