@@ -370,7 +370,7 @@ export default function LihatJadwalLab() {
           )}
           {/* Menampilkan nama lab untuk Kepala Lab (atau role lain yang labnya sudah ditentukan) */}
           {userRole === 'Kepala Lab' && namaSelectedLab && ( 
-             <div className="text-lg font-medium text-gray-700">{namaSelectedLab}</div>
+              <div className="text-lg font-medium text-gray-700">{namaSelectedLab}</div>
           )}
         </div>
 
@@ -412,8 +412,8 @@ export default function LihatJadwalLab() {
             <p className="text-xs text-center text-gray-500 mt-1">{periodeDataUntukAPI.display_api}</p>
         </div>
         
-        {/* Tombol Cetak hanya muncul jika lab valid (sudah dipilih/ditentukan) dan tidak sedang loading */}
-        {isLabValidForDisplay && !isLoading &&  (
+        {/* PERUBAHAN DI SINI: Menambahkan kondisi userRole untuk tombol Cetak */}
+        {isLabValidForDisplay && !isLoading && (userRole === 'Admin' || userRole === 'Kepala Lab') && (
             <div className="flex justify-end mb-4">
                 <button onClick={handleCetakJadwal}
                     className="px-4 py-2 bg-teal-500 text-white rounded-md hover:bg-teal-600 flex items-center gap-2 text-sm"
@@ -437,7 +437,7 @@ export default function LihatJadwalLab() {
 
         {/* Pesan untuk Admin/Guru jika belum memilih lab */}
         {!isLoading && (userRole === 'Admin' || userRole === 'Guru') && !selectedLabId && (
-             <div className="text-center py-10 text-gray-500 bg-white rounded-lg shadow"> Silakan pilih laboratorium untuk menampilkan jadwal. </div>
+            <div className="text-center py-10 text-gray-500 bg-white rounded-lg shadow"> Silakan pilih laboratorium untuk menampilkan jadwal. </div>
         )}
 
         {/* Pesan jika lab sudah valid (terpilih/ditentukan) TAPI tidak ada data jadwal dari API */}
