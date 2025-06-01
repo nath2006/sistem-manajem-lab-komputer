@@ -19,6 +19,8 @@ import AddPengumuman from "./Components/Pengumuman/AddPengumuman";
 import Lab from "./features/KelolaLaboratorium/Laboratorium";
 import AddLaboratorium from "./Components/DataLab/AddLabaratorium";
 
+import Pengecekan from "./features/KelolaPengecekan/PengecekanPerangkat";
+
 function App() {
   return (
     <AuthProvider>
@@ -61,7 +63,8 @@ function App() {
             </Route>
 
             {/* Teknisi */}
-            <Route element={<RoleRoute allowedRoles={["Teknisi"]} />}>
+            <Route element={<RoleRoute allowedRoles={["Admin","Teknisi"]} />}>
+              <Route path="/kelola-pengecekan" element={<Pengecekan />} />
               <Route path="/dashboard-teknisi" element={<TeknisiPage />} />
             </Route>
 

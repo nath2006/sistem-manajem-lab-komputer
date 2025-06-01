@@ -90,7 +90,7 @@ const Dashboard = ({ title, children }) => {
     {
       name: "Pengecekan Perangkat",
       ic: <FaLaptopMedical />,
-      to: "/teknisi/pengecekan",
+      to: "/kelola-pengecekan",
     },
   ];
 
@@ -129,7 +129,7 @@ const Dashboard = ({ title, children }) => {
     {
       name: "Pengecekan Perangkat",
       ic: <FaLaptopMedical />,
-      to: "/admin/pengecekan-perangkat",
+      to: "/kelola-pengecekan",
     },
     { type: "divider" },
     { name: "Kelola User", ic: <FaUserGear />, to: "/user" },

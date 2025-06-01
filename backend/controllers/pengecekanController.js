@@ -30,15 +30,26 @@ export const createPengecekan = async (req, res) => {
   }
 };
 
-// Ambil Semua Pengecekan
+// Ambil Semua Pengecekan (dengan detail nama user, nama perangkat, dan nama lab)
 export const getAllPengecekan = async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT p.*, u.nama_lengkap AS nama_user, d.nama_perangkat 
+      `SELECT 
+         p.pengecekan_id,
+         p.user_id,
+         p.perangkat_id,
+         p.pemeriksaan_id,
+         p.tanggal_pengecekan,
+         p.ditemukan_kerusakan,
+         p.status_pengecekan,
+         u.nama_lengkap AS nama_user, 
+         d.nama_perangkat,
+         l.nama_lab -- Kolom baru untuk nama lab
        FROM pengecekan p
        JOIN user u ON p.user_id = u.user_id
        JOIN perangkat d ON p.perangkat_id = d.perangkat_id
-       ORDER BY tanggal_pengecekan DESC`
+       JOIN laboratorium l ON d.lab_id = l.lab_id -- JOIN baru ke tabel laboratorium
+       ORDER BY p.tanggal_pengecekan DESC`
     );
 
     res.status(200).json({
@@ -46,7 +57,7 @@ export const getAllPengecekan = async (req, res) => {
       message: "Berhasil Mengambil Data Pengecekan"
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching all pengecekan:", error); // Log error yang lebih spesifik
     res.status(500).json({
       message: "Mengambil Data Pengecekan Gagal",
       error: error.message
@@ -54,34 +65,44 @@ export const getAllPengecekan = async (req, res) => {
   }
 };
 
-// Ambil Pengecekan Berdasarkan ID
+// Anda mungkin juga ingin menyesuaikan fungsi getPengecekanById jika ada,
+// agar mengembalikan informasi nama_lab juga.
+// Contoh:
 export const getPengecekanById = async (req, res) => {
   try {
     const { id } = req.params;
-
     const [rows] = await db.query(
-      `SELECT p.*, u.nama_lengkap AS nama_user, d.nama_perangkat 
+      `SELECT 
+         p.pengecekan_id,
+         p.user_id,
+         p.perangkat_id,
+         p.pemeriksaan_id,
+         p.tanggal_pengecekan,
+         p.ditemukan_kerusakan,
+         p.status_pengecekan,
+         u.nama_lengkap AS nama_user, 
+         d.nama_perangkat,
+         l.nama_lab
        FROM pengecekan p
        JOIN user u ON p.user_id = u.user_id
        JOIN perangkat d ON p.perangkat_id = d.perangkat_id
+       JOIN laboratorium l ON d.lab_id = l.lab_id
        WHERE p.pengecekan_id = ?`,
       [id]
     );
 
     if (rows.length === 0) {
-      return res.status(404).json({
-        message: "Data Pengecekan Tidak Ditemukan"
-      });
+      return res.status(404).json({ message: "Data Pengecekan tidak ditemukan" });
     }
 
     res.status(200).json({
       data: rows[0],
-      message: "Berhasil Mengambil Data Pengecekan"
+      message: "Berhasil Mengambil Detail Data Pengecekan"
     });
   } catch (error) {
-    console.error(error);
+    console.error(`Error fetching pengecekan by ID ${id}:`, error);
     res.status(500).json({
-      message: "Mengambil Data Pengecekan Gagal",
+      message: "Mengambil Detail Data Pengecekan Gagal",
       error: error.message
     });
   }
