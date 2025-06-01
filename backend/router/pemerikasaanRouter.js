@@ -19,7 +19,7 @@ router.get('/:id',verifyToken, getPemeriksaanById);
 
 router.post('/create', 
   verifyToken, 
-  authorizeRoles(["Admin", "Koordinator Lab"]),
+  authorizeRoles(["Admin", "Kepala Lab"]),
   createPemeriksaan
 );
 
