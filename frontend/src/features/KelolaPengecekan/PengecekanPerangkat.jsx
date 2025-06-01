@@ -1,22 +1,20 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Dashboard from '../../Layouts/Dashboard';
 import Tabel from '../../Layouts/Table';
-import { FaEye, FaTrash, FaFilePen, FaScrewdriverWrench } from "react-icons/fa6"; // Tambah ikon untuk perbaikan
-import { get, deleteData, post } from '../../utils/api'; // Asumsi 'post' ada untuk membuat perbaikan
+import { FaEye, FaTrash, FaFilePen, FaScrewdriverWrench } from "react-icons/fa6";
+import { get, deleteData } from '../../utils/api'; // 'post' tidak secara langsung digunakan di sini, tapi mungkin di BuatPerbaikanModal
 import { useLocation, useNavigate } from 'react-router-dom';
 import Notification from '../../Components/Notification/Notif';
 import useTitle from '../../utils/useTitle';
 import { AuthContext } from '../../Context/AuthContext';
 import DeleteConfirmation from '../../components/Notification/DeleteConfirmation';
-import DetailPengecekan from '../../Components/Pengecekan/DetailPengecekan';
-import EditPengecekan from '../../Components/Pengecekan/EditPengecekan';
+import DetailPengecekan from '../../Components/Pengecekan/DetailPengecekan'; // Pastikan path ini benar
+import EditPengecekan from '../../Components/Pengecekan/EditPengecekan';   // Pastikan path ini benar
 import truncateText from '../../utils/truncateText';
-
-// Impor komponen Modal untuk Buat Perbaikan (Anda perlu membuatnya)
-import BuatPerbaikanModal from '../../Components/Perbaikan/AddPerbaikan'; // SESUAIKAN PATH
+import BuatPerbaikanModal from '../../Components/Perbaikan/AddPerbaikan'; // Pastikan path ini benar
 
 const Pengecekan = () => {
-  useTitle('Kelola Data Pengecekan');
+  useTitle('Data Pengecekan Perangkat'); // Judul lebih deskriptif
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -25,20 +23,22 @@ const Pengecekan = () => {
   const [data, setData] = useState([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
-  const [selectedPengecekanUntukPerbaikan, setSelectedPengecekanUntukPerbaikan] = useState(null); // Untuk data yang akan dikirim ke modal perbaikan
+  const [selectedPengecekanUntukPerbaikan, setSelectedPengecekanUntukPerbaikan] = useState(null);
 
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showBuatPerbaikanModal, setShowBuatPerbaikanModal] = useState(false); // State untuk modal perbaikan
+  const [showBuatPerbaikanModal, setShowBuatPerbaikanModal] = useState(false);
 
   const { state: authState } = useContext(AuthContext);
   const userRole = authState?.role;
-  const loggedInUserId = authState?.user?.user_id; // Ambil ID user yang login
+  const loggedInUserId = authState?.user?.user_id;
 
-  // Otorisasi: Admin, Koordinator Lab, Teknisi bisa mengelola pengecekan dan membuat perbaikan
-  // Sesuaikan role ini jika Kepala Lab juga bisa membuat perbaikan dari pengecekan
-  const isAuthorizedToManage = userRole === 'Admin' || userRole === 'Koordinator Lab' || userRole === 'Teknisi' || userRole === 'Kepala Lab';
-  const canCreatePerbaikan = userRole === 'Admin' || userRole === 'Teknisi' || userRole === 'Kepala Lab'; // Siapa yang bisa klik tombol "Buat Perbaikan"
+  // --- Penyesuaian Hak Akses ---
+  const canViewDetail = true; // Semua role yang masuk halaman ini bisa lihat detail
+  const canEditPengecekan = userRole === 'Admin';
+  const canDeletePengecekan = userRole === 'Admin';
+  const canInitiatePerbaikan = userRole === 'Admin' || userRole === 'Teknisi'; // Admin & Teknisi bisa buat perbaikan
+  const canAddPengecekan = userRole === 'Admin'; // Hanya Admin yang bisa tambah data pengecekan baru
 
   useEffect(() => {
     if (successMsg || errorMsg) {
@@ -58,7 +58,7 @@ const Pengecekan = () => {
       setIsInitialLoading(true);
     }
     try {
-      const response = await get('/pengecekan');
+      const response = await get('/pengecekan'); // Endpoint API Anda untuk mengambil semua data pengecekan
       if (response && Array.isArray(response.data)) {
         setData(response.data);
       } else {
@@ -81,12 +81,12 @@ const Pengecekan = () => {
     fetchData(true);
     const refreshIntervalTime = parseInt(import.meta.env.VITE_REFRESH_INTERVAL, 10) || 300000;
     const intervalId = setInterval(() => {
-      console.log("Refreshing pengecekan data in background...");
       fetchData(false);
     }, refreshIntervalTime);
     return () => clearInterval(intervalId);
   }, []);
 
+  
 
   const handleOpenDetailModal = (id) => {
     setSelectedId(id);
@@ -99,12 +99,12 @@ const Pengecekan = () => {
   };
 
   const handleOpenBuatPerbaikanModal = (pengecekanItem) => {
-    setSelectedPengecekanUntukPerbaikan(pengecekanItem); // Kirim seluruh item pengecekan
+    setSelectedPengecekanUntukPerbaikan(pengecekanItem);
     setShowBuatPerbaikanModal(true);
   };
 
   const handleDelete = DeleteConfirmation({
-    onDelete: (id) => deleteData(`/pengecekan/${id}`), // Sesuaikan endpoint jika perlu (misal /pengecekan/delete/:id)
+    onDelete: (id) => deleteData(`/pengecekan/delete/${id}`), // Endpoint untuk menghapus pengecekan
     itemName: 'data pengecekan',
     onSuccess: (deletedId) => {
       setData(prevData => prevData.filter(item => item.pengecekan_id !== deletedId));
@@ -116,32 +116,28 @@ const Pengecekan = () => {
     }
   });
 
-  // Fungsi yang akan dipanggil setelah perbaikan berhasil dibuat dari modal
   const handlePerbaikanCreated = (createdPerbaikanData) => {
     setSuccessMsg(createdPerbaikanData.message || 'Data perbaikan berhasil dibuat, data pengecekan terkait telah diproses.');
-    // Karena data pengecekan asli akan dihapus oleh backend, kita fetch ulang data pengecekan
-    fetchData(true); // true agar ada loading spinner
+    fetchData(true);
     setShowBuatPerbaikanModal(false);
   };
-
 
   const headTable = [
     { judul: "ID Cek" },
     { judul: "Nama User (Pengecek)" },
     { judul: "Nama Perangkat" },
-    { judul: "Lab" }, // Tambah kolom Lab
+    { judul: "Lab" },
     { judul: "Tanggal Cek" },
     { judul: "Kerusakan" },
-    { judul: "Status Cek" }, // Tambah kolom Status Pengecekan
+    { judul: "Status Cek" },
     { judul: "Aksi" }
   ];
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
-    // Cek apakah dateString sudah objek Date atau perlu di-parse
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) { // Invalid date
-        return dateString; // Kembalikan string asli jika tidak valid
+    if (isNaN(date.getTime())) {
+        return dateString;
     }
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return date.toLocaleDateString('id-ID', options);
@@ -152,10 +148,10 @@ const Pengecekan = () => {
       <tr className="bg-white border-b hover:bg-gray-50" key={item.pengecekan_id || index}>
         <td className="px-6 py-4 text-gray-700 text-center">{item.pengecekan_id || '-'}</td>
         <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-          {item.nama_user_pengecek || item.nama_user || '-'} {/* Sesuaikan dengan field dari API Anda */}
+          {item.nama_user_pengecek || item.nama_user || '-'}
         </th>
         <td className="px-6 py-4 text-gray-700">{item.nama_perangkat || '-'}</td>
-        <td className="px-6 py-4 text-gray-700">{item.nama_lab || '-'}</td> {/* Data ini perlu ada dari API /pengecekan */}
+        <td className="px-6 py-4 text-gray-700">{item.nama_lab || '-'}</td>
         <td className="px-6 py-4 text-gray-700">{formatDate(item.tanggal_pengecekan)}</td>
         <td className="px-6 py-4 text-gray-700">{truncateText(item.ditemukan_kerusakan, 30) || '-'}</td>
         <td className="px-6 py-4 text-gray-700">
@@ -169,34 +165,38 @@ const Pengecekan = () => {
             </span>
         </td>
         <td className='px-6 py-4 text-center'>
-          <div className='flex items-center justify-center space-x-1'> {/* Mengurangi space-x jika tombol banyak */}
-            <button
-              onClick={() => handleOpenDetailModal(item.pengecekan_id)}
-              className="p-2 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-100 transition-colors duration-150"
-              title="Lihat Detail"
-            >
-              <FaEye size={18} />
-            </button>
-            {isAuthorizedToManage && ( // Menggunakan isAuthorizedToManage
-              <>
+          <div className='flex items-center justify-center space-x-1'>
+            {canViewDetail && (
                 <button
-                  onClick={() => handleOpenEditModal(item.pengecekan_id)}
-                  className="p-2 text-yellow-500 hover:text-yellow-700 rounded-full hover:bg-yellow-100 transition-colors duration-150"
-                  title="Edit Data Pengecekan"
+                onClick={() => handleOpenDetailModal(item.pengecekan_id)}
+                className="p-2 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-100 transition-colors duration-150"
+                title="Lihat Detail"
                 >
-                  <FaFilePen size={17} />
+                <FaEye size={18} />
                 </button>
-                <button
-                  onClick={() => handleDelete(item.pengecekan_id)}
-                  className="p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-100 transition-colors duration-150"
-                  title="Hapus Data Pengecekan"
-                >
-                  <FaTrash size={17}/>
-                </button>
-              </>
             )}
-            {/* Tombol Buat Perbaikan hanya muncul jika statusnya memungkinkan dan user berhak */}
-            {canCreatePerbaikan && (item.status_pengecekan === 'Baru' || item.status_pengecekan === 'Menunggu Perbaikan') && (
+            
+            {canEditPengecekan && (item.status_pengecekan === 'Baru' || item.status_pengecekan === 'Menunggu Perbaikan') && (
+              <button
+                onClick={() => handleOpenEditModal(item.pengecekan_id)}
+                className="p-2 text-yellow-500 hover:text-yellow-700 rounded-full hover:bg-yellow-100 transition-colors duration-150"
+                title="Edit Data Pengecekan"
+              >
+                <FaFilePen size={17} />
+              </button>
+            )}
+
+            {canDeletePengecekan && item.status_pengecekan === 'Baru' && ( 
+              <button
+                onClick={() => handleDelete(item.pengecekan_id)}
+                className="p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-100 transition-colors duration-150"
+                title="Hapus Data Pengecekan"
+              >
+                <FaTrash size={17}/>
+              </button>
+            )}
+            
+            {canInitiatePerbaikan && (item.status_pengecekan === 'Baru' || item.status_pengecekan === 'Menunggu Perbaikan') && (
                 <button
                     onClick={() => handleOpenBuatPerbaikanModal(item)}
                     className="p-2 text-green-600 hover:text-green-800 rounded-full hover:bg-green-100 transition-colors duration-150"
@@ -212,7 +212,7 @@ const Pengecekan = () => {
   }
 
   return (
-    <Dashboard title="Kelola Data Pengecekan">
+    <Dashboard title="Data Pengecekan Perangkat">
       <div className="flex flex-col justify-between w-full min-h-[calc(100vh-110px)] px-4 py-6 md:px-6 lg:px-8">
         {(successMsg && !errorMsg) && (
           <Notification type="success" message={successMsg} onClose={() => setSuccessMsg('')} />
@@ -225,11 +225,14 @@ const Pengecekan = () => {
           title="Data Pengecekan Perangkat"
           breadcrumbContext={userRole}
           headers={headTable}
-          to={isAuthorizedToManage ? "/add-pengecekan" : null} // Link ke halaman tambah pengecekan
-          buttonText="Tambah Pengecekan Baru"
+          // Tombol "Tambah Pengecekan Baru" hanya muncul untuk Admin
+          to={canAddPengecekan ? "/add-pengecekan" : null} 
+          buttonText={canAddPengecekan ? "Tambah Pengecekan Baru" : ""} // Kosongkan teks jika tidak ada tombol
           data={data}
           itemsPerPage={10}
           renderRow={renderPengecekanRow}
+          // Jika Teknisi hanya cari data, mungkin perlu tambahkan komponen filter/search di sini atau di dalam Tabel
+          // Untuk saat ini, fungsionalitas pencarian belum ditambahkan secara eksplisit di sini.
         >
           {isInitialLoading && (
             <tr>
@@ -254,15 +257,14 @@ const Pengecekan = () => {
         </Tabel>
 
         {showDetailModal && selectedId && <DetailPengecekan id={selectedId} onClose={() => setShowDetailModal(false)} />}
-        {showEditModal && selectedId && <EditPengecekan id={selectedId} onClose={() => setShowEditModal(false)} onUpdate={() => fetchData(true)} />}
+        {showEditModal && selectedId && canEditPengecekan && <EditPengecekan id={selectedId} onClose={() => setShowEditModal(false)} onUpdate={() => fetchData(true)} />}
         
-        {/* Modal untuk Buat Perbaikan */}
-        {showBuatPerbaikanModal && selectedPengecekanUntukPerbaikan && (
+        {showBuatPerbaikanModal && selectedPengecekanUntukPerbaikan && canInitiatePerbaikan && (
           <BuatPerbaikanModal
-            pengecekanData={selectedPengecekanUntukPerbaikan} // Kirim data pengecekan yang dipilih
-            loggedInUserId={loggedInUserId} // Kirim ID user yang login (untuk field user_id di perbaikan)
+            pengecekanData={selectedPengecekanUntukPerbaikan}
+            loggedInUserId={loggedInUserId}
             onClose={() => setShowBuatPerbaikanModal(false)}
-            onSuccess={handlePerbaikanCreated} // Callback setelah perbaikan sukses dibuat
+            onSuccess={handlePerbaikanCreated}
           />
         )}
       </div>

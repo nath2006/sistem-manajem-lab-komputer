@@ -1,128 +1,113 @@
-// EditPengumuman.js
-import React, { useState, useEffect } from "react";
-import { get, putWithFile } from "../../utils/api"; // Pastikan path ini benar
-import ModalContainer from "../DetailModal/ModalContainer"; // Pastikan path ini benar
-import LoadingSpinner from "../DetailModal/LoadingSpinner"; // Pastikan path ini benar
+// EditPengecekan.jsx
+import React, { useState, useEffect, useContext } from "react";
+import { get, put } from "../../utils/api"; // Menggunakan 'put' untuk JSON, atau sesuaikan jika 'putWithFile' bisa handle FormData tanpa file
+import ModalContainer from "../DetailModal/ModalContainer";
+import LoadingSpinner from "../DetailModal/LoadingSpinner";
+import { AuthContext } from "../../Context/AuthContext"; // Untuk mengambil user yang login jika diperlukan
 
-const EditPengumuman = ({ id, onClose, onUpdate }) => {
+const EditPengecekan = ({ id, onClose, onUpdate }) => {
+  const { state: authState } = useContext(AuthContext);
+  // const loggedInUserId = authState?.user?.user_id; // ID user yang sedang login, bisa digunakan untuk validasi atau field 'diubah_oleh'
+
   const [formData, setFormData] = useState({
-    judul: "",
-    content: "",
-    is_active: true,
+    user_id: "", // Akan di-fetch, biasanya tidak diedit
+    perangkat_id: "", // Akan di-fetch, biasanya tidak diedit
+    pemeriksaan_id: null, // Akan di-fetch, biasanya tidak diedit
+    tanggal_pengecekan: "",
+    ditemukan_kerusakan: "",
+    status_pengecekan: "Baru", // Default atau akan di-fetch
+    // Info tambahan yang mungkin ingin ditampilkan tapi tidak diedit
+    nama_user_pengecek: "",
+    nama_perangkat: "",
+    nama_lab: "",
   });
-  const [currentFilePath, setCurrentFilePath] = useState(null);
-  const [selectedFile, setSelectedFile] = useState(null); // Ini untuk objek File aktual
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const ASSET_BASE_URL = import.meta.env.VITE_ASSET_BASE_URL || 'http://localhost:5500'; // Sesuaikan port jika backend di 5000
-  const PENGUMUMAN_ASSET_SUBFOLDER = '/uploads/pengumuman/'; // Pastikan konsisten dengan backend static serving
-
   useEffect(() => {
-    const fetchDetailPengumuman = async () => {
+    const fetchDetailPengecekan = async () => {
       if (!id) {
-        setError("ID Pengumuman tidak valid.");
+        setError("ID Pengecekan tidak valid.");
         setLoading(false);
-        console.warn("EditPengumuman - fetchDetail: ID tidak valid, fetch dibatalkan.");
         return;
       }
-      console.log(`EditPengumuman - fetchDetail: Memulai fetch untuk ID ${id}`);
       setLoading(true);
+      setError("");
       try {
-        const response = await get(`/pengumuman/${id}`);
-        console.log("EditPengumuman - fetchDetail: Respons API GET:", response);
+        const response = await get(`/pengecekan/${id}`);
         if (response.data) {
+          const dataPengecekan = response.data;
           setFormData({
-            judul: response.data.judul || "",
-            content: response.data.content || "",
-            is_active: response.data.is_active === 1 || response.data.is_active === true,
+            user_id: dataPengecekan.user_id || "",
+            perangkat_id: dataPengecekan.perangkat_id || "",
+            pemeriksaan_id: dataPengecekan.pemeriksaan_id || null,
+            // Untuk tanggal, pastikan formatnya YYYY-MM-DD untuk input type="date"
+            tanggal_pengecekan: dataPengecekan.tanggal_pengecekan ? new Date(dataPengecekan.tanggal_pengecekan).toISOString().split('T')[0] : "",
+            ditemukan_kerusakan: dataPengecekan.ditemukan_kerusakan || "",
+            status_pengecekan: dataPengecekan.status_pengecekan || "Baru",
+            // Data tambahan untuk display (jika ada dan dikirim API detail)
+            nama_user_pengecek: dataPengecekan.nama_user || dataPengecekan.nama_user_pengecek || "",
+            nama_perangkat: dataPengecekan.nama_perangkat || "",
+            nama_lab: dataPengecekan.nama_lab || "",
           });
-          setCurrentFilePath(response.data.file_path);
-          console.log("EditPengumuman - fetchDetail: Data form di-set, currentFilePath:", response.data.file_path);
         } else {
-          setError("Data pengumuman tidak ditemukan dari API.");
-          console.warn("EditPengumuman - fetchDetail: Data tidak ditemukan di respons API.");
+          setError("Data pengecekan tidak ditemukan dari API.");
         }
       } catch (error) {
-        console.error("EditPengumuman - fetchDetail: Gagal mengambil data pengumuman:", error.response?.data || error.message || error);
-        setError("Gagal mengambil data pengumuman");
+        console.error("EditPengecekan - fetchDetail: Gagal mengambil data pengecekan:", error.response?.data || error.message || error);
+        setError("Gagal mengambil data pengecekan. " + (error.response?.data?.message || ""));
       } finally {
         setLoading(false);
       }
     };
-    fetchDetailPengumuman();
+    fetchDetailPengecekan();
   }, [id]);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    console.log("EditPengumuman - handleFileChange: File dipilih dari input:", file);
-    if (file) {
-      console.log("EditPengumuman - handleFileChange: Apakah file instance dari File?", file instanceof File);
-      console.log("EditPengumuman - handleFileChange: Tipe file:", file.type);
-      console.log("EditPengumuman - handleFileChange: Ukuran file:", file.size);
-    }
-    setSelectedFile(file || null); // Set ke null jika e.target.files kosong atau file tidak valid
   };
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
-    if (!formData.judul.trim() || !formData.content.trim()) {
-      setError("Judul dan Konten tidak boleh kosong.");
+    if (!formData.tanggal_pengecekan || !formData.ditemukan_kerusakan.trim() || !formData.status_pengecekan) {
+      setError("Tanggal Pengecekan, Kerusakan Ditemukan, dan Status Pengecekan tidak boleh kosong.");
       return;
     }
     setSaving(true);
     setError("");
 
-    console.log("EditPengumuman - handleSubmit: Memulai submit...");
-    console.log("EditPengumuman - handleSubmit: formData state:", formData);
-    console.log("EditPengumuman - handleSubmit: selectedFile state sebelum append:", selectedFile);
-
-    const dataToSubmit = new FormData();
-    dataToSubmit.append("judul", formData.judul);
-    dataToSubmit.append("content", formData.content);
-    dataToSubmit.append("is_active", formData.is_active ? 1 : 0);
-
-    if (selectedFile && selectedFile instanceof File) { // Pastikan selectedFile adalah objek File
-      dataToSubmit.append("file_pengumuman", selectedFile, selectedFile.name); // Key "file_pengumuman"
-      console.log("EditPengumuman - handleSubmit: File ditambahkan ke FormData dengan key 'file_pengumuman':", selectedFile);
-    } else if (selectedFile) {
-      console.warn("EditPengumuman - handleSubmit: selectedFile ada, tapi bukan instance dari File. Tidak di-append.", selectedFile);
-    } else {
-      console.log("EditPengumuman - handleSubmit: Tidak ada file baru yang dipilih (selectedFile null atau undefined).");
-    }
-
-    console.log("EditPengumuman - handleSubmit: Isi FormData yang akan dikirim:");
-    for (let pair of dataToSubmit.entries()) {
-      console.log(`FormData Entry: ${pair[0]} =`, pair[1]);
-    }
+    // Data yang akan dikirim untuk update.
+    // user_id dan perangkat_id biasanya tidak diubah.
+    // Jika backend Anda mengharapkannya, sertakan. Jika tidak, hapus.
+    const dataToSubmit = {
+      user_id: formData.user_id, // Jika backend mengharapkan user_id pengecek awal
+      perangkat_id: formData.perangkat_id, // Jika backend mengharapkan perangkat_id awal
+      pemeriksaan_id: formData.pemeriksaan_id, // Jika backend mengharapkannya
+      tanggal_pengecekan: formData.tanggal_pengecekan,
+      ditemukan_kerusakan: formData.ditemukan_kerusakan,
+      status_pengecekan: formData.status_pengecekan,
+      // Anda mungkin ingin menambahkan field 'diubah_oleh_user_id: loggedInUserId' jika ada di backend
+    };
 
     try {
-      // Pastikan fungsi 'put' di utils/api.js dikonfigurasi untuk mengirim FormData dengan benar
-      // Parameter ketiga 'true' biasanya menandakan bahwa 'dataToSubmit' adalah FormData
-      console.log("EditPengumuman - handleSubmit: Memanggil put API...");
-      const response = await putWithFile(`/pengumuman/update/${id}`, dataToSubmit, true);
-      console.log("EditPengumuman - handleSubmit: Respons API PUT:", response);
-      onUpdate();
-      onClose();
+      // Gunakan fungsi 'put' jika data adalah JSON.
+      // Jika Anda harus menggunakan putWithFile dan FormData, Anda perlu konversi dataToSubmit ke FormData
+      // const formDataInstance = new FormData();
+      // Object.keys(dataToSubmit).forEach(key => formDataInstance.append(key, dataToSubmit[key]));
+      // await putWithFile(`/pengecekan/update/${id}`, formDataInstance);
+
+      await put(`/pengecekan/update/${id}`, dataToSubmit); // Asumsi endpoint dan method PUT
+      onUpdate(); // Panggil callback onUpdate untuk refresh data di halaman list
+      onClose();  // Tutup modal
     } catch (error) {
-      console.error("EditPengumuman - handleSubmit: Gagal menyimpan data pengumuman:", error.response?.data || error.message || error);
-      let errorMessage = "Gagal mengubah data pengumuman.";
-      if (error.response && error.response.data && error.response.data.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      setError(errorMessage);
+      console.error("EditPengecekan - handleSubmit: Gagal menyimpan data pengecekan:", error.response?.data || error.message || error);
+      setError(error.response?.data?.message || "Gagal mengubah data pengecekan.");
     } finally {
       setSaving(false);
     }
@@ -130,7 +115,7 @@ const EditPengumuman = ({ id, onClose, onUpdate }) => {
 
   if (loading) {
     return (
-      <ModalContainer title="Edit Pengumuman" onClose={onClose}>
+      <ModalContainer title="Edit Data Pengecekan" onClose={onClose}>
         <LoadingSpinner />
       </ModalContainer>
     );
@@ -155,10 +140,17 @@ const EditPengumuman = ({ id, onClose, onUpdate }) => {
     </button>
   );
 
+  // Opsi untuk ENUM status_pengecekan
+  const statusPengecekanOptions = [
+    { value: "Baru", label: "Baru" },
+    { value: "Menunggu Perbaikan", label: "Menunggu Perbaikan" },
+    { value: "Sudah Ditangani", label: "Sudah Ditangani" },
+  ];
+
   return (
     <ModalContainer
-      title="Edit Pengumuman"
-      subtitle="Edit informasi pengumuman"
+      title="Edit Data Pengecekan"
+      subtitle="Ubah informasi data pengecekan perangkat"
       onClose={onClose}
       primaryButton={primaryButton}
       secondaryButton={secondaryButton}
@@ -170,71 +162,65 @@ const EditPengumuman = ({ id, onClose, onUpdate }) => {
           </div>
         )}
 
+        {/* Informasi yang mungkin tidak diedit tapi ditampilkan */}
+        {formData.nama_perangkat && (
+            <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
+                <p className="text-sm font-medium">Perangkat: <span className="font-normal">{formData.nama_perangkat} (ID: {formData.perangkat_id})</span></p>
+                {formData.nama_lab && <p className="text-sm font-medium">Lokasi: <span className="font-normal">{formData.nama_lab}</span></p>}
+                {formData.nama_user_pengecek && <p className="text-sm font-medium">Dicek Oleh: <span className="font-normal">{formData.nama_user_pengecek} (ID: {formData.user_id})</span></p>}
+                 {formData.pemeriksaan_id && <p className="text-sm font-medium">ID Pemeriksaan Terkait: <span className="font-normal">{formData.pemeriksaan_id}</span></p>}
+            </div>
+        )}
+
         <div>
-          <label htmlFor="judul" className="block mb-1.5 font-medium text-sm">Judul Pengumuman</label>
+          <label htmlFor="tanggal_pengecekan" className="block mb-1.5 font-medium text-sm">Tanggal Pengecekan</label>
           <input
-            type="text"
-            id="judul"
-            name="judul"
-            value={formData.judul}
+            type="date"
+            id="tanggal_pengecekan"
+            name="tanggal_pengecekan"
+            value={formData.tanggal_pengecekan}
             onChange={handleChange}
             className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-            placeholder="Masukan Judul Pengumuman"
             required
           />
         </div>
 
         <div>
-          <label htmlFor="content" className="block mb-1.5 font-medium text-sm">Konten</label>
+          <label htmlFor="ditemukan_kerusakan" className="block mb-1.5 font-medium text-sm">Kerusakan Ditemukan</label>
           <textarea
-            id="content"
-            name="content"
+            id="ditemukan_kerusakan"
+            name="ditemukan_kerusakan"
             rows="4"
-            value={formData.content}
+            value={formData.ditemukan_kerusakan}
             onChange={handleChange}
             className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-            placeholder="Masukan Isi Pengumuman"
+            placeholder="Jelaskan kerusakan yang ditemukan"
             required
           ></textarea>
         </div>
-        
+
         <div>
-          <label htmlFor="file" className="block mb-1.5 font-medium text-sm">File Pendukung (Opsional)</label>
-          {currentFilePath && !selectedFile && (
-            <div className="mb-2 text-xs text-gray-600">
-              File saat ini: <a href={`${ASSET_BASE_URL}${PENGUMUMAN_ASSET_SUBFOLDER}${currentFilePath}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{currentFilePath.split('/').pop() || currentFilePath}</a>
-            </div>
-          )}
-          {selectedFile && (
-             <div className="mb-2 text-xs text-gray-500">File baru dipilih: {selectedFile.name} ({Math.round(selectedFile.size / 1024)} KB)</div>
-          )}
-          <input
-            type="file"
-            id="file"
-            // name="file_pengumuman_input" // Atribut name HTML tidak terlalu krusial jika FormData di-append manual
-            onChange={handleFileChange}
-            className="block w-full text-sm text-gray-900 border border-gray-300 rounded-md cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            Kosongkan jika tidak ingin mengubah file. File baru akan menggantikan file lama.
-          </p>
+          <label htmlFor="status_pengecekan" className="block mb-1.5 font-medium text-sm">Status Pengecekan</label>
+          <select
+            id="status_pengecekan"
+            name="status_pengecekan"
+            value={formData.status_pengecekan}
+            onChange={handleChange}
+            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            required
+          >
+            {statusPengecekanOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <div className="pt-2">
-          <label className="flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              name="is_active"
-              checked={formData.is_active}
-              onChange={handleChange}
-              className="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="text-sm font-medium">Jadikan Pengumuman Aktif</span>
-          </label>
-        </div>
+        {/* Tombol submit sudah dihandle oleh ModalContainer jika primaryButton di-pass */}
       </form>
     </ModalContainer>
   );
 };
 
-export default EditPengumuman;
+export default EditPengecekan;
