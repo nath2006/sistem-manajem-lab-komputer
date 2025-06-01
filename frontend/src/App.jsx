@@ -10,7 +10,7 @@ import GuruPage from "./pages/Guru/GuruDashboard";
 import TeknisiPage from "./pages/Teknisi/TeknisiDashboard";
 import KoordinatorLabPage from "./pages/KoordinatorLab/KoordinatorLabDashboard";
 import KepalaLabPage from "./pages/KepalaLab/KepalaLabDashboard";
-import TeknisiDashboard from "./pages/Teknisi/TeknisiDashboard";
+
 
 // Features
 import User from "./features/KelolaUser/User";
@@ -25,6 +25,7 @@ import AddPengecekan from "./Components/Pengecekan/AddPengecekan";
 
 import Perbaikan from "./features/KelolaPerbaikan/Perbaikan";
 
+import Perangkat from "./features/KelolaDataPerangkat/Perangkat";
 
 function App() {
   return (
@@ -59,8 +60,9 @@ function App() {
             </Route>
 
             {/* Kepala Lab */}
-            <Route element={<RoleRoute allowedRoles={["Kepala Lab"]} />}>
+            <Route element={<RoleRoute allowedRoles={["Admin","Kepala Lab"]} />}>
               <Route path="/dashboard-kepala-lab" element={<KepalaLabPage />} />
+              <Route path="/kelola-perangkat" element={<Perangkat />} />
             </Route>
 
             {/* Guru */}

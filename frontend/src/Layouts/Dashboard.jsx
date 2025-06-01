@@ -59,7 +59,7 @@ const Dashboard = ({ title, children }) => {
     {
       name: "Kelola Data Perangkat",
       ic: <FaLaptopFile />,
-      to: "/kepala-lab/kelola-perangkat",
+      to: "/kelola-perangkat",
     },
   ];
 
@@ -114,7 +114,7 @@ const Dashboard = ({ title, children }) => {
     {
       name: "Kelola Data Perangkat",
       ic: <FaLaptopFile />,
-      to: "/admin/kelola-perangkat",
+      to: "/kelola-perangkat",
     },
     { name: "Jadwal Lab", ic: <FaRegCalendarDays />, to: "/admin/jadwal-lab" },
     { type: "divider" },
