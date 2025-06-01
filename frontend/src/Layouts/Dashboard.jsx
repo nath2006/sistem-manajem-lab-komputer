@@ -108,9 +108,13 @@ const Dashboard = ({ title, children }) => {
     { name: "Dashboard", ic: <FaHouse />, to: "/dashboard-guru" },
     { type: "divider" },
     {
-      name: "Pengajuan Pengajuan Jadwal Lab",
-      ic: <FaRegCalendarDays />,
+      name: "Pengajuan  Jadwal Lab",
+      ic: <FaCalendarCheck />,
       to: "/guru/pengajuan-jadwal",
+    },
+    { name: "Jadwal Lab", 
+      ic: < FaRegCalendarDays/>, 
+      to: "/jadwal-lab" 
     },
   ];
 
