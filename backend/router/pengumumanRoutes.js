@@ -6,15 +6,16 @@ import {
   getAnnouncementById,
   updateAnnouncement,
   deleteAnnouncement,
-} from "../controllers/pengumumanController.js"; // Pastikan path controller benar
-import { verifyToken, authorizeRoles } from "../middleware/authMiddleware.js"; // Pastikan path middleware benar
-import { multerUpload } from "../utils/multer.js"; // Impor dari lokasi yang benar
+} from "../controllers/pengumumanController.js"; 
+import { verifyToken, authorizeRoles } from "../middleware/authMiddleware.js"; 
+import { multerUpload } from "../utils/multer.js"; 
 
 const router = express.Router();
 
-// ... (route GET dan DELETE Anda)
-router.get("/", verifyToken, getAllAnnouncements);
-router.get("/:id", verifyToken, getAnnouncementById);
+//Get dan Detail tidak perlu login
+router.get("/",  getAllAnnouncements);
+router.get("/:id", getAnnouncementById);
+
 router.delete("/delete/:id", verifyToken, authorizeRoles(["Admin", "Koordinator Lab"]), deleteAnnouncement);
 
 // Rute untuk membuat pengumuman baru

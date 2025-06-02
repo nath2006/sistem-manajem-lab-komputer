@@ -37,6 +37,8 @@ import PengajuanJadwalLabPageGuru from "./features/PengajuanJadwalLab/PengajuanJ
 import AddJadwalLab from "./Components/KelolaJadwalLab/AddJadwalLab";
 import PengecekanStatus from "./Components/KelolaJadwalLab/PengecekanStatus";
 
+import PengumumanDetailPage from "./pages/Pengumuman/PengumumanDetailPage";
+
 function App() {
   return (
     <AuthProvider>
@@ -46,6 +48,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
 
+          <Route path="/pengumuman/:id" element={<PengumumanDetailPage />} />
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             
