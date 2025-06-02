@@ -174,12 +174,12 @@ const LoginPage = () => {
         <div className="flex flex-col w-full md:w-1/2 lg:w-2/3 bg-white p-8 md:p-16 rounded-xl shadow-lg md:rounded-none md:shadow-none">
             {/* Wrapper untuk logo dan judul selamat datang agar bisa dikontrol padding/marginnya jika perlu */}
             <div> 
-                <div className="headerWrapper flex items-center mb-4">
+                <div className="headerWrapper flex flex-col items-start mb-4">
                     <div className="h-20 w-20 mr-4">
                     <img src="/assets/images/login/logo.png" alt="Logo SIM Lab Komputer" className="object-contain h-full w-full"/>
                     </div>
-                    <h2 className="text-lg md:text-xl font-bold text-red-900">
-                    Selamat Datang di Sistem Informasi Manajemen Laboratorium Komputer
+                    <h2 className="mt-4 text-lg md:text-2xl font-bold text-red-900 ">
+                    Selamat Datang di Sistem Informasi Manajemen <br/>Laboratorium Komputer
                     </h2>
                 </div>
                 {/* Bagian teks Login di bawah header */}
