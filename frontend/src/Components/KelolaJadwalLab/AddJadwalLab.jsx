@@ -37,14 +37,22 @@ const AddJadwalLab = () => {
         if (response && Array.isArray(response.data)) {
           setLabs(response.data);
         } else {
-          console.warn("Data laboratorium tidak ditemukan atau format salah:", response);
+          console.warn(
+            "Data laboratorium tidak ditemukan atau format salah:",
+            response
+          );
           setLabs([]);
           // Pertimbangkan untuk setError di sini jika daftar lab penting untuk melanjutkan
           // setError("Gagal memuat daftar laboratorium. Tidak dapat membuat pengajuan.");
         }
       } catch (err) {
-        console.error("Gagal mengambil data laboratorium:", err.response?.data || err.message || err);
-        setError("Gagal memuat daftar laboratorium. Silakan coba muat ulang halaman.");
+        console.error(
+          "Gagal mengambil data laboratorium:",
+          err.response?.data || err.message || err
+        );
+        setError(
+          "Gagal memuat daftar laboratorium. Silakan coba muat ulang halaman."
+        );
       }
     };
     fetchLabs();
@@ -80,23 +88,22 @@ const AddJadwalLab = () => {
 
     // Validasi jam mulai vs jam selesai
     if (formData.jam_mulai >= formData.jam_selesai) {
-        setError("Jam mulai harus sebelum jam selesai.");
-        setIsSubmitting(false);
-        return;
+      setError("Jam mulai harus sebelum jam selesai.");
+      setIsSubmitting(false);
+      return;
     }
 
     // Validasi tanggal tidak boleh di masa lalu (opsional, tapi baik)
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Set ke awal hari
     const selectedDate = new Date(formData.tanggal_pakai);
-    selectedDate.setHours(0,0,0,0); // Normalisasi tanggal pilihan user
+    selectedDate.setHours(0, 0, 0, 0); // Normalisasi tanggal pilihan user
 
     if (selectedDate < today) {
-        setError("Tanggal pakai tidak boleh kurang dari tanggal hari ini.");
-        setIsSubmitting(false);
-        return;
+      setError("Tanggal pakai tidak boleh kurang dari tanggal hari ini.");
+      setIsSubmitting(false);
+      return;
     }
-
 
     const payload = {
       lab_id: formData.lab_id,
@@ -111,20 +118,88 @@ const AddJadwalLab = () => {
     // Jika backend memerlukan user_id dari frontend (meskipun biasanya dari token)
     // payload.user_id = authState.userId; // Sesuaikan dengan field di authState
 
-    console.log("AddJadwalLab - handleSubmit: Payload yang akan dikirim:", payload);
+    console.log(
+      "AddJadwalLab - handleSubmit: Payload yang akan dikirim:",
+      payload
+    );
+
+    // ... (kode sebelum try-catch tetap sama)
 
     try {
       // Gunakan 'post' dan endpoint yang benar
-      await post("/pengajuan/create", payload);
+      await post("/pengajuan/create", payload); // Sesuaikan path navigasi setelah berhasil
 
-      // Sesuaikan path navigasi setelah berhasil
-      navigate("/riwayat-pengajuan", { // Atau halaman lain yang relevan
+      navigate("/riwayat-pengajuan", {
+        // Atau halaman lain yang relevan
         state: { successMsg: "Pengajuan jadwal lab berhasil dikirim" },
       });
     } catch (err) {
-      console.error("AddJadwalLab - handleSubmit: Gagal mengirim pengajuan:", err.response?.data || err.message || err);
-      const apiErrorMessage = err.response?.data?.message || err.response?.data?.error;
-      setError(apiErrorMessage || err.message || "Gagal mengirim pengajuan. Silakan coba lagi.");
+      // Log detail error untuk diagnosis - tambahkan err.error dan err.message langsung
+      console.error(
+        "AddJadwalLab - handleSubmit: Gagal mengirim pengajuan (RAW):",
+        {
+          err_direct_error_prop: err.error, // <--- Periksa ini
+          err_direct_message_prop: err.message, // <--- Periksa ini
+          responseStatus: err.response?.status,
+          responseData: err.response?.data,
+          fullErrorObject: err,
+        }
+      );
+
+      let messageToDisplay = "Gagal mengirim pengajuan. Silakan coba lagi."; // Pesan default
+
+      // 1. Cek apakah 'err' secara langsung memiliki properti 'error' (berdasarkan log Anda)
+      if (typeof err.error === "string" && err.error.trim() !== "") {
+        messageToDisplay = err.error; // Ini SEHARUSNYA menangkap "Jadwal bentrok..."
+      }
+      // 2. Alternatif, cek apakah 'err' secara langsung memiliki properti 'message'
+      //    (ini untuk kasus jika API Anda terkadang mengembalikan { message: "..." } secara langsung di 'err')
+      //    dan pastikan itu bukan bagian dari err.response (yang mana undefined dalam kasus Anda)
+      else if (
+        typeof err.message === "string" &&
+        err.message.trim() !== "" &&
+        !err.response
+      ) {
+        messageToDisplay = err.message;
+      }
+      // 3. Jika tidak ada di 'err' langsung, baru cek struktur error standar Axios (err.response.data)
+      //    (Meskipun dalam kasus Anda err.response undefined, ini untuk jaga-jaga jika error lain berbeda)
+      else if (err.response && err.response.data) {
+        const apiErrorData = err.response.data;
+        if (
+          typeof apiErrorData.message === "string" &&
+          apiErrorData.message.trim() !== ""
+        ) {
+          messageToDisplay = apiErrorData.message;
+        } else if (
+          typeof apiErrorData.error === "string" &&
+          apiErrorData.error.trim() !== ""
+        ) {
+          messageToDisplay = apiErrorData.error;
+        } else if (
+          typeof apiErrorData === "string" &&
+          apiErrorData.trim() !== ""
+        ) {
+          messageToDisplay = apiErrorData;
+        }
+      }
+      // 4. Fallback terakhir ke err.message jika messageToDisplay masih default
+      //    Ini untuk error umum seperti "Network Error" atau jika err.message didefinisikan tapi tidak tertangkap di atas.
+      //    Dalam kasus Anda, err.message adalah undefined, jadi ini tidak akan berpengaruh untuk error spesifik ini.
+      if (
+        messageToDisplay === "Gagal mengirim pengajuan. Silakan coba lagi." &&
+        typeof err.message === "string" &&
+        err.message.trim() !== ""
+      ) {
+        messageToDisplay = err.message;
+      }
+
+      console.log(
+        "AddJadwalLab - handleSubmit: Pesan error FINAL yang akan ditampilkan ke user:",
+        messageToDisplay
+      );
+
+      setError(messageToDisplay);
     } finally {
       setIsSubmitting(false);
     }
@@ -144,7 +219,10 @@ const AddJadwalLab = () => {
         {/* Baris 1: Lab dan Tanggal Pakai */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <div className="mb-1">
-            <label htmlFor="lab_id" className="block mb-1.5 text-sm font-medium text-gray-700">
+            <label
+              htmlFor="lab_id"
+              className="block mb-1.5 text-sm font-medium text-gray-700"
+            >
               Pilih Laboratorium <span className="text-red-500">*</span>
             </label>
             <select
@@ -157,19 +235,30 @@ const AddJadwalLab = () => {
               disabled={labs.length === 0 && !error} // Disable jika lab belum load dan tidak ada error load lab
             >
               <option value="" disabled>
-                {labs.length === 0 && !error ? "Memuat daftar lab..." : "Pilih Laboratorium"}
+                {labs.length === 0 && !error
+                  ? "Memuat daftar lab..."
+                  : "Pilih Laboratorium"}
               </option>
-              {labs.map(lab => (
+              {labs.map((lab) => (
                 // Pastikan 'lab.id' atau 'lab.lab_id' dan 'lab.nama_lab' sesuai dengan respons API Anda
                 <option key={lab.lab_id || lab.id} value={lab.lab_id || lab.id}>
                   {lab.nama_lab}
                 </option>
               ))}
             </select>
-             {labs.length === 0 && error && <p className="text-xs text-red-500 mt-1">{error.includes("laboratorium") ? "Gagal memuat lab. Coba muat ulang." : ""}</p>}
+            {labs.length === 0 && error && (
+              <p className="text-xs text-red-500 mt-1">
+                {error.includes("laboratorium")
+                  ? "Gagal memuat lab. Coba muat ulang."
+                  : ""}
+              </p>
+            )}
           </div>
           <div className="mb-1">
-            <label htmlFor="tanggal_pakai" className="block mb-1.5 text-sm font-medium text-gray-700">
+            <label
+              htmlFor="tanggal_pakai"
+              className="block mb-1.5 text-sm font-medium text-gray-700"
+            >
               Tanggal Pakai <span className="text-red-500">*</span>
             </label>
             <input
@@ -188,7 +277,10 @@ const AddJadwalLab = () => {
         {/* Baris 2: Jam Mulai dan Jam Selesai */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-4">
           <div className="mb-1">
-            <label htmlFor="jam_mulai" className="block mb-1.5 text-sm font-medium text-gray-700">
+            <label
+              htmlFor="jam_mulai"
+              className="block mb-1.5 text-sm font-medium text-gray-700"
+            >
               Jam Mulai <span className="text-red-500">*</span>
             </label>
             <input
@@ -202,7 +294,10 @@ const AddJadwalLab = () => {
             />
           </div>
           <div className="mb-1">
-            <label htmlFor="jam_selesai" className="block mb-1.5 text-sm font-medium text-gray-700">
+            <label
+              htmlFor="jam_selesai"
+              className="block mb-1.5 text-sm font-medium text-gray-700"
+            >
               Jam Selesai <span className="text-red-500">*</span>
             </label>
             <input
@@ -216,11 +311,14 @@ const AddJadwalLab = () => {
             />
           </div>
         </div>
-        
+
         {/* Baris 3: Kelas dan Mata Pelajaran */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-4">
           <div className="mb-1">
-            <label htmlFor="kelas" className="block mb-1.5 text-sm font-medium text-gray-700">
+            <label
+              htmlFor="kelas"
+              className="block mb-1.5 text-sm font-medium text-gray-700"
+            >
               Kelas <span className="text-red-500">*</span>
             </label>
             <input
@@ -235,7 +333,10 @@ const AddJadwalLab = () => {
             />
           </div>
           <div className="mb-1">
-            <label htmlFor="mata_pelajaran" className="block mb-1.5 text-sm font-medium text-gray-700">
+            <label
+              htmlFor="mata_pelajaran"
+              className="block mb-1.5 text-sm font-medium text-gray-700"
+            >
               Mata Pelajaran <span className="text-red-500">*</span>
             </label>
             <input
@@ -253,7 +354,10 @@ const AddJadwalLab = () => {
 
         {/* Kegiatan */}
         <div className="mt-4 mb-1">
-          <label htmlFor="kegiatan" className="block mb-1.5 text-sm font-medium text-gray-700">
+          <label
+            htmlFor="kegiatan"
+            className="block mb-1.5 text-sm font-medium text-gray-700"
+          >
             Kegiatan <span className="text-red-500">*</span>
           </label>
           <textarea

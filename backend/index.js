@@ -84,8 +84,8 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, 'localhost', () => {
-  console.log(`Server berjalan di http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server berjalan di http://0.0.0.0:${PORT}`);
   console.log(`Folder statis 'uploads' disajikan pada path URL '/uploads'`);
   console.log(`Contoh URL file: http://localhost:${PORT}/uploads/pengumuman/NAMA_FILE_ANDA.ekstensi`);
 });
