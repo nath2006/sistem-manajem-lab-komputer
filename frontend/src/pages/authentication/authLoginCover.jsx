@@ -4,9 +4,10 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 // Menggunakan fungsi get dan post dari utils/api.js Anda
 import { get, post } from "../../utils/api";
 import Notification from "../../Components/Notification/Notif";
-import { useNavigate } from "react-router-dom"; // useNavigate sudah diimpor
+import { useNavigate } from "react-router-dom"; 
 import { AuthContext } from "../../Context/AuthContext";
 import useTitle from "../../utils/useTitle";
+import truncateText from "../../utils/truncateText"; 
 
 const LoginPage = () => {
   useTitle("Login - SIM Lab Komputer");
@@ -176,7 +177,7 @@ const LoginPage = () => {
             <div> 
                 <div className="headerWrapper flex flex-col items-start mb-4">
                     <div className="h-20 w-20 mr-4">
-                    <img src="/assets/images/login/logo.png" alt="Logo SIM Lab Komputer" className="object-contain h-full w-full"/>
+                    <img src="/assets/images/login/DUMMY-LOGO.png" alt="Logo SIM Lab Komputer" className="object-contain h-full w-full"/>
                     </div>
                     <h2 className="mt-4 text-lg md:text-2xl font-bold text-red-900 ">
                     Selamat Datang di Sistem Informasi Manajemen <br/>Laboratorium Komputer
@@ -300,7 +301,7 @@ const LoginPage = () => {
                       </h5>
                       <p className="text-xs md:text-sm text-gray-500 mt-1 mb-2">{item.date}</p>
                       <p className="text-sm text-gray-700 mt-1 line-clamp-5 md:line-clamp-6 flex-grow">
-                        {item.content}
+                        {truncateText(item.content, 150)}
                       </p>
                     </div>
                   </Card>

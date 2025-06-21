@@ -23,17 +23,16 @@ const DasboardAdmin = () => {
   const fetchAdminDashboardData = async () => {
     try {
       const statsResponse = await get("/dashboard/admin/stats");
-      // Asumsi statsResponse.data adalah objek yang berisi semua statistik
-      // e.g., { totalOnlineUsers: 5, totalPerangkat: 10, ... }
-      setDashboardStats(statsResponse.data || {}); // Beri default empty object jika null/undefined
+      
+      setDashboardStats(statsResponse.data || {}); 
 
       const labsResponse = await get("/dashboard/admin/labs-with-heads");
-      // Asumsi labsResponse.data adalah array objek lab
-      setLabsData(labsResponse.data || []); // Beri default empty array
+
+      setLabsData(labsResponse.data || []); 
 
       const usersResponse = await get("/dashboard/admin/users-with-roles");
-      // Asumsi usersResponse.data adalah array objek user
-      setUsersData(usersResponse.data || []); // Beri default empty array
+      
+      setUsersData(usersResponse.data || []); 
 
     } catch (error) {
       console.error("Error fetching admin dashboard data:", error);
@@ -45,17 +44,17 @@ const DasboardAdmin = () => {
   };
 
   useEffect(() => {
-    fetchAdminDashboardData(); // Panggil saat komponen dimuat
+    fetchAdminDashboardData(); 
 
     const refreshInterval = parseInt(import.meta.env.VITE_REFRESH_INTERVAL || "15000", 10); // Interval refresh
     const intervalId = setInterval(fetchAdminDashboardData, refreshInterval);
 
-    // Bersihkan interval saat komponen di-unmount
+    
     return () => clearInterval(intervalId);
   }, []);
 
   const headTableLabs = ["No", "Nama Lab", "Kepala Lab"];
-  const headTableUsers = ["No", "Nama User", "Role"]; // Mengganti "User" menjadi "Nama User" untuk kejelasan
+  const headTableUsers = ["No", "Nama User", "Role"]; 
 
   return (
     <div className="min-h-screen flex flex-col">

@@ -14,7 +14,7 @@ import {
   FaCalendarCheck,
   FaCalendarDay
 } from "react-icons/fa6";
-import img from "../images/logo.png"; // Pastikan path ini benar
+import img from "../assets/DUMMY-LOGO.png"; // Pastikan path ini benar
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { post } from "../utils/api"; // Pastikan path ini benar
@@ -201,6 +201,7 @@ const Dashboard = ({ title, children }) => {
     <>
       <ModalProfil modal={{ showYourProfile, setShowYourProfile }} />
       <div>
+      
         <nav className="fixed top-0 z-50 w-full h-[69px] bg-white border-b border-maroon">
           <div className="h-full px-3 py-4 lg:px-5 lg:pl-3">
             <div className="flex items-center justify-between">
@@ -220,8 +221,9 @@ const Dashboard = ({ title, children }) => {
                     className="w-[32px] me-3" // bg-white dihapus jika logo sudah transparan
                     alt="Logo SMK Letris Indonesia 2"
                   />
+                  
                   <span className="self-center text-xl font-bold text-gray-800 sm:text-2xl whitespace-nowrap">
-                    SMK LETRIS INDONESIA 2
+                    Sekolah Anda
                   </span>
                 </div>
               </div>
@@ -357,7 +359,7 @@ const Dashboard = ({ title, children }) => {
           }`}
         >
           {/* Ganti bg-neutral-100/20 menjadi bg-gray-50 atau warna netral lain */}
-          <div className="bg-white ">
+          <div className="">
             {/* Tambah padding, bg-white, dan shadow untuk area konten jika diinginkan */}
             {children}
           </div>
