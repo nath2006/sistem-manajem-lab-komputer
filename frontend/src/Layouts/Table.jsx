@@ -6,15 +6,14 @@ import { FaAngleRight, FaAngleLeft } from 'react-icons/fa6';
 
 const Tabel = ({
   title,
-  breadcrumbContext, // Prop baru untuk konteks breadcrumb (misalnya, role)
+  breadcrumbContext, 
   headers,
   children,
   to,
-  // handle, // Prop 'handle' tidak digunakan, bisa dipertimbangkan untuk dihapus jika tidak ada rencana penggunaan
   data,
   itemsPerPage = 5,
   renderRow,
-  buttonText = "Tambah Data" // Prop baru untuk teks tombol tambah, dengan nilai default
+  buttonText = "Tambah Data" 
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);

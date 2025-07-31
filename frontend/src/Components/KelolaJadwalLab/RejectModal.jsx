@@ -1,6 +1,6 @@
 // src/Components/Pengajuan/RejectPengajuanModal.jsx
 import React, { useState, useEffect } from 'react';
-import ModalContainer from '../DetailModal/ModalContainer'; // Sesuaikan path ke ModalContainer Anda
+import ModalContainer from '../DetailModal/ModalContainer'; 
 
 const RejectPengajuanModal = ({ onClose, onSubmit, requestData, isSubmitting }) => {
   const [rejectionReason, setRejectionReason] = useState('');

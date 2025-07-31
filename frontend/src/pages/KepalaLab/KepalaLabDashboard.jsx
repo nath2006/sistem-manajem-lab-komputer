@@ -1,13 +1,13 @@
 // src/pages/KepalaLab/KepalaLabPage.js
 import React, { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../../Context/AuthContext"; // Sesuaikan path jika perlu
-import Dashboard from "../../Layouts/Dashboard"; // Sesuaikan path jika perlu
-import Footer from "../../components/Footer"; // Sesuaikan path jika perlu
-import { getGreetingTime } from "../../utils/greetingTime"; // Sesuaikan path jika perlu
+import { AuthContext } from "../../Context/AuthContext"; 
+import Dashboard from "../../Layouts/Dashboard"; 
+import Footer from "../../components/Footer"; 
+import { getGreetingTime } from "../../utils/greetingTime"; 
 import moment from "moment";
-import useTitle from "../../utils/useTitle"; // Sesuaikan path jika perlu
-import { get } from "../../utils/api"; // Sesuaikan path jika perlu
+import useTitle from "../../utils/useTitle"; 
+import { get } from "../../utils/api"; 
 import {
   FaTasks,
   FaHourglassHalf,
@@ -70,7 +70,7 @@ export default function KepalaLabPage() {
         typeof response.data === "object" &&
         response.data !== null
       ) {
-        // Pastikan properti yang diharapkan ada dan parse, default ke 0 jika NaN atau hilang
+        
         setPengajuanStats({
           menunggu: parseInt(response.data.menunggu, 10) || 0,
           disetujui: parseInt(response.data.disetujui, 10) || 0,
@@ -78,7 +78,7 @@ export default function KepalaLabPage() {
           total_filter: parseInt(response.data.total_filter, 10) || 0,
         });
       } else {
-        // Di sinilah error spesifik Anda kemungkinan besar dipicu
+        
         console.error(
           "KepalaLabPage - API response.data is not a valid object or is null. Response:",
           response
@@ -92,21 +92,19 @@ export default function KepalaLabPage() {
           disetujui: 0,
           ditolak: 0,
           total_filter: 0,
-        }); // Reset stats
+        }); 
       }
     } catch (err) {
       console.error("KepalaLabPage - Error fetching pengajuan stats:", err);
-      // Log objek error untuk melihat apakah ada detail lebih lanjut (misalnya, err.response)
       console.error(
         "KepalaLabPage - Detailed error object:",
         err.response || err.message || err
       );
 
       if (isInitialLoad) {
-        // Coba dapatkan pesan yang lebih spesifik dari objek error
         const message =
           err.response?.data?.message ||
-          (typeof err.response?.data === "string" ? err.response.data : null) || // Jika response.data adalah string error
+          (typeof err.response?.data === "string" ? err.response.data : null) || 
           err.message ||
           "Gagal mengambil data statistik pengajuan.";
         setErrorStats(message);
@@ -124,11 +122,11 @@ export default function KepalaLabPage() {
 
   useEffect(() => {
     fetchPengajuanStats(true);
-    // Anda bisa menambahkan interval refresh jika statistik perlu sering diperbarui
+    // interval refresh jika statistik perlu sering diperbarui
     // const refreshInterval = 300000; // 5 menit
     // const interval = setInterval(() => fetchPengajuanStats(false), refreshInterval);
     // return () => clearInterval(interval);
-  }, []); // Dependency array kosong agar hanya berjalan sekali saat mount
+  }, []); 
 
   return (
     <>
@@ -145,7 +143,6 @@ export default function KepalaLabPage() {
               </p>
             </div>
 
-            {/* Shortcut ACC Pengajuan */}
             <div className="mb-8 md:mb-12 group">
               <div
                 className="h-[70px] max-w-full bg-gradient-to-r from-red-500 to-red-600 rounded-xl shadow-lg hover:shadow-xl hover:cursor-pointer transition-all duration-300 ease-in-out transform hover:-translate-y-1 active:translate-y-0"

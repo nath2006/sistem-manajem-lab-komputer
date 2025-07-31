@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";   
 import { get } from "../../utils/api";
 import InfoItem from "../DetailModal/InfoItem"; 
 import InfoSection from "../DetailModal/InfoSection"; 

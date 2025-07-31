@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
 import { Card } from "flowbite-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-// Menggunakan fungsi get dan post dari utils/api.js Anda
+
 import { get, post } from "../../utils/api";
 import Notification from "../../Components/Notification/Notif";
 import { useNavigate } from "react-router-dom"; 
@@ -15,7 +15,7 @@ const LoginPage = () => {
   const { state, dispatch } = useContext(AuthContext);
   const [form, setForm] = useState({ username: "", password: "" });
   const [errorMsg, setErrorMsg] = useState("");
-  const navigate = useNavigate(); // useNavigate sudah diinisialisasi
+  const navigate = useNavigate(); 
 
   // State untuk pengumuman dinamis
   const [apiAnnouncements, setApiAnnouncements] = useState([]);

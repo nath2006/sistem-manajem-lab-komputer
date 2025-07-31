@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { get } from "../../utils/api"; // Sesuaikan path ke utils/api.js jika berbeda
-import useTitle from "../../utils/useTitle"; // Asumsi Anda memiliki hook ini, sesuaikan path jika berbeda
+import { get } from "../../utils/api"; 
+import useTitle from "../../utils/useTitle"; 
 import { Card, Spinner, Alert, Button } from "flowbite-react";
 import { ArrowLeft, Download, Paperclip } from "lucide-react";
 

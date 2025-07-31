@@ -1,11 +1,11 @@
 // AddLaboratorium.js
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { postWithFile, get } from "../../utils/api"; // Impor get untuk mengambil daftar user
+import { postWithFile, get } from "../../utils/api"; 
 import Dashboard from "../../Layouts/Dashboard";
 import useTitle from "../../utils/useTitle";
-import FormContainer from "../../Components/FormContainer"; // Pastikan path ini benar
-import { AuthContext } from "../../Context/AuthContext"; // Jika perlu info user login
+import FormContainer from "../../Components/FormContainer"; 
+import { AuthContext } from "../../Context/AuthContext"; 
 
 const AddLaboratorium = () => {
   useTitle("Tambah Laboratorium - Dashboard");
@@ -16,14 +16,14 @@ const AddLaboratorium = () => {
     nama_lab: "",
     lokasi: "",
     kapasitas: "",
-    kepala_lab_id: "", // Akan diisi dengan user_id Kepala Lab
+    kepala_lab_id: "", 
     deskripsi: "",
-    status: "Tersedia", // Default status
-    jam_buka: "07:00",   // Default jam buka (format HH:MM)
-    jam_tutup: "16:00",  // Default jam tutup (format HH:MM)
+    status: "Tersedia", 
+    jam_buka: "07:00",   
+    jam_tutup: "16:00",  
   });
-  const [selectedFoto, setSelectedFoto] = useState(null); // Untuk file foto lab
-  const [users, setUsers] = useState([]); // Untuk daftar user (calon Kepala Lab)
+  const [selectedFoto, setSelectedFoto] = useState(null); 
+  const [users, setUsers] = useState([]); 
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -32,8 +32,6 @@ const AddLaboratorium = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        // Ambil user dengan role yang relevan untuk menjadi Kepala Lab
-        // Sesuaikan query parameter 'role' jika diperlukan oleh backend Anda
         const response = await get("/user?roles=Kepala Lab,Admin,Koordinator Lab"); 
         if (response && Array.isArray(response.data)) {
           setUsers(response.data);
@@ -88,12 +86,10 @@ const AddLaboratorium = () => {
     dataToSubmit.append("kepala_lab_id", formData.kepala_lab_id);
     dataToSubmit.append("deskripsi", formData.deskripsi);
     dataToSubmit.append("status", formData.status);
-    // Pastikan format jam sesuai dengan yang diharapkan backend (misal HH:MM:SS)
     dataToSubmit.append("jam_buka", `${formData.jam_buka}:00`); 
     dataToSubmit.append("jam_tutup", `${formData.jam_tutup}:00`);
 
     if (selectedFoto && selectedFoto instanceof File) {
-      // Pastikan key "foto_lab" sesuai dengan yang diharapkan Multer di backend
       dataToSubmit.append("foto_lab", selectedFoto, selectedFoto.name);
       console.log("AddLaboratorium - handleSubmit: Foto lab ditambahkan ke FormData:", selectedFoto);
     } else {
@@ -110,7 +106,6 @@ const AddLaboratorium = () => {
     }
 
     try {
-      // Gunakan postWithFile dan endpoint yang benar untuk create lab
       await postWithFile("/lab/create", dataToSubmit);
 
       navigate("/kelola/data-lab", { 

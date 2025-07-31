@@ -2,12 +2,12 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-const BASE_URL = import.meta.env.VITE_BASE_URL; // Misal: 'http://localhost:5500/api'
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: {
-    'Content-Type': 'application/json', // Default Content-Type untuk request JSON biasa
+    'Content-Type': 'application/json', 
   },
 });
 
@@ -32,11 +32,11 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
     
     if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true; // Tandai request agar tidak di-retry berulang kali jika refresh gagal
+      originalRequest._retry = true; 
       
       try {
         console.log("Attempting to refresh token...");
-        const refreshApiClient = axios.create({ baseURL: BASE_URL }); // Instance baru untuk menghindari loop interceptor
+        const refreshApiClient = axios.create({ baseURL: BASE_URL }); 
         const refreshToken = Cookies.get('refresh_token');
 
         if (!refreshToken) {
@@ -48,7 +48,7 @@ apiClient.interceptors.response.use(
 
         // Sesuaikan endpoint dan payload untuk refresh token Anda
         const response = await refreshApiClient.post(`/auth/refresh-token`, { refreshToken }); 
-        const newAuthToken = response.data.token; // Sesuaikan dengan struktur respons API Anda
+        const newAuthToken = response.data.token; 
         const newRefreshToken = response.data.refreshToken; 
         
         if (newAuthToken) {
@@ -58,50 +58,47 @@ apiClient.interceptors.response.use(
             secure: import.meta.env.PROD, 
             sameSite: 'Strict'
           });
-          if (newRefreshToken) { // Jika backend juga mengirim refresh token baru
+          if (newRefreshToken) {
             Cookies.set('refresh_token', newRefreshToken, { /* opsi cookie, misal httpOnly, secure, sameSite */ });
           }
           
-          // Update default header untuk request apiClient selanjutnya
+          // Update default header 
           apiClient.defaults.headers.common['Authorization'] = `Bearer ${newAuthToken}`;
           // Update header untuk request asli yang gagal
           originalRequest.headers['Authorization'] = `Bearer ${newAuthToken}`;
-          return apiClient(originalRequest); // Ulangi request asli dengan token baru
+          return apiClient(originalRequest); 
         } else {
-          // Jika tidak ada token baru meskipun refresh berhasil (seharusnya tidak terjadi jika API benar)
           throw new Error("New token not received after refresh attempt.");
         }
       } catch (refreshError) {
         console.error("Refresh token failed, logging out:", refreshError.response?.data || refreshError.message);
         Cookies.remove('auth_token');
         Cookies.remove('refresh_token');
-        // window.location.href = '/login'; // Pertimbangkan cara penanganan yang lebih baik
-        return Promise.reject(refreshError); // Lempar error refresh agar bisa ditangani lebih lanjut jika perlu
+        // window.location.href = '/login';
+        return Promise.reject(refreshError); 
       }
     }
     
-    // Untuk error selain 401 atau jika sudah di-retry
+
     return Promise.reject(error);
   }
 );
 
-// --- FUNGSI API STANDAR (application/json) ---
 
 export const get = async (endpoint, params = {}) => {
   try {
     const response = await apiClient.get(endpoint, { params });
-    return response.data; // Umumnya komponen hanya perlu response.data
+    return response.data; 
   } catch (error) {
     console.error(`Error in GET request to ${endpoint}:`, error.response?.data || error.message || error);
-    throw error.response?.data || error; // Lempar error yang lebih informatif
+    throw error.response?.data || error; 
   }
 };
 
 export const post = async (endpoint, data = {}) => {
   try {
-    // Menggunakan apiClient yang defaultnya application/json
     const response = await apiClient.post(endpoint, data);
-    return response; // Kembalikan seluruh objek response (termasuk response.data, status, dll)
+    return response; 
   } catch (error) {
     console.error(`Error in POST request to ${endpoint}:`, error.response?.data || error.message || error);
     throw error.response?.data || error;
@@ -110,7 +107,6 @@ export const post = async (endpoint, data = {}) => {
 
 export const put = async (endpoint, data = {}) => {
   try {
-    // Menggunakan apiClient yang defaultnya application/json
     const response = await apiClient.put(endpoint, data);
     return response;
   } catch (error) {
@@ -130,10 +126,9 @@ export const deleteData = async (endpoint) => {
 };
 
 
-// --- FUNGSI UNTUK REQUEST DENGAN FILE (FormData) ---
 
 /**
- * Mengirim request POST dengan FormData (misalnya untuk membuat entitas baru dengan file).
+ * Mengirim request POST dengan FormData ( untuk membuat entitas baru dengan file).
  * @param {string} endpoint - Endpoint API.
  * @param {FormData} formData - Objek FormData yang berisi data teks dan file.
  * @returns {Promise<AxiosResponse<any>>} - Respons dari Axios.
@@ -156,7 +151,7 @@ export const postWithFile = async (endpoint, formData) => {
 };
 
 /**
- * Mengirim request PUT dengan FormData (misalnya untuk memperbarui entitas dengan file).
+ * Mengirim request PUT dengan FormData (untuk memperbarui entitas dengan file).
  * @param {string} endpoint - Endpoint API.
  * @param {FormData} formData - Objek FormData yang berisi data teks dan file.
  * @returns {Promise<AxiosResponse<any>>} - Respons dari Axios.
@@ -175,4 +170,4 @@ export const putWithFile = async (endpoint, formData) => {
   }
 };
 
-export default apiClient; // Ekspor apiClient jika ada bagian lain yang menggunakannya secara langsung
+export default apiClient; 

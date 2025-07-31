@@ -1,7 +1,7 @@
 // src/Components/Perangkat/EditPerangkat.jsx
 import React, { useState, useEffect, useContext } from "react";
 import { get, putWithFile } from "../../utils/api";
-import ModalFormContainer from "../DetailModal/ModalContainer"; // Ini adalah ModalContainer Anda
+import ModalFormContainer from "../DetailModal/ModalContainer";
 import { AuthContext } from "../../Context/AuthContext";
 import LoadingSpinner from "../DetailModal/LoadingSpinner";
 
@@ -19,6 +19,7 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
     nomor_inventaris: "",
     _method: "PUT",
   });
+  
   const [selectedFile, setSelectedFile] = useState(null);
   const [currentImageUrl, setCurrentImageUrl] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -28,7 +29,7 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const { state: authState } = useContext(AuthContext); // Pastikan ini ada
+  const { state: authState } = useContext(AuthContext); 
   const userRole = authState?.role;
   const isAdmin = userRole === 'Admin';
   const isKepalaLab = userRole === 'Kepala Lab';

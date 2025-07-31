@@ -26,9 +26,9 @@ const TeknisiDashboard = () => {
 
   const fetchTeknisiStats = async (isInitialLoad = false) => {
     if (isInitialLoad) setIsLoadingStats(true);
-    setErrorStats(""); // Reset error setiap fetch
+    setErrorStats(""); 
     try {
-      // Sesuaikan endpoint dengan yang Anda buat di backend
+
       const response = await get("/dashboard/teknisi/stats"); 
       if (response && response.data) {
         setStats({
@@ -37,12 +37,12 @@ const TeknisiDashboard = () => {
         });
       } else {
         if(isInitialLoad) setErrorStats("Data statistik tidak ditemukan.");
-        setStats({ totalPengecekanAktif: 0, totalRiwayatPerbaikan: 0 }); // Reset ke default jika data aneh
+        setStats({ totalPengecekanAktif: 0, totalRiwayatPerbaikan: 0 }); 
       }
     } catch (err) {
       console.error("Error fetching teknisi dashboard stats:", err.response?.data || err.message || err);
       if(isInitialLoad) setErrorStats("Gagal mengambil data statistik dashboard Teknisi.");
-      setStats({ totalPengecekanAktif: 0, totalRiwayatPerbaikan: 0 }); // Reset ke default jika error
+      setStats({ totalPengecekanAktif: 0, totalRiwayatPerbaikan: 0 }); 
     } finally {
       if (isInitialLoad) setIsLoadingStats(false);
     }
@@ -90,8 +90,8 @@ const TeknisiDashboard = () => {
           <div className="mb-8 md:mb-12 group">
             <div 
               className="h-[70px] max-w-full rounded-xl shadow-lg hover:shadow-xl hover:cursor-pointer transition-all duration-300 ease-in-out transform hover:-translate-y-1 active:translate-y-0"
-              style={{ backgroundColor: '#F90000' }} // Background Merah
-              onClick={() => navigate('/kelola-pengecekan')} // Arahkan ke halaman kelola pengecekan
+              style={{ backgroundColor: '#F90000' }} 
+              onClick={() => navigate('/kelola-pengecekan')} 
             >
               <div className="flex justify-start items-center h-full mx-4 sm:mx-6">
                 <div className="p-3 bg-white/20 rounded-full mr-4">

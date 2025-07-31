@@ -1,6 +1,6 @@
 // DetailLaboratorium.js
 import React, { useState, useEffect } from "react";
-import { get } from "../../utils/api"; // Pastikan path ini benar
+import { get } from "../../utils/api";
 import InfoItem from "../DetailModal/InfoItem"; 
 import InfoSection from "../DetailModal/InfoSection"; 
 import ModalContainer from "../DetailModal/ModalContainer"; 
@@ -9,24 +9,24 @@ import LoadingSpinner from "../DetailModal/LoadingSpinner";
 // import formatDate from '../../utils/formatDateView'; 
 
 const DetailLaboratorium = ({ id, onClose }) => {
-  const [labData, setLabData] = useState(null); // Menggunakan nama state yang lebih spesifik
+  const [labData, setLabData] = useState(null); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   // Sesuaikan ASSET_BASE_URL dan path subfolder untuk foto lab
-  const ASSET_BASE_URL = import.meta.env.VITE_ASSET_BASE_URL || 'http://localhost:5500'; // Port server Anda
-  const LAB_IMAGE_SUBFOLDER = '/uploads/labs/'; // Path ke folder foto lab di server
+  const ASSET_BASE_URL = import.meta.env.VITE_ASSET_BASE_URL || 'http://localhost:5500'; 
+  const LAB_IMAGE_SUBFOLDER = '/uploads/labs/'; 
 
   useEffect(() => {
     const fetchLabData = async () => {
       try {
-        const response = await get(`/lab/${id}`); // Endpoint untuk detail lab
-        console.log("Detail Lab API Response:", response); // Untuk debugging
+        const response = await get(`/lab/${id}`); 
+        console.log("Detail Lab API Response:", response); 
         if (response && response.data) {
           setLabData(response.data);
         } else {
           setError("Data laboratorium tidak ditemukan atau format respons tidak sesuai.");
-          setLabData(null); // Pastikan labData null jika error
+          setLabData(null); 
         }
       } catch (err) {
         setError("Gagal mengambil data laboratorium");

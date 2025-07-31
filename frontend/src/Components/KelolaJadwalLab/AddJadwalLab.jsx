@@ -3,16 +3,16 @@
 
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { post, get } from "../../utils/api"; // Pastikan Anda memiliki fungsi 'post' (bukan 'postWithFile') dan 'get'
+import { post, get } from "../../utils/api"; 
 import Dashboard from "../../Layouts/Dashboard";
 import useTitle from "../../utils/useTitle";
-import FormContainer from "../../Components/FormContainer"; // Pastikan path ini benar
-import { AuthContext } from "../../Context/AuthContext"; // Info user yang login, mungkin tidak langsung dipakai di payload tapi bisa berguna
+import FormContainer from "../FormContainer"; 
+import { AuthContext } from "../../Context/AuthContext"; 
 
 const AddJadwalLab = () => {
   useTitle("Pengajuan Jadwal Lab - Dashboard");
   const navigate = useNavigate();
-  const { state: authState } = useContext(AuthContext); // Info user yang login
+  const { state: authState } = useContext(AuthContext); 
 
   const [formData, setFormData] = useState({
     lab_id: "",
@@ -21,9 +21,9 @@ const AddJadwalLab = () => {
     jam_selesai: "",
     kelas: "",
     mata_pelajaran: "",
-    kegiatan: "Jadwal Biasa", // Default value
+    kegiatan: "Jadwal Biasa", 
   });
-  const [labs, setLabs] = useState([]); // Untuk daftar laboratorium
+  const [labs, setLabs] = useState([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -32,8 +32,7 @@ const AddJadwalLab = () => {
   useEffect(() => {
     const fetchLabs = async () => {
       try {
-        // Sesuaikan endpoint ini jika berbeda untuk mengambil daftar lab
-        const response = await get("/lab"); // Atau /lab/list, /lab/all, dll.
+        const response = await get("/lab"); 
         if (response && Array.isArray(response.data)) {
           setLabs(response.data);
         } else {
@@ -42,8 +41,6 @@ const AddJadwalLab = () => {
             response
           );
           setLabs([]);
-          // Pertimbangkan untuk setError di sini jika daftar lab penting untuk melanjutkan
-          // setError("Gagal memuat daftar laboratorium. Tidak dapat membuat pengajuan.");
         }
       } catch (err) {
         console.error(
@@ -93,11 +90,10 @@ const AddJadwalLab = () => {
       return;
     }
 
-    // Validasi tanggal tidak boleh di masa lalu (opsional, tapi baik)
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Set ke awal hari
+    today.setHours(0, 0, 0, 0); 
     const selectedDate = new Date(formData.tanggal_pakai);
-    selectedDate.setHours(0, 0, 0, 0); // Normalisasi tanggal pilihan user
+    selectedDate.setHours(0, 0, 0, 0); 
 
     if (selectedDate < today) {
       setError("Tanggal pakai tidak boleh kurang dari tanggal hari ini.");
@@ -107,16 +103,14 @@ const AddJadwalLab = () => {
 
     const payload = {
       lab_id: formData.lab_id,
-      tanggal_pakai: formData.tanggal_pakai, // Format YYYY-MM-DD dari input type="date"
-      jam_mulai: formData.jam_mulai, // Format HH:MM dari input type="time"
-      jam_selesai: formData.jam_selesai, // Format HH:MM dari input type="time"
+      tanggal_pakai: formData.tanggal_pakai,
+      jam_mulai: formData.jam_mulai, 
+      jam_selesai: formData.jam_selesai, 
       kelas: formData.kelas,
       mata_pelajaran: formData.mata_pelajaran,
       kegiatan: formData.kegiatan,
     };
 
-    // Jika backend memerlukan user_id dari frontend (meskipun biasanya dari token)
-    // payload.user_id = authState.userId; // Sesuaikan dengan field di authState
 
     console.log(
       "AddJadwalLab - handleSubmit: Payload yang akan dikirim:",
@@ -126,20 +120,19 @@ const AddJadwalLab = () => {
     // ... (kode sebelum try-catch tetap sama)
 
     try {
-      // Gunakan 'post' dan endpoint yang benar
-      await post("/pengajuan/create", payload); // Sesuaikan path navigasi setelah berhasil
+      await post("/pengajuan/create", payload); 
 
       navigate("/riwayat-pengajuan", {
         // Atau halaman lain yang relevan
         state: { successMsg: "Pengajuan jadwal lab berhasil dikirim" },
       });
     } catch (err) {
-      // Log detail error untuk diagnosis - tambahkan err.error dan err.message langsung
+      
       console.error(
         "AddJadwalLab - handleSubmit: Gagal mengirim pengajuan (RAW):",
         {
-          err_direct_error_prop: err.error, // <--- Periksa ini
-          err_direct_message_prop: err.message, // <--- Periksa ini
+          err_direct_error_prop: err.error, 
+          err_direct_message_prop: err.message, 
           responseStatus: err.response?.status,
           responseData: err.response?.data,
           fullErrorObject: err,

@@ -1,8 +1,8 @@
 // EditPengumuman.js
 import React, { useState, useEffect } from "react";
-import { get, putWithFile } from "../../utils/api"; // Pastikan path ini benar
-import ModalContainer from "../DetailModal/ModalContainer"; // Pastikan path ini benar
-import LoadingSpinner from "../DetailModal/LoadingSpinner"; // Pastikan path ini benar
+import { get, putWithFile } from "../../utils/api";
+import ModalContainer from "../DetailModal/ModalContainer"; 
+import LoadingSpinner from "../DetailModal/LoadingSpinner"; 
 
 const EditPengumuman = ({ id, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({

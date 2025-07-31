@@ -1,10 +1,10 @@
 // src/Components/Perangkat/DetailPerangkat.jsx
 import React, { useState, useEffect } from "react";
-import { get } from "../../utils/api"; // Pastikan path ini benar
-import InfoItem from "../DetailModal/InfoItem"; // Sesuaikan path jika perlu
-import InfoSection from "../DetailModal/InfoSection"; // Sesuaikan path jika perlu
-import ModalContainer from "../DetailModal/ModalContainer"; // Sesuaikan path jika perlu
-import LoadingSpinner from "../DetailModal/LoadingSpinner"; // Sesuaikan path jika perlu
+import { get } from "../../utils/api"; 
+import InfoItem from "../DetailModal/InfoItem"; 
+import InfoSection from "../DetailModal/InfoSection"; 
+import ModalContainer from "../DetailModal/ModalContainer"; 
+import LoadingSpinner from "../DetailModal/LoadingSpinner"; 
 
 // Asumsi base URL untuk aset gambar, sesuaikan jika berbeda
 const ASSET_BASE_URL = import.meta.env.VITE_ASSET_BASE_URL || 'http://localhost:5500';

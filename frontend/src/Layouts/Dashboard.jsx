@@ -14,14 +14,14 @@ import {
   FaCalendarCheck,
   FaCalendarDay
 } from "react-icons/fa6";
-import img from "../assets/DUMMY-LOGO.png"; // Pastikan path ini benar
+import img from "../assets/DUMMY-LOGO.png"; 
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import { post } from "../utils/api"; // Pastikan path ini benar
-import { AuthContext } from "../Context/AuthContext"; // Pastikan path ini benar
+import { post } from "../utils/api"; 
+import { AuthContext } from "../Context/AuthContext"; 
 
 const ModalProfil = ({ modal }) => {
-  // Implementasi ModalProfil Anda jika ada, atau biarkan kosong jika belum
+  
   return (
     <div>
       {/* Contoh: {modal.showYourProfile && <div>Konten Modal Profil Anda</div>} */}

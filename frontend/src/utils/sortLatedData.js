@@ -1,7 +1,7 @@
 /**
- * Sort data berdasarkan created_at in descending order (latest first)
- * @param {Array} data - The data array to be sorted
- * @returns {Array} - The sorted data array
+ * Sort data berdasarkan created_at in descending 
+ * @param {Array} data - Data array yang berisi objek dengan properti created_at
+ * @returns {Array} - Data yang sudah diurutkan berdasarkan created_at terbaru ke terlama
  */
 export const sortLatedData = (data) => {
     return data.sort((a, b) => {

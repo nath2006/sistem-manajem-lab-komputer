@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
-import Dashboard from '../../Layouts/Dashboard'; // Sesuaikan path jika berbeda
-import Tabel from '../../Layouts/Table';       // Sesuaikan path jika berbeda
-import { get } from '../../utils/api';           // Sesuaikan path jika berbeda
-import useTitle from '../../utils/useTitle';     // Sesuaikan path jika berbeda
-import { AuthContext } from '../../context/AuthContext'; // SESUAIKAN PATH INI JIKA PERLU
-import Notification from '../../Components/Notification/Notif'; // Sesuaikan path jika berbeda
-// import { FaEye } from 'react-icons/fa';
+import Dashboard from '../../Layouts/Dashboard'; 
+import Tabel from '../../Layouts/Table';       
+import { get } from '../../utils/api';           
+import useTitle from '../../utils/useTitle';     
+import { AuthContext } from '../../context/AuthContext'; 
+import Notification from '../../Components/Notification/Notif'; 
 
 // Fungsi untuk memotong teks jika terlalu panjang
 const truncateText = (text, maxLength) => {
@@ -45,23 +44,21 @@ export default function PengecekanStatus() {
   ];
 
   const fetchData = async () => {
-    // Menggunakan authState.userId langsung
+    
     if (!authState.userId) {
       const noUserMsg = "Data pengguna tidak lengkap (userId tidak ditemukan di AuthContext). Tidak dapat mengambil data pengajuan.";
       console.warn("fetchData check failed:", noUserMsg, "Current authState:", authState);
       setErrorMsg(noUserMsg);
-      setIsLoading(false); // Pastikan loading berhenti
+      setIsLoading(false); 
       setPengajuanData([]);
       return;
     }
 
-    setIsLoading(true); // Set loading true sebelum fetch
+    setIsLoading(true); 
     setErrorMsg('');
     console.log(`Memulai fetchData untuk userId: ${authState.userId}`);
 
-    // ... (di dalam try blok fetchData) ...
     try {
-      // Asumsikan 'get' mengembalikan array data secara langsung
       const dataArray = await get('/pengajuan/status');
 
       // Tambahkan log ini untuk memastikan apa yang Anda terima dari 'get'

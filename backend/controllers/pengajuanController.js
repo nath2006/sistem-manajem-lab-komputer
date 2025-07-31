@@ -65,9 +65,9 @@ export const createPengajuan = async (req, res) => {
 
     const [overlapPengajuan] = await db.query(
       `SELECT pengajuan_id FROM pengajuan_lab
-       WHERE lab_id = ? AND tanggal_pakai = ? AND
-       NOT (jam_selesai <= ? OR jam_mulai >= ?)
-       AND status IN ('Menunggu', 'Disetujui')`,
+        WHERE lab_id = ? AND tanggal_pakai = ? AND
+        NOT (jam_selesai <= ? OR jam_mulai >= ?)
+        AND status IN ('Menunggu', 'Disetujui')`,
       [lab_id, tanggal_pakai, jam_mulai, jam_selesai]
     );
 
