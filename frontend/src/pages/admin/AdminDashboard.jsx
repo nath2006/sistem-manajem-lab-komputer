@@ -118,7 +118,7 @@ const DasboardAdmin = () => {
             {/* Tabel Data Lab */}
             <div className="mt-4 col-span-12 md:col-span-6 h-[500px] overflow-hidden group rounded-lg bg-white shadow-md relative transition-all duration-300 ease-in-out">
               <div className="DataWrapper">
-                <div className="overflow-y-auto h-[calc(500px-80px)]"> 
+                <div className="overflow-y-auto h-[calc(500px-60px)]"> 
                   <table className="min-w-full">
                     <thead className="bg-red-900 sticky top-0 z-10">
                       <tr className="rounded-t-lg">
@@ -163,7 +163,7 @@ const DasboardAdmin = () => {
             {/* Tabel Data User */}
             <div className="mt-4 col-span-12 md:col-span-6 h-[500px] overflow-hidden group rounded-lg bg-white shadow-md relative transition-all duration-300 ease-in-out">
               <div className="DataWrapper">
-                <div className="overflow-y-auto h-[calc(500px-80px)]">
+                <div className="overflow-y-auto h-[calc(500px-60px)]">
                   <table className="min-w-full">
                     <thead className="bg-red-900 sticky top-0 z-10">
                       <tr className="rounded-t-lg">
