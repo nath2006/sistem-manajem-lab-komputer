@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "driver.js/dist/driver.css";
+@import "./Components/Onboarding/onboarding.css";
 @plugin "flowbite-react/plugin/tailwindcss";
 @source "../.flowbite-react/class-list.json";
 
@@ -7,10 +9,22 @@
   --color-emas: #D4AF37;
 }
 
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
+
 
 
 .select-option:hover option:hover{
-    background-color: #f87171; /* Tailwind class: bg-red-500 */
+    background-color: var(--color-maroon);
     color: #fff; 
 }
 
@@ -26,5 +40,79 @@
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (pointer: coarse) {
+  button,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 639px) {
+  .mobile-data-table,
+  .mobile-data-table tbody,
+  .mobile-data-table tbody tr {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mobile-data-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .mobile-data-table tbody {
+    padding: 12px;
+  }
+
+  .mobile-data-table tbody tr {
+    margin-bottom: 12px;
+    border: 1px solid var(--color-gray-200);
+    border-radius: 8px;
+    overflow-wrap: anywhere;
+  }
+
+  .mobile-data-table tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .mobile-data-table td[data-label] {
+    display: grid;
+    grid-template-columns: minmax(4.5rem, 0.35fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+    padding: 12px;
+    white-space: normal;
+  }
+
+  .mobile-data-table td[data-label] > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .mobile-data-table td[data-label] .flex {
+    flex-wrap: wrap;
+  }
+
+  .mobile-data-table td img {
+    max-width: 100%;
+  }
+
+  .mobile-data-table td[colspan] {
+    display: block;
   }
 }

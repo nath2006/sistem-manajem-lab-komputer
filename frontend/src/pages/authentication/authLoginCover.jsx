@@ -1,6 +1,7 @@
+import LoadingSkeleton from '../../Components/Loading/Skeleton';
 import React, { useContext, useState, useEffect } from "react";
 import { Card } from "flowbite-react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, EyeOff } from "lucide-react";
 
 import { get, post } from "../../utils/api";
 import Notification from "../../Components/Notification/Notif";
@@ -8,12 +9,15 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../Context/AuthContext";
 import useTitle from "../../utils/useTitle";
 import truncateText from "../../utils/truncateText"; 
+import { useSettings } from "../../Context/SettingsContext";
 
 const LoginPage = () => {
   useTitle("Login - SIM Lab Komputer");
 
   const { state, dispatch } = useContext(AuthContext);
+  const { settings, logoSrc } = useSettings();
   const [form, setForm] = useState({ username: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate(); 
 
@@ -90,6 +94,9 @@ const LoginPage = () => {
       const response = await post("/auth/login", {
         username: form.username,
         password: form.password
+      },{
+        _skipAuth: true, 
+        _skipRefresh: true, 
       });
 
       if (response && response.data) {
@@ -177,10 +184,10 @@ const LoginPage = () => {
             <div> 
                 <div className="headerWrapper flex flex-col items-start mb-4">
                     <div className="h-20 w-20 mr-4">
-                    <img src="/assets/images/login/DUMMY-LOGO.png" alt="Logo SIM Lab Komputer" className="object-contain h-full w-full"/>
+                    <img src={logoSrc || settings.logo_url || "/assets/images/login/DUMMY-LOGO.png"} alt={`Logo ${settings.school_name}`} className="object-contain h-full w-full"/>
                     </div>
-                    <h2 className="mt-4 text-lg md:text-2xl font-bold text-red-900 ">
-                    Selamat Datang di Sistem Informasi Manajemen <br/>Laboratorium Komputer
+                    <h2 className="mt-4 text-lg md:text-2xl font-bold text-maroon">
+                    Selamat Datang di Sistem Informasi Manajemen <br/>Laboratorium Komputer — {settings.school_name}
                     </h2>
                 </div>
                 {/* Bagian teks Login di bawah header */}
@@ -195,7 +202,7 @@ const LoginPage = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4 max-w-lg">
             {errorMsg && (
-              <Notification type="error" message={errorMsg} onClose={handleCloseError} />
+              <Notification type="error" variant="brand" message={errorMsg} onClose={handleCloseError} />
             )}
             <div>
               <label
@@ -208,7 +215,7 @@ const LoginPage = () => {
                 id="login-username"
                 type="text"
                 name="username"
-                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500"
+                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-maroon focus:border-maroon"
                 placeholder="Masukkan username Anda"
                 value={form.username}
                 onChange={handleChange}
@@ -222,20 +229,32 @@ const LoginPage = () => {
               >
                 Password
               </label>
-              <input
-                id="login-password"
-                type="password"
-                name="password"
-                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500"
-                placeholder="Masukkan password Anda"
-                value={form.password}
-                onChange={handleChange}
-                required
-              />
+              <div className="relative">
+                <input
+                  id="login-password"
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  className="mt-1 block w-full pl-4 pr-12 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-maroon focus:border-maroon"
+                  placeholder="Masukkan password Anda"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
+                />
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                  aria-controls="login-password"
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword(value => !value)}
+                  className="absolute inset-y-0 right-0 px-3 text-gray-500 hover:text-maroon focus:outline-none focus:ring-2 focus:ring-maroon rounded-r-lg"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
             </div>
             <button
               type="submit"
-              className="w-full px-4 py-2 text-white bg-red-800 hover:bg-red-700 rounded-lg shadow focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+              className="w-full px-4 py-2 text-white bg-maroon hover:bg-maroon/90 rounded-lg shadow focus:ring-2 focus:ring-maroon focus:ring-offset-1"
             >
               Masuk
             </button>
@@ -244,7 +263,7 @@ const LoginPage = () => {
 
         {/* Kolom Pengumuman */}
         {/* Diubah 'items-center' menjadi 'items-start' untuk alignment atas */}
-        <div className="flex md:w-1/2 bg-red-900 items-start p-6 md:p-12">
+        <div className="flex md:w-1/2 bg-maroon items-start p-6 md:p-12">
           <div className="flex flex-col gap-8 w-full">
             <div>
               <h1 className="text-3xl font-bold text-white">
@@ -258,7 +277,7 @@ const LoginPage = () => {
             <div className="relative h-[550px] md:h-[600px] w-full max-w-md mx-auto">
               {loadingAnnouncements && (
                 <div className="absolute inset-0 flex items-center justify-center z-50">
-                  <p className="text-white text-xl p-4 bg-black bg-opacity-50 rounded-lg">Memuat pengumuman...</p>
+                  <LoadingSkeleton variant="cards" label="Memuat pengumuman..." />
                 </div>
               )}
               {!loadingAnnouncements && announcementError && (

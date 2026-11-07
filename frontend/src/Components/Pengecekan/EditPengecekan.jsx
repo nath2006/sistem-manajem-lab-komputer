@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { get, put } from "../../utils/api"; // Menggunakan 'put' untuk JSON, atau sesuaikan jika 'putWithFile' bisa handle FormData tanpa file
 import ModalContainer from "../DetailModal/ModalContainer";
 import LoadingSpinner from "../DetailModal/LoadingSpinner";
-import { AuthContext } from "../../Context/AuthContext"; // Untuk mengambil user yang login jika diperlukan
 
 const EditPengecekan = ({ id, onClose, onUpdate }) => {
-  const { state: authState } = useContext(AuthContext);
   // const loggedInUserId = authState?.user?.user_id; // ID user yang sedang login, bisa digunakan untuk validasi atau field 'diubah_oleh'
 
   const [formData, setFormData] = useState({
@@ -143,7 +141,7 @@ const EditPengecekan = ({ id, onClose, onUpdate }) => {
   const statusPengecekanOptions = [
     { value: "Baru", label: "Baru" },
     { value: "Menunggu Perbaikan", label: "Menunggu Perbaikan" },
-    { value: "Sudah Ditangani", label: "Sudah Ditangani" },
+
   ];
 
   return (

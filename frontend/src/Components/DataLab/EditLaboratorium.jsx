@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { get, putWithFile } from "../../utils/api"; // Menggunakan putWithFile
 import ModalContainer from "../DetailModal/ModalContainer";
 import LoadingSpinner from "../DetailModal/LoadingSpinner";
+import LoadingSkeleton from '../Loading/Skeleton';
 
 const EditLaboratorium = ({ id, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
@@ -21,6 +22,7 @@ const EditLaboratorium = ({ id, onClose, onUpdate }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [loadingUsers, setLoadingUsers] = useState(true);
 
   const ASSET_BASE_URL = import.meta.env.VITE_ASSET_BASE_URL || 'http://localhost:5500';
   const LAB_IMAGE_SUBFOLDER = '/uploads/labs/'; // Path subfolder untuk foto lab
@@ -37,6 +39,8 @@ const EditLaboratorium = ({ id, onClose, onUpdate }) => {
       } catch (err) {
         console.error("Gagal mengambil data user untuk Kepala Lab:", err);
         // Tidak perlu set error utama di sini, dropdown bisa tetap kosong atau tampilkan pesan
+      } finally {
+        setLoadingUsers(false);
       }
     };
     fetchUsers();
@@ -141,15 +145,15 @@ const EditLaboratorium = ({ id, onClose, onUpdate }) => {
   }
 
   const primaryButton = (
-    <button onClick={handleSubmit} disabled={saving}
-      className="w-full px-5 py-2 text-sm font-semibold text-center rounded-md bg-red-600 hover:bg-red-700 text-white active:scale-95 focus:outline-none">
+    <button onClick={handleSubmit} disabled={saving || loadingUsers}
+      className="w-full px-5 py-2 text-sm font-semibold text-center rounded-md bg-maroon hover:bg-maroon/90 hover:shadow-md text-white active:scale-95 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none">
       {saving ? "Menyimpan..." : "Simpan Perubahan"}
     </button>
   );
 
   const secondaryButton = (
     <button onClick={onClose}
-      className="w-full px-5 py-2 text-sm font-semibold text-center bg-white border-2 rounded-md text-gray-700 border-gray-300 hover:bg-gray-50 active:scale-95 focus:outline-none">
+      className="w-full px-5 py-2 text-sm font-semibold text-center bg-white border-2 rounded-md text-maroon border-maroon hover:bg-maroon/10 hover:shadow-sm active:scale-95 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon focus-visible:ring-offset-2">
       Batal
     </button>
   );
@@ -193,13 +197,13 @@ const EditLaboratorium = ({ id, onClose, onUpdate }) => {
           </div>
           <div>
             <label htmlFor="kepala_lab_id" className="block mb-1.5 font-medium text-sm">Kepala Lab</label>
-            <select id="kepala_lab_id" name="kepala_lab_id" value={formData.kepala_lab_id} onChange={handleChange} required
+            {loadingUsers && users.length === 0 ? <LoadingSkeleton variant="text" rows={1} label="Memuat daftar kepala lab..." /> : <select id="kepala_lab_id" name="kepala_lab_id" value={formData.kepala_lab_id} onChange={handleChange} required
               className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
               <option value="" disabled>Pilih Kepala Lab</option>
               {users.map(user => (
                 <option key={user.user_id} value={user.user_id}>{user.nama_lengkap} ({user.role})</option>
               ))}
-            </select>
+            </select>}
           </div>
         </div>
         

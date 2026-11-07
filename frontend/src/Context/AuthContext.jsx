@@ -62,11 +62,9 @@ export const AuthProvider = ({ children }) => {
     const loadAuth = async () => {
       dispatch({ type: "LOADING" });
       const token = Cookies.get("auth_token");
-      console.log("AuthContext (User's Approach) - Token from cookies:", token); 
 
       if (token) {
         const userDataFromToken = verifyToken(token); 
-        console.log("AuthContext (User's Approach) - Data from verifyToken:", userDataFromToken); 
 
         if (userDataFromToken && userDataFromToken.userId) { 
           api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -83,7 +81,6 @@ export const AuthProvider = ({ children }) => {
             },
           });
         } else {
-          console.warn("AuthContext (User's Approach): userDataFromToken tidak valid atau tidak ada userId.", userDataFromToken);
           Cookies.remove("auth_token");
           dispatch({ type: "AUTH_ERROR" });
         }
@@ -96,11 +93,10 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    console.log("AuthContext (User's Approach) - State berubah:", state);
     if (state.isAuthenticated && state.token) {
       Cookies.set("auth_token", state.token, {
         expires: 7,
-        secure: process.env.NODE_ENV === "production",
+        secure: import.meta.env.PROD,
         sameSite: "Strict",
       });
       api.defaults.headers.common["Authorization"] = `Bearer ${state.token}`;

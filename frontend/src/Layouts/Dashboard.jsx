@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import {
   FaHouse,
   FaBars,
@@ -12,361 +12,399 @@ import {
   FaComputer,
   FaChevronDown,
   FaCalendarCheck,
-  FaCalendarDay
-} from "react-icons/fa6";
-import img from "../assets/DUMMY-LOGO.png"; 
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-import { post } from "../utils/api"; 
-import { AuthContext } from "../Context/AuthContext"; 
+} from 'react-icons/fa6';
+import img from '../assets/DUMMY-LOGO.png';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { post } from '../utils/api';
+import { AuthContext } from '../Context/AuthContext';
+import { useSettings } from '../Context/SettingsContext';
+import useDialog from '../utils/useDialog';
+import useMediaQuery from '../utils/useMediaQuery';
+import { DashboardContext } from '../Context/DashboardContext';
 
-const ModalProfil = ({ modal }) => {
-  
-  return (
-    <div>
-      {/* Contoh: {modal.showYourProfile && <div>Konten Modal Profil Anda</div>} */}
-    </div>
-  );
-};
+const dateFormatter = new Intl.DateTimeFormat('id-ID', {
+  day: '2-digit',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'Asia/Jakarta',
+});
 
-const Dashboard = ({ title, children }) => {
+export const DashboardShell = ({ title, children, onReplayOnboarding }) => {
   const navigate = useNavigate();
   const { state, dispatch } = useContext(AuthContext);
+  const { settings, logoSrc } = useSettings();
 
-  const fullName = state?.fullName || "User";
+  const fullName = state?.fullName || 'User';
   const userRole = state?.role;
 
   const Logout = async () => {
     try {
-      await post("/auth/logout");
-      dispatch({ type: "LOGOUT" });
-      localStorage.removeItem("token");
-      localStorage.removeItem("userName");
-      localStorage.removeItem("role");
-      navigate("/");
+      await post('/auth/logout');
+      dispatch({ type: 'LOGOUT' });
+      localStorage.removeItem('token');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('role');
+      navigate('/');
     } catch (error) {
-      console.error("Logout Error:", error);
+      console.error('Logout Error:', error);
     }
   };
 
   const menuKepalaLab = [
-    { name: "Dashboard", ic: <FaHouse />, to: "/dashboard-kepala-lab" },
-    { type: "divider" },
+    { name: 'Dashboard', ic: <FaHouse />, to: '/dashboard-kepala-lab' },
+    { type: 'divider' },
     {
-      name: "Pengajuan  Jadwal Lab",
+      name: 'Pengajuan  Jadwal Lab',
       ic: <FaCalendarCheck />,
-      to: "/kelola-jadwal-lab",
+      to: '/kelola-jadwal-lab',
     },
-    { name: "Jadwal Lab", 
-      ic: < FaRegCalendarDays/>, 
-      to: "/jadwal-lab" 
-    },
-        { type: "divider" },
+    { name: 'Jadwal Lab', ic: <FaRegCalendarDays />, to: '/jadwal-lab' },
+    { type: 'divider' },
     {
-      name: "Pemeriksaan Perangkat",
+      name: 'Pemeriksaan Perangkat',
       ic: <FaLaptopMedical />,
-      to: "/kelola-pemeriksaan-perangkat",
+      to: '/kelola-pemeriksaan-perangkat',
     },
     {
-      name: "Kelola Data Perangkat",
+      name: 'Kelola Data Perangkat',
       ic: <FaLaptopFile />,
-      to: "/kelola-perangkat",
+      to: '/kelola-perangkat',
     },
   ];
 
   const menuKoordinatorLab = [
-    { name: "Dashboard", ic: <FaHouse />, to: "/dashboard-koordinator-lab" },
-    { type: "divider" },
+    { name: 'Dashboard', ic: <FaHouse />, to: '/dashboard-koordinator-lab' },
+    { type: 'divider' },
     {
-      name: "Kelola Data Lab",
+      name: 'Kelola Data Lab',
       ic: <FaComputer />,
-      to: "/kelola/data-lab",
+      to: '/kelola/data-lab',
     },
     {
-      name: "Kelola Pengumuman",
+      name: 'Kelola Pengumuman',
       ic: <FaRegNewspaper />,
-      to: "/kelola-pengumuman",
+      to: '/kelola-pengumuman',
     },
   ];
 
   const menuTeknisi = [
-    { name: "Dashboard", ic: <FaHouse />, to: "/dashboard-teknisi" },
-    { type: "divider" },
+    { name: 'Dashboard', ic: <FaHouse />, to: '/dashboard-teknisi' },
+    { type: 'divider' },
     {
-      name: "Perbaikan Perangkat",
+      name: 'Perbaikan Perangkat',
       ic: <FaLaptopMedical />,
-      to: "/kelola-perbaikan",
+      to: '/kelola-perbaikan',
     },
     {
-      name: "Pengecekan Perangkat",
+      name: 'Pengecekan Perangkat',
       ic: <FaLaptopMedical />,
-      to: "/kelola-pengecekan",
+      to: '/kelola-pengecekan',
     },
   ];
 
   const menuGuru = [
-    { name: "Dashboard", ic: <FaHouse />, to: "/dashboard-guru" },
-    { type: "divider" },
+    { name: 'Dashboard', ic: <FaHouse />, to: '/dashboard-guru' },
+    { type: 'divider' },
     {
-      name: "Pengajuan  Jadwal Lab",
+      name: 'Pengajuan  Jadwal Lab',
       ic: <FaCalendarCheck />,
-      to: "/pengajuan-jadwal-lab",
+      to: '/pengajuan-jadwal-lab',
     },
-     {
-      name: "Cek Status Pengajuan Jadwal ",
+    {
+      name: 'Cek Status Pengajuan Jadwal ',
       ic: <FaCalendarCheck />,
-      to: "/pengajuan-jadwal-lab/status",
+      to: '/pengajuan-jadwal-lab/status',
     },
-    { name: "Jadwal Lab", 
-      ic: < FaRegCalendarDays/>, 
-      to: "/jadwal-lab" 
-    },
+    { name: 'Jadwal Lab', ic: <FaRegCalendarDays />, to: '/jadwal-lab' },
   ];
 
   const menuAdmin = [
-    { name: "Dashboard", ic: <FaHouse />, to: "/dashboard" },
-    { type: "divider" },
+    { name: 'Dashboard', ic: <FaHouse />, to: '/dashboard' },
+    { type: 'divider' },
     {
-      name: "Pemeriksaan Perangkat",
+      name: 'Pemeriksaan Perangkat',
       ic: <FaLaptopMedical />,
-      to: "/kelola-pemeriksaan-perangkat",
+      to: '/kelola-pemeriksaan-perangkat',
     },
     {
-      name: "Kelola Data Perangkat",
+      name: 'Kelola Data Perangkat',
       ic: <FaLaptopFile />,
-      to: "/kelola-perangkat",
+      to: '/kelola-perangkat',
     },
-    { name: "Pengajuan Jadwal Lab", ic: <FaRegCalendarCheck />, to: "/kelola-jadwal-lab" },
-    { name: "Jadwal Lab", ic: < FaRegCalendarDays/>, to: "/jadwal-lab" },
-    { type: "divider" },
-    { name: "Data Lab", ic: <FaComputer />, to: "/kelola/data-lab" },
     {
-      name: "Kelola Pengumuman",
+      name: 'Pengajuan Jadwal Lab',
+      ic: <FaRegCalendarCheck />,
+      to: '/kelola-jadwal-lab',
+    },
+    { name: 'Jadwal Lab', ic: <FaRegCalendarDays />, to: '/jadwal-lab' },
+    { type: 'divider' },
+    { name: 'Data Lab', ic: <FaComputer />, to: '/kelola/data-lab' },
+    {
+      name: 'Kelola Pengumuman',
       ic: <FaRegNewspaper />,
-      to: "/kelola-pengumuman",
+      to: '/kelola-pengumuman',
     },
-    { type: "divider" },
+    { type: 'divider' },
     {
-      name: "Perbaikan Perangkat",
+      name: 'Perbaikan Perangkat',
       ic: <FaLaptopMedical />,
-      to: "/kelola-perbaikan",
+      to: '/kelola-perbaikan',
     },
     {
-      name: "Pengecekan Perangkat",
+      name: 'Pengecekan Perangkat',
       ic: <FaLaptopMedical />,
-      to: "/kelola-pengecekan",
+      to: '/kelola-pengecekan',
     },
-    { type: "divider" },
-    { name: "Kelola User", ic: <FaUserGear />, to: "/user" },
+    { type: 'divider' },
+    { name: 'Kelola User', ic: <FaUserGear />, to: '/user' },
+    { name: 'Pengaturan Sistem', ic: <FaUserGear />, to: '/pengaturan' },
+    { name: 'Log Aktivitas', ic: <FaRegCalendarCheck />, to: '/log-aktivitas' },
   ];
 
   let data = [];
 
-  if (userRole === "Admin") {
+  if (userRole === 'Admin') {
     data = menuAdmin;
-  } else if (userRole === "Guru") {
+  } else if (userRole === 'Guru') {
     data = menuGuru;
-  } else if (userRole === "Kepala Lab") {
+  } else if (userRole === 'Kepala Lab') {
     data = menuKepalaLab;
-  } else if (userRole === "Koordinator Lab") {
+  } else if (userRole === 'Koordinator Lab') {
     data = menuKoordinatorLab;
-  } else if (userRole === "Teknisi") {
+  } else if (userRole === 'Teknisi') {
     data = menuTeknisi;
   }
 
-  function tanggal() {
-    const date = new Date();
-    const options = {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-      timeZone: "Asia/Jakarta",
-    };
-    // Menggunakan toLocaleDateString untuk format yang lebih baik dan penanganan bulan
-    return new Intl.DateTimeFormat("id-ID", options).format(date);
+  if (!data.some((item) => item.to === '/ticketing')) {
+    data = [
+      ...data,
+      { name: 'Tiket Layanan', ic: <FaLaptopMedical />, to: '/ticketing' },
+    ];
   }
 
+  const location = useLocation();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopExpanded, setDesktopExpanded] = useState(true);
   const [showProfile, setShowProfile] = useState(false);
-  const [showYourProfile, setShowYourProfile] = useState(false); // Untuk ModalProfil jika digunakan
-  const [showSide, setShowSide] = useState(true);
+  const [tour, setTour] = useState(null);
+  useEffect(() => {
+    const coordinate = event => {
+      setTour(event.detail ? { sidebar: event.detail.sidebar } : null);
+      if (event.detail) setShowProfile(false);
+    };
+    document.addEventListener('lab:tour-shell', coordinate);
+    return () => document.removeEventListener('lab:tour-shell', coordinate);
+  }, []);
+  const profileRef = useRef(null);
+  const sidebarRef = useDialog(mobileOpen && !isDesktop && !tour, () =>
+    setMobileOpen(false)
+  );
+  const sidebarExpanded = tour ? tour.sidebar : (isDesktop ? desktopExpanded : mobileOpen);
 
-  function handleSide() {
-    setShowSide(!showSide);
-  }
+  useEffect(() => {
+    setMobileOpen(false);
+    setShowProfile(false);
+  }, [location.pathname, isDesktop]);
+  useEffect(() => {
+    if (!showProfile) return;
+    const closeOutside = (event) => {
+      if (!profileRef.current?.contains(event.target)) setShowProfile(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setShowProfile(false);
+    };
+    document.addEventListener('pointerdown', closeOutside);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [showProfile]);
 
-  const sidebarWidthClass = "w-72"; // Lebar sidebar yang baru (misal: 18rem atau 288px)
-  const mainContentMarginClass = "lg:ml-72"; // Margin konten utama disesuaikan
+  const toggleSidebar = () => {
+    if (isDesktop) setDesktopExpanded((value) => !value);
+    else setMobileOpen((value) => !value);
+  };
 
   return (
-    <>
-      <ModalProfil modal={{ showYourProfile, setShowYourProfile }} />
-      <div>
-      
-        <nav className="fixed top-0 z-50 w-full h-[69px] bg-white border-b border-maroon">
-          <div className="h-full px-3 py-4 lg:px-5 lg:pl-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center justify-start lg:ps-1 rtl:justify-end">
+    <div data-tour-running={tour ? "true" : undefined} className="min-h-dvh min-w-0 bg-gray-50">
+      <a
+        href="#dashboard-content"
+        className="sr-only focus:not-sr-only fixed left-3 top-3 z-[70] rounded-lg bg-maroon p-3 text-white"
+      >
+        Lewati navigasi
+      </a>
+      <nav
+        aria-label="Navigasi akun"
+        className="fixed inset-x-0 top-0 z-50 h-[69px] min-w-0 border-b border-maroon bg-white px-3 sm:px-5"
+      >
+        <div className="flex h-full min-w-0 items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <button
+              type="button"
+              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-gray-600 hover:bg-maroon/10 focus-visible:ring-2 focus-visible:ring-maroon"
+              onClick={toggleSidebar}
+              aria-controls="logo-sidebar"
+              aria-expanded={sidebarExpanded}
+            >
+              <span className="sr-only">Buka/tutup sidebar</span>
+              <FaBars aria-hidden="true" />
+            </button>
+            <div className="flex min-w-0 items-center gap-2">
+              <img
+                src={logoSrc || settings.logo_url || img}
+                className="h-8 w-8 shrink-0 object-contain"
+                alt={`Logo ${settings.school_name}`}
+              />
+              <span className="truncate text-sm font-bold text-gray-800 sm:text-lg lg:text-xl">
+                {settings.school_name}
+              </span>
+            </div>
+          </div>
+          <div ref={profileRef} className="relative min-w-0 shrink-0">
+            <button
+              onClick={() => setShowProfile((value) => !value)}
+              type="button"
+              className="flex min-h-11 min-w-11 items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-gray-700 hover:bg-maroon/10 focus-visible:ring-2 focus-visible:ring-maroon sm:px-3"
+              data-tour="profile"
+              id="user-menu-button"
+              aria-expanded={showProfile}
+              aria-haspopup="menu"
+            >
+              <span className="sr-only">Buka menu pengguna </span>
+              <span className="max-w-[25vw] truncate sm:max-w-[180px] lg:max-w-[240px]">
+                {fullName}
+              </span>
+              <FaChevronDown className="h-3 w-3 shrink-0" aria-hidden="true" />
+            </button>
+            {showProfile && (
+              <div
+                className="absolute right-0 top-full mt-2 w-60 max-w-[calc(100vw-2rem)] rounded-lg bg-white p-1 shadow-lg ring-1 ring-gray-200"
+                role="menu"
+                aria-labelledby="user-menu-button"
+              >
+                {onReplayOnboarding && <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setShowProfile(false);
+                    onReplayOnboarding();
+                  }}
+                  className="flex min-h-11 w-full items-center rounded-md px-4 py-2 text-sm text-gray-700 hover:bg-maroon/10 hover:text-maroon focus-visible:ring-2 focus-visible:ring-maroon"
+                >Panduan awal</button>}
                 <button
-                  className="inline-flex items-center p-2 text-sm rounded-lg text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
-                  onClick={handleSide}
-                  aria-controls="logo-sidebar" // Untuk aksesibilitas
-                  aria-expanded={showSide} // Untuk aksesibilitas
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    Logout();
+                    setShowProfile(false);
+                  }}
+                  className="flex min-h-11 w-full items-center justify-between rounded-md px-4 py-2 text-sm text-gray-700 hover:bg-maroon/10 hover:text-maroon"
                 >
-                  <span className="sr-only">Buka/tutup sidebar</span>
-                  <FaBars />
+                  <span>Log out</span>
+                  <FaArrowRightFromBracket aria-hidden="true" />
                 </button>
-                <div className="ml-2 items-center hidden lg:flex">
-                  <img
-                    src={img}
-                    className="w-[32px] me-3" // bg-white dihapus jika logo sudah transparan
-                    alt="Logo SMK Letris Indonesia 2"
-                  />
-                  
-                  <span className="self-center text-xl font-bold text-gray-800 sm:text-2xl whitespace-nowrap">
-                    Sekolah Anda
-                  </span>
-                </div>
               </div>
-
-              <div className="flex items-center">
-                <div className="relative flex items-center ms-3">
-                  {" "}
-                  {/* Tambahkan 'relative' */}
-                  <div>
-                    <button
-                      onClick={() => setShowProfile(!showProfile)}
-                      type="button"
-                      className="flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-maroon"
-                      id="user-menu-button"
-                      aria-expanded={showProfile}
-                      aria-haspopup="true"
-                    >
-                      <span className="sr-only">Buka menu pengguna</span>
-                      <span className="text-md">{fullName}</span>
-                      <FaChevronDown
-                        className="ml-2 -mr-1 h-4 w-3 text-gray-900"
-                        aria-hidden="true"
-                      />
-                    </button>
-                  </div>
-                  {showProfile && (
-                    <div
-                      className="absolute origin-top-right right-0 mt-22 w-60 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
-                      role="menu"
-                      aria-orientation="vertical"
-                      aria-labelledby="user-menu-button"
-                      tabIndex="-1"
-                    >
-                      <div
-                        className="py-1 hover:cursor-pointer hover:bg-maroon"
-                        role="none"
-                      >
-                        <button
-                          onClick={() => {
-                            Logout();
-                            setShowProfile(false); // Tutup dropdown setelah logout
-                          }}
-                          className="w-full text-left flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:text-white "
-                          role="menuitem"
-                          tabIndex="-1"
-                          id="user-menu-item-0"
-                        >
-                          <span>Log out</span>
-                          <FaArrowRightFromBracket className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </nav>
-
-        <aside
-          id="logo-sidebar"
-          className={`${
-            showSide ? sidebarWidthClass : "w-0"
-          } fixed top-0 left-0 z-40 h-screen pt-[69px] transition-transform ${
-            showSide ? "translate-x-0" : "-translate-x-full"
-          } bg-gray-800 overflow-hidden border-r border-maroon`}
-          aria-label="Sidebar"
-        >
-          {/* Mengubah pt sedikit dan transisi, serta bg-gray-800 untuk area transisi */}
-          {/* Tambahkan kelas custom-scrollbar jika Anda menambahkan CSS untuk itu */}
-          <div className="h-full px-4 pb-4 pt-4 overflow-y-auto bg-white custom-scrollbar">
-            <ul className="pb-4 space-y-2 font-medium text-sm">
-              {data.map((item, index) => {
-                if (item.type === "divider") {
-                  return (
-                    <hr
-                      key={`divider-${index}`}
-                      className="my-2 border-gray-300"
-                    />
-                  );
-                }
-                if (item.to) {
-                  return (
-                    <li key={item.name || index} className="cursor-pointer">
-                      <Link to={item.to} className="block">
-                        {" "}
-                        {/* Link sebagai block untuk area klik penuh */}
-                        <div
-                          className={`flex hover:shadow-lg hover:bg-gray-50 items-center gap-2 p-2 text-gray-900 rounded-lg group ${
-                            item.name === title
-                              ? "bg-gray-100 shadow-lg py-2.5"
-                              : "hover:bg-gray-100"
-                          }`}
-                        >
-                          {/* Perubahan warna dasar dan hover */}
-                          <span
-                            className={`${
-                              item.name === title
-                                ? "bg-maroon text-white"
-                                : "bg-gray-100 text-gray-900 group-hover:bg-maroon group-hover:text-white"
-                            } flex items-center shadow-md justify-center p-3 transition-colors duration-150 rounded-lg`}
-                          >
-                            {item.ic}
-                          </span>
-                          <span
-                            className={`${
-                              item.name === title
-                                ? "text-maroon font-semibold"
-                                : "text-gray-700 group-hover:text-gray-900"
-                            } font-medium ml-3 whitespace-nowrap`}
-                          >
-                            {item.name}
-                          </span>
-                        </div>
-                      </Link>
-                    </li>
-                  );
-                }
-                return null;
-              })}
-            </ul>
-            <div className="mt-auto px-4 py-2 bg-white rounded-lg border-t border-gray-200">
-              {" "}
-              {/* mt-auto untuk mendorong ke bawah */}
-              <p className="font-bold text-center text-maroon">{tanggal()}</p>
-            </div>
-          </div>
-        </aside>
-
-        <div
-          className={`p-4 mt-[69px] bg-gray-50 transition-all duration-300 ${
-            showSide ? mainContentMarginClass : "ml-0"
-          }`}
-        >
-          {/* Ganti bg-neutral-100/20 menjadi bg-gray-50 atau warna netral lain */}
-          <div className="">
-            {/* Tambah padding, bg-white, dan shadow untuk area konten jika diinginkan */}
-            {children}
+            )}
           </div>
         </div>
-      </div>
-    </>
+      </nav>
+
+      {mobileOpen && !isDesktop && !tour && (
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label="Tutup menu navigasi"
+          onClick={() => setMobileOpen(false)}
+          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+        />
+      )}
+      <aside
+        ref={sidebarRef}
+        id="logo-sidebar"
+        role={mobileOpen && !isDesktop && !tour ? 'dialog' : undefined}
+        aria-modal={mobileOpen && !isDesktop && !tour ? true : undefined}
+        aria-label="Navigasi utama"
+        aria-hidden={!sidebarExpanded}
+        inert={!sidebarExpanded}
+        tabIndex={-1}
+        data-dialog-root={mobileOpen && !isDesktop && !tour ? 'true' : undefined}
+        className={`fixed inset-y-0 left-0 z-40 w-72 max-w-[calc(100vw-3rem)] border-r border-maroon bg-white pt-[69px] outline-none transition-transform duration-200 motion-reduce:transition-none lg:max-w-none ${sidebarExpanded ? 'translate-x-0 lg:translate-x-0' : '-translate-x-full lg:-translate-x-full'}`}
+      >
+        <div className="flex h-full min-h-0 flex-col">
+          <div className="flex shrink-0 items-center justify-between border-b px-4 py-2 lg:hidden">
+            <strong className="text-sm text-maroon">
+              {userRole || 'Menu'}
+            </strong>
+            <button
+              type="button"
+              onClick={() => setMobileOpen(false)}
+              aria-label="Tutup navigasi"
+              className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-2xl text-maroon hover:bg-maroon/10"
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+          <ul data-tour-scroll="sidebar" className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-3 py-4 text-sm font-medium custom-scrollbar">
+            {data.map((item, index) => {
+              if (item.type === 'divider')
+                return (
+                  <li
+                    key={`divider-${index}`}
+                    role="separator"
+                    className="my-2 border-t border-gray-200"
+                  />
+                );
+              if (!item.to) return null;
+              const active = location.pathname === item.to;
+              return (
+                <li key={item.to}>
+                  <Link
+                    data-tour-path={item.to}
+                    to={item.to}
+                    onClick={() => setMobileOpen(false)}
+                    aria-current={active ? 'page' : undefined}
+                    className={`group flex min-h-11 items-center gap-3 rounded-lg p-2 focus-visible:ring-2 focus-visible:ring-maroon ${active ? 'bg-maroon/10 text-maroon' : 'text-gray-700 hover:bg-maroon/5'}`}
+                  >
+                    <span
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors ${active ? 'bg-maroon text-white' : 'bg-gray-100 text-gray-700 group-hover:bg-maroon/10 group-hover:text-maroon'}`}
+                    >
+                      {item.ic}
+                    </span>
+                    <span className="min-w-0 break-words">{item.name}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="shrink-0 border-t border-gray-200 px-4 py-3 pb-[max(.75rem,env(safe-area-inset-bottom))]">
+            <p className="text-center text-sm font-semibold text-maroon">
+              {dateFormatter.format(new Date())}
+            </p>
+          </div>
+        </div>
+      </aside>
+      <main
+        id="dashboard-content"
+        aria-label={title}
+        tabIndex={-1}
+        inert={mobileOpen && !isDesktop && !tour}
+        className={`min-h-dvh min-w-0 px-3 pb-6 pt-[85px] outline-none transition-[margin] duration-200 motion-reduce:transition-none sm:px-6 ${desktopExpanded ? 'lg:ml-72' : ''}`}
+      >
+        <div className="min-w-0"><h1 data-tour="content" className="mb-4 text-xl font-semibold text-gray-900">{title}</h1>{children}</div>
+      </main>
+    </div>
   );
 };
 
-export default Dashboard;
+function DashboardContent({ title, children }) {
+  const { setTitle } = useContext(DashboardContext);
+  useEffect(() => { setTitle(title || 'Dashboard'); }, [title, setTitle]);
+  return children;
+}
+
+export default function Dashboard(props) {
+  const shell = useContext(DashboardContext);
+  return shell ? <DashboardContent {...props} /> : <DashboardShell {...props} />;
+}

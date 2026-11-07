@@ -1,5 +1,5 @@
 // src/Pages/Pemeriksaan/Pemeriksaan.jsx
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import Dashboard from '../../Layouts/Dashboard';
 import Tabel from '../../Layouts/Table';
 import { FaEye, FaTrash, FaPrint } from "react-icons/fa6";
@@ -8,16 +8,18 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Notification from '../../Components/Notification/Notif';
 import useTitle from '../../utils/useTitle';
 import { AuthContext } from '../../Context/AuthContext';
-import DeleteConfirmation from '../../components/Notification/DeleteConfirmation';
+import useDeletionDialog from '../../Components/Deletion/useDeletionDialog';
 import truncateText from '../../utils/truncateText';
 
 // 1. Uncomment dan pastikan path ini benar
 import DetailPemeriksaan from '../../Components/Pemeriksaan/DetailPemeriksaan'; 
 
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { loadPdfTools } from '../../utils/loadPdfTools';
 
 const Pemeriksaan = () => {
+  const printLock = useRef(false);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [printError, setPrintError] = useState('');
   useTitle('Riwayat Pemeriksaan Perangkat');
   const location = useLocation();
   const navigate = useNavigate();
@@ -121,8 +123,8 @@ const Pemeriksaan = () => {
         }
         } else if (isKepalaLab && kepalaLabAssignedLabId) {
         filteredData = allPemeriksaanData.filter(p => p.lab_id?.toString() === kepalaLabAssignedLabId.toString());
-        } else if (isTeknisi && teknisiAssignedLabId) {
-        filteredData = allPemeriksaanData.filter(p => p.lab_id?.toString() === teknisiAssignedLabId.toString());
+        } else if (isTeknisi) {
+        filteredData = allPemeriksaanData;
         } else {
             if(!isAdmin && !isKepalaLab && !isTeknisi) {
                 filteredData = [];
@@ -144,7 +146,7 @@ const Pemeriksaan = () => {
       const timer = setTimeout(() => {
         setSuccessMsg('');
         setErrorMsg('');
-        if (location.state) {
+        if (location.state && !location.state.deletionContext) {
           navigate(location.pathname, { replace: true, state: {} });
         }
       }, 3000);
@@ -161,7 +163,8 @@ const Pemeriksaan = () => {
     setShowDetailModal(true);
   };
 
-  const handleDelete = DeleteConfirmation({
+  const {requestDeletion:handleDelete,dialog:deletionDialog} = useDeletionDialog({
+    resource: 'pemeriksaan',
     onDelete: (id) => deleteData(`/pemeriksaan/delete/${id}`),
     itemName: 'data pemeriksaan',
     onSuccess: (deletedId) => {
@@ -209,55 +212,67 @@ const Pemeriksaan = () => {
     return "Riwayat Pemeriksaan Perangkat";
   };
 
-  const handlePrintData = () => {
+  const handlePrintData = async () => {
     const dataToPrint = dataPemeriksaan;
     if (dataToPrint.length === 0) {
         alert("Tidak ada data pemeriksaan untuk dicetak.");
         return;
     }
 
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 10;
-    const reportTitle = getCurrentTableTitle(); // Menggunakan fungsi yang sama dengan judul tabel
+    if (printLock.current) return;
+    printLock.current = true;
+    setIsPrinting(true);
+    setPrintError('');
+    try {
+      const { jsPDF, autoTable } = await loadPdfTools();
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 10;
+      const reportTitle = getCurrentTableTitle(); // Menggunakan fungsi yang sama dengan judul tabel
 
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Laporan ${reportTitle}`, pageWidth / 2, margin + 5, { align: 'center' });
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, pageWidth / 2, margin + 10, { align: 'center' });
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Laporan ${reportTitle}`, pageWidth / 2, margin + 5, { align: 'center' });
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, pageWidth / 2, margin + 10, { align: 'center' });
 
-    const tableColumn = ["ID", "Pelaksana", "Perangkat", "No. Inv.", "Lab", "Tanggal Cek", "Hasil", "Catatan"];
+      const tableColumn = ["ID", "Pelaksana", "Perangkat", "No. Inv.", "Lab", "Tanggal Cek", "Hasil", "Catatan"];
     
-    const tableRows = dataToPrint.map(item => [
-        item.pemeriksaan_id || '-',
-        item.nama_pemeriksa || `User ID: ${item.pemeriksa_user_id || item.user_id}`,
-        item.nama_perangkat || `ID: ${item.perangkat_id}`,
-        item.nomor_inventaris || '-',
-        item.nama_lab || `Lab ID: ${item.lab_id}`,
-        formatDateForDisplayAndPDF(item.tanggal_pemeriksaan),
-        item.hasil_pemeriksaan || 'N/A',
-        truncateText(item.catatan, 50) || '-',
-    ]);
+      const tableRows = dataToPrint.map(item => [
+          item.pemeriksaan_id || '-',
+          item.nama_pemeriksa || `User ID: ${item.pemeriksa_user_id || item.user_id}`,
+          item.nama_perangkat || `ID: ${item.perangkat_id}`,
+          item.nomor_inventaris || '-',
+          item.nama_lab || `Lab ID: ${item.lab_id}`,
+          formatDateForDisplayAndPDF(item.tanggal_pemeriksaan),
+          item.hasil_pemeriksaan || 'N/A',
+          truncateText(item.catatan, 50) || '-',
+      ]);
 
-    autoTable(doc, { 
-        head: [tableColumn], body: tableRows, startY: margin + 20, theme: 'grid',
-        headStyles: { fillColor: [0, 100, 0] }, 
-        styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak' },
-        columnStyles: {
-            0: { cellWidth: 10 }, 1: { cellWidth: 35 }, 2: { cellWidth: 40 }, 
-            3: { cellWidth: 30 }, 4: { cellWidth: 35 }, 5: { cellWidth: 20 }, 
-            6: { cellWidth: 25 }, 7: { cellWidth: 'auto' },
-        }
-    });
+      autoTable(doc, { 
+          head: [tableColumn], body: tableRows, startY: margin + 20, theme: 'grid',
+          headStyles: { fillColor: [0, 100, 0] }, 
+          styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak' },
+          columnStyles: {
+              0: { cellWidth: 10 }, 1: { cellWidth: 35 }, 2: { cellWidth: 40 }, 
+              3: { cellWidth: 30 }, 4: { cellWidth: 35 }, 5: { cellWidth: 20 }, 
+              6: { cellWidth: 25 }, 7: { cellWidth: 'auto' },
+          }
+      });
     
-    let labNameForFile = 'Semua_Lab';
-    if (isAdmin && selectedLabId) labNameForFile = getLabNameForTitleAndFile(selectedLabId).replace(/\s+/g, '_');
-    else if (isKepalaLab) labNameForFile = getLabNameForTitleAndFile(kepalaLabAssignedLabId).replace(/\s+/g, '_');
-    else if (isTeknisi) labNameForFile = getLabNameForTitleAndFile(teknisiAssignedLabId).replace(/\s+/g, '_');
+      let labNameForFile = 'Semua_Lab';
+      if (isAdmin && selectedLabId) labNameForFile = getLabNameForTitleAndFile(selectedLabId).replace(/\s+/g, '_');
+      else if (isKepalaLab) labNameForFile = getLabNameForTitleAndFile(kepalaLabAssignedLabId).replace(/\s+/g, '_');
+      else if (isTeknisi) labNameForFile = getLabNameForTitleAndFile(teknisiAssignedLabId).replace(/\s+/g, '_');
 
-    doc.save(`Laporan_Pemeriksaan_${labNameForFile}_${formatDateForFilename(new Date())}.pdf`);
+      doc.save(`Laporan_Pemeriksaan_${labNameForFile}_${formatDateForFilename(new Date())}.pdf`);
+    } catch {
+      setPrintError('Gagal membuat PDF. Periksa koneksi lalu coba cetak kembali.');
+    } finally {
+      printLock.current = false;
+      setIsPrinting(false);
+    }
   };
 
   const headTable = [
@@ -337,6 +352,7 @@ const Pemeriksaan = () => {
 
   return (
     <Dashboard title="Riwayat Pemeriksaan Perangkat">
+      {printError && <p role="alert" className="p-3 text-red-700">{printError}</p>}
       <div className="flex flex-col w-full min-h-screen px-4 py-6 md:px-6 lg:px-8">
         {(successMsg && !errorMsg) && (
           <Notification type="success" message={successMsg} onClose={() => setSuccessMsg('')} />
@@ -354,7 +370,7 @@ const Pemeriksaan = () => {
                 value={selectedLabId}
                 onChange={handleLabChange}
                 className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                disabled={isLoading} // Nonaktifkan saat loading
+                disabled={isLoading || isPrinting} // Nonaktifkan saat loading
               >
                 <option value="">Tampilkan Semua Riwayat Lab</option>
                 {allLabs.map(lab => (
@@ -370,12 +386,12 @@ const Pemeriksaan = () => {
           {canPrintData && dataPemeriksaan.length > 0 && (
             <div className="w-full sm:w-auto flex sm:justify-end">
                 <button
-                    onClick={handlePrintData}
+                    aria-busy={isPrinting} onClick={handlePrintData}
                     className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 flex items-center text-sm"
                     title="Cetak Riwayat Pemeriksaan ke PDF"
-                    disabled={isLoading} // Nonaktifkan saat loading
+                    disabled={isLoading || isPrinting} // Nonaktifkan saat loading
                 >
-                    <FaPrint className="mr-2" /> Cetak Riwayat
+                    {isPrinting && <span role="status">Menyiapkan PDF… </span>}<FaPrint className="mr-2" /> Cetak Riwayat
                 </button>
             </div>
           )}
@@ -384,6 +400,7 @@ const Pemeriksaan = () => {
         {displayUserLabInfoText()}
 
         <Tabel
+          isLoading={isLoading}
           title={getCurrentTableTitle()}
           breadcrumbContext={userRole}
           headers={headTable}
@@ -392,28 +409,7 @@ const Pemeriksaan = () => {
           data={dataPemeriksaan}
           itemsPerPage={10}
           renderRow={renderPemeriksaanRow}
-        >
-          {isLoading && (
-            <tr>
-              <td colSpan={headTable.length} className="text-center py-20 text-gray-500">
-                <div className="flex flex-col justify-center items-center">
-                  <svg className="animate-spin h-10 w-10 text-blue-600 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                  <span className="text-lg">Memuat data pemeriksaan...</span>
-                </div>
-              </td>
-            </tr>
-          )}
-          {!isLoading && dataPemeriksaan.length === 0 && (
-            <tr>
-              <td colSpan={headTable.length} className="text-center py-20 text-gray-500 text-lg">
-                {isAdmin && !selectedLabId && allPemeriksaanData.length > 0 ? "Tidak ada data untuk filter lab yang dipilih."
-                 : isAdmin && !selectedLabId ? "Tidak ada riwayat pemeriksaan di semua lab, atau pilih lab untuk filter." 
-                 : (isKepalaLab || isTeknisi) && !allPemeriksaanData.some(p => p.lab_id?.toString() === (isKepalaLab ? kepalaLabAssignedLabId?.toString() : teknisiAssignedLabId?.toString())) && allPemeriksaanData.length > 0 ? `Tidak ada riwayat pemeriksaan ditemukan untuk lab Anda.`
-                 : "Tidak ada data riwayat pemeriksaan ditemukan."}
-              </td>
-            </tr>
-          )}
-        </Tabel>
+        />
 
         {/* 2. Uncomment render modal DetailPemeriksaan */}
         {showDetailModal && selectedPemeriksaanId && 
@@ -427,6 +423,7 @@ const Pemeriksaan = () => {
         }
         
       </div>
+      {deletionDialog}
     </Dashboard>
   );
 }

@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { build } from 'esbuild';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+
+test('actual schedule submit fails closed without loaded settings and follows admin updates', async () => {
+  const realReact = require('react');
+  let index = 0;
+  const state = [];
+  const hooks = {...realReact, useState(initial) { const i=index++; if (!(i in state)) state[i]=initial; return [state[i], next=>{state[i]=typeof next==='function'?next(state[i]):next;}]; }, useEffect() {}};
+  const settings = {settings:{schedule_start:'08:00',schedule_end:'16:00',lesson_duration:60}, loaded:false, loading:false, error:'', reloadSettings:async()=>{}};
+  const posted = [];
+  globalThis.__scheduleSubmit = {useSettings:()=>settings, post:async(...args)=>posted.push(args), get:async()=>({data:[]})};
+  const result = await build({entryPoints:['src/Components/KelolaJadwalLab/AddJadwalLab.jsx'], bundle:true, platform:'node', format:'cjs', write:false, jsx:'automatic', external:['react','react/jsx-runtime'],plugins:[{name:'boundaries',setup(b){
+    b.onResolve({filter:/Context\/SettingsContext$/},()=>({path:'settings',namespace:'test'}));
+    b.onResolve({filter:/utils\/api$/},()=>({path:'api',namespace:'test'}));
+    b.onResolve({filter:/react-router-dom$/},()=>({path:'router',namespace:'test'}));
+    b.onResolve({filter:/utils\/useTitle$/},()=>({path:'title',namespace:'test'}));
+    b.onResolve({filter:/(Layouts\/Dashboard|FormContainer)$/},()=>({path:'layout',namespace:'test'}));
+    b.onLoad({filter:/.*/,namespace:'test'},({path})=>({contents:path==='settings'?'export const useSettings=globalThis.__scheduleSubmit.useSettings;':path==='api'?'export const {post,get}=globalThis.__scheduleSubmit;':path==='router'?'export const useNavigate=()=>()=>{};':path==='title'?'export default ()=>{};':'export default function Layout({children}) {return children;}'}));
+  }}]});
+  const module={exports:{}};
+  new Function('require','module','exports',result.outputFiles[0].text)(name=>name==='react'?hooks:require(name),module,module.exports);
+  delete globalThis.__scheduleSubmit;
+  const render=()=>{index=0;return module.exports.default();};
+  const form=()=>render().props.children;
+  render();
+  state[0]={lab_id:'1',tanggal_pakai:'2099-11-05',jam_mulai:'08:00',jam_selesai:'09:00',kelas:'X',mata_pelajaran:'Komputer',kegiatan:'Belajar'};
+  const submit=async()=>form().props.onSubmit({preventDefault(){}});
+  await submit(); assert.equal(posted.length,0); assert.match(form().props.error,/belum dimuat/);
+  settings.loaded=true; settings.loading=true;
+  await submit(); assert.equal(posted.length,0);
+  settings.loading=false; settings.error='offline';
+  await submit(); assert.equal(posted.length,0);
+  settings.error='';
+  await submit(); assert.equal(posted.length,1); assert.equal(posted[0][0],'/pengajuan/create');
+  settings.settings={...settings.settings,schedule_start:'09:00'};
+  await submit(); assert.equal(posted.length,1); assert.match(form().props.error,/operasional/);
+});

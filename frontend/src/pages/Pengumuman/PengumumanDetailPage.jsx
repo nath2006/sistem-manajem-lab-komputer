@@ -1,8 +1,9 @@
+import LoadingSkeleton from '../../Components/Loading/Skeleton';
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { get } from "../../utils/api"; 
 import useTitle from "../../utils/useTitle"; 
-import { Card, Spinner, Alert, Button } from "flowbite-react";
+import { Card, Alert, Button } from "flowbite-react";
 import { ArrowLeft, Download, Paperclip } from "lucide-react";
 
 const PengumumanDetailPage = () => {
@@ -79,7 +80,7 @@ const PengumumanDetailPage = () => {
     try {
       const urlObject = new URL(apiServiceUrl);
       domainUrl = `${urlObject.protocol}//${urlObject.host}`;
-    } catch (e) {
+    } catch {
       console.error(
         "Invalid API Service URL for constructing file URL:",
         apiServiceUrl
@@ -93,14 +94,7 @@ const PengumumanDetailPage = () => {
   if (loading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen bg-gray-50 p-4">
-        <Spinner
-          aria-label="Memuat detail pengumuman"
-          size="xl"
-          className="text-red-600"
-        />
-        <span className="ml-3 text-lg text-red-700 mt-3">
-          Memuat detail pengumuman...
-        </span>
+        <LoadingSkeleton variant="detail" label="Memuat detail pengumuman..." />
       </div>
     );
   }

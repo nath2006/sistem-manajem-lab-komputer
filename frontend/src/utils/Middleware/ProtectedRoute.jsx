@@ -2,11 +2,12 @@
 import { useContext } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { AuthContext } from "../../Context/AuthContext";
+import LoadingSkeleton from '../../Components/Loading/Skeleton';
 
 // Untuk user login umum
 export const ProtectedRoute = () => {
   const { state } = useContext(AuthContext);
-  if (state.isLoading) return <div>Loading...</div>;
+  if (state.isLoading) return <LoadingSkeleton label="Memuat sesi..." className="p-6" />;
 
   return state.isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
 };
@@ -14,7 +15,7 @@ export const ProtectedRoute = () => {
 // Untuk filtering role secara fleksibel
 export const RoleRoute = ({ allowedRoles }) => {
   const { state } = useContext(AuthContext);
-  if (state.isLoading) return <div>Loading...</div>;
+  if (state.isLoading) return <LoadingSkeleton label="Memuat sesi..." className="p-6" />;
 
   return allowedRoles.includes(state.role)
     ? <Outlet />

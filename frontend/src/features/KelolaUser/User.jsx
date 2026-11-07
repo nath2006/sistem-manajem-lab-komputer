@@ -3,18 +3,17 @@ import Dashboard from '../../Layouts/Dashboard';
 import Tabel from '../../Layouts/Table';
 import { FaEye, FaTrash, FaFilePen } from "react-icons/fa6";
 import { get, deleteData } from '../../utils/api'; 
-import { useLocation, useNavigate } from 'react-router-dom'; 
+import { useLocation } from 'react-router-dom'; 
 import Notification from '../../Components/Notification/Notif';
 import useTitle from '../../utils/useTitle';
 import { AuthContext } from '../../Context/AuthContext';
-import DeleteConfirmation from '../../components/Notification/DeleteConfirmation';
+import useDeletionDialog from '../../Components/Deletion/useDeletionDialog';
 import DetailUser from '../../Components/User/DetailUser';
 import EditUser from '../../Components/User/EditUser';
 
 const User = () => {
     useTitle('Kelola Data User');
     const location = useLocation();
-    const navigate = useNavigate();
     const [successMsg, setSuccessMsg] = useState(location.state?.successMsg);
     const [errorMsg, setErrorMsg] = useState(location.state?.errorMsg);
     const [data, setData] = useState([]);
@@ -46,11 +45,12 @@ const User = () => {
         setShowEditModal(true);
     };
 
-    const handleDelete = DeleteConfirmation({
+    const {requestDeletion:handleDelete,dialog:deletionDialog} = useDeletionDialog({
+        resource: 'user',
         onDelete: (id) => deleteData(`/user/delete/${id}`),
         itemName: 'data user',
         onSuccess: (id) => {
-            setData(data.filter(item => item.user_id !== id));
+            setData(previous => previous.filter(item => item.user_id !== id));
             setSuccessMsg('Data user berhasil dihapus');
         },
         onError: (error) => {
@@ -72,10 +72,10 @@ const User = () => {
         try {
             const response = await get('/user');
             setData(response.data);
-            setIsLoading(false);
         } catch (err) {
             // setErrorMsg('Gagal Mengambil Data');
             console.error("Error fetching user data:", err);
+        } finally {
             setIsLoading(false);
         }
     };
@@ -102,7 +102,7 @@ const User = () => {
             <span
               className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${ // Tambahkan whitespace-nowrap
                 item.role === 'Admin' 
-                  ? 'bg-red-100 text-red-800' 
+                  ? 'bg-maroon/10 text-maroon' 
                   : item.role === 'Guru'
                   ? 'bg-green-100 text-green-800' 
                   : item.role === 'Teknisi'
@@ -126,18 +126,21 @@ const User = () => {
           </td>
           <td className='flex justify-center items-center py-6'>
             <div className='flex items-center justify-between gap-x-5'>
-              <button onClick={() => handleOpenModal(item.user_id)} className="text-red-700 hover:text-red-500 cursor-pointer">
+              <button type="button" aria-label={`Lihat detail user ${item.nama_lengkap}`}
+              onClick={() => handleOpenModal(item.user_id)} className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-maroon p-2 rounded-full hover:bg-maroon/10 hover:shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon transition-all duration-150 cursor-pointer">
                 <FaEye size={18} />
               </button>
               {isAdmin && (
                 <>
-                  <button onClick={() => handleOpenEditModal(item.user_id)} className="text-red-700 hover:text-red-500 cursor-pointer">
+                  <button type="button" aria-label={`Edit user ${item.nama_lengkap}`}
+              onClick={() => handleOpenEditModal(item.user_id)} className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-maroon p-2 rounded-full hover:bg-maroon/10 hover:shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon transition-all duration-150 cursor-pointer">
                     <FaFilePen size={18} />
                   </button>
     
                   <button
-                    onClick={() => handleDelete(item.user_id)}
-                    className="text-red-700 hover:text-red-500 cursor-pointer"
+                    type="button" aria-label={`Hapus user ${item.nama_lengkap}`}
+              onClick={() => handleDelete(item.user_id)}
+                    className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-maroon p-2 rounded-full hover:bg-maroon/10 hover:shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon transition-all duration-150 cursor-pointer"
                   >
                     <FaTrash size={18}/>
                   </button>
@@ -160,27 +163,21 @@ const User = () => {
                 )}
                 
                 <Tabel
+          isLoading={isLoading}
                     title="Kelola Data User"
                     breadcrumbContext={userRole}
                     headers={headTable}
                     to="/add-user"
-                    data={isLoading ? [] : data}
+                    data={data}
                     itemsPerPage={5}
                     renderRow={renderUserRow}
-                >
-                    {isLoading && (
-                        <tr>
-                        <td colSpan={headTable.length} className="text-center py-4">
-                            Loading...
-                        </td>
-                        </tr>
-                    )}
-                </Tabel>
+                />
 
                 {showModal && <DetailUser id={selectedId} onClose={() => setShowModal(false)} />}
                 {showEditModal && <EditUser id={selectedId} onClose={() => setShowEditModal(false)} onUpdate={fetchData} />}
             
             </div>
+            {deletionDialog}
         </Dashboard>
     )
 }
