@@ -1,5 +1,6 @@
 // labController.js (atau nama file controller Anda)
-import db from "../config/db.js"; // Sesuaikan path ke konfigurasi database Anda
+import db from "../config/db.js";
+import {createDeletionService,sendDeletionError} from "../services/deletionService.js"; // Sesuaikan path ke konfigurasi database Anda
 import fs from "fs";
 import path from "path";
 
@@ -282,48 +283,11 @@ export const updateLab = async (req, res) => {
 };
 
 // Delete Lab (dengan penghapusan file foto)
-export const deleteLab = async (req, res) => {
-  console.log("DELETE LAB - REQ.PARAMS:", req.params);
-  try {
-    const { id } = req.params;
-
-    const [oldRows] = await db.query("SELECT foto_lab FROM laboratorium WHERE lab_id = ?", [id]);
-    if (oldRows.length === 0) {
-      return res.status(404).json({ message: "Data Lab Tidak Ditemukan" });
-    }
-    const oldFotoLabBasename = oldRows[0].foto_lab;
-
-    const [result] = await db.query("DELETE FROM laboratorium WHERE lab_id = ?", [id]);
-    if (result.affectedRows === 0) {
-      // Seharusnya tidak terjadi karena sudah dicek di atas
-      return res.status(404).json({ message: "Data Lab Tidak Ditemukan saat delete" });
-    }
-
-    if (oldFotoLabBasename) {
-      const oldFileSystemPath = path.join(LAB_FILES_DIR_FROM_ROOT, oldFotoLabBasename);
-      if (fs.existsSync(oldFileSystemPath)) {
-        try {
-          fs.unlinkSync(oldFileSystemPath);
-          console.log(`File foto lab ${oldFotoLabBasename} berhasil dihapus.`);
-        } catch (unlinkErr) {
-          console.error(`Gagal menghapus file foto lab ${oldFotoLabBasename}:`, unlinkErr);
-        }
-      }
-    }
-
-    res.status(200).json({ message: "Data Lab Berhasil Dihapus" });
-  } catch (error) {
-    console.error("ERROR DELETE LAB:", error);
-    // Jika error disebabkan oleh foreign key constraint, pesannya akan lebih spesifik
-    if (error.code === 'ER_ROW_IS_REFERENCED_2' || error.message.includes('foreign key constraint fails')) {
-        return res.status(400).json({
-            message: "Gagal menghapus data lab karena masih digunakan di data lain (misalnya jadwal, perangkat, atau pengajuan).",
-            error: error.message
-        });
-    }
-    res.status(500).json({
-      message: "Menghapus Data Lab Gagal",
-      error: error.message,
-    });
-  }
+export const createDeleteLab = ({service = createDeletionService({db}), removeImage = filename => { const target = path.join(LAB_FILES_DIR_FROM_ROOT, path.basename(filename)); if (fs.existsSync(target)) fs.unlinkSync(target); }} = {}) => async (req,res) => {
+ try {
+  const row = await service.remove('laboratorium',req.params.id,req.user);
+  if(row.foto_lab) {try {removeImage(row.foto_lab);} catch { /* DB committed; image cleanup is best effort. */ }}
+  res.status(200).json({message:'Data Lab Berhasil Dihapus'});
+ } catch(error) {sendDeletionError(res,error);}
 };
+export const deleteLab = createDeleteLab();

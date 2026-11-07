@@ -1,161 +1,198 @@
+// import db from '../config/db.js';
+// import bcrypt from 'bcrypt';
+
+// //Buat User Baru
+// export const createUser = async (req, res) => {
+//   try {
+//     const { username, password, nama_lengkap, email, role } = req.body;
+//     const hashedPassword = await bcrypt.hash(password, 10);
+    
+//     const [result] = await db.query(
+//       "INSERT INTO user (username, password, nama_lengkap, email, role) VALUES (?, ?, ?, ?, ?)",
+//       [username, hashedPassword, nama_lengkap, email, role]
+//     );
+
+//     const newUser = {
+//       id: result.insertId,
+//       username,
+//       nama_lengkap,
+//       email,
+//       role
+//     }
+
+//     res.status(201).json({ 
+//       data: newUser,
+//       message: 'User Berhasil Ditambahkan '
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ 
+//       message: 'Membuat User Baru Gagal' ,
+//       error: error.message,
+//     });
+//   }
+// };
+
+// //Get All User
+// export const getAllUser = async (req, res) => {
+//   try {
+//     const [rows] = await db.query("SELECT * FROM user");
+//     res.status(200).json({
+//       data: rows,
+//       message: 'Berhasil Mengambil Data User'
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ 
+//       message: 'Mengambil Data User Gagal' ,
+//       error: error.message,
+//     });
+//   }
+// };
+
+// //Get User By ID  
+// export const getUserById = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const [rows] = await db.query("SELECT * FROM user WHERE user_id = ?", [id]);
+    
+//     if (rows.length === 0) {
+//       return res.status(404).json({ 
+//         message: 'User Tidak Ditemukan' 
+//       });
+//     }
+
+//     res.status(200).json({
+//       data: rows[0],
+//       message: 'Berhasil Mengambil Data User'
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ 
+//       message: 'Mengambil Data User Gagal' ,
+//       error: error.message,
+//     });
+//   }
+// };
+
+// //Update User
+// export const updateUser = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { username, password, nama_lengkap, email, role, is_online } = req.body; 
+
+//     let query = "UPDATE user SET username = ?, nama_lengkap = ?, email = ?, role = ?, is_online = ?"; // Tambahkan is_online di sini
+//     const queryParams = [username, nama_lengkap, email, role, is_online];
+
+//     if (is_online !== undefined) { // Atau periksa field lain seperti is_online
+//        query += ", is_online = ?"; // atau is_online = ?
+//        queryParams.push(is_online); // Kirim 1 atau 0
+//     }
+
+
+//     if (password && password.trim() !== "") {
+//       const hashedPassword = await bcrypt.hash(password, 10);
+//       query += ", password = ?";
+//       queryParams.push(hashedPassword);
+//     }
+
+//     query += " WHERE user_id = ?";
+//     queryParams.push(id);
+
+//     const [result] = await db.query(query, queryParams);
+
+//     if (result.affectedRows === 0) {
+//       return res.status(404).json({
+//         message: 'User Tidak Ditemukan'
+//       });
+//     }
+
+//     res.status(200).json({
+//       message: 'User Berhasil Diupdate'
+//     });
+//   } catch (error) {
+//     console.error("Error updating user:", error); // Logging yang lebih detail
+//     res.status(500).json({
+//       message: 'Mengupdate User Gagal',
+//       error: error.message,
+//     });
+//   }
+// };
+
+// // Hapus User
+// export const deleteUser = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     // Cek apakah user menjadi kepala lab
+//     const [labRelation] = await db.query(
+//       "SELECT * FROM laboratorium WHERE kepala_lab_id = ?",
+//       [id]
+//     );
+
+//     if (labRelation.length > 0) {
+//       return res.status(400).json({
+//         message: "Harap ubah kepala lab jika ingin melanjutkan menghapus user"
+//       });
+//     }
+
+//     // Lanjut hapus jika tidak ada relasi
+//     const [result] = await db.query(
+//       "DELETE FROM user WHERE user_id = ?",
+//       [id]
+//     );
+
+//     if (result.affectedRows === 0) {
+//       return res.status(404).json({ 
+//         message: 'User Tidak Ditemukan' 
+//       });
+//     }
+
+//     res.status(200).json({
+//       message: 'User Berhasil Dihapus'
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ 
+//       message: 'Menghapus User Gagal',
+//       error: error.message
+//     });
+//   }
+// };
 import db from '../config/db.js';
-import bcrypt from 'bcrypt';
+import {createDeletionService,sendDeletionError} from '../services/deletionService.js';
+import { asyncHandler } from '../core/asyncHandler.js';
+import { UserService } from '../services/UserService.js';
+import parseIdParam from '../utils/parseIdParam.js';
 
-//Buat User Baru
-export const createUser = async (req, res) => {
+const svc = new UserService();
+
+export const createUser = asyncHandler(async (req, res) => {
+  const created = await svc.create(req.body);
+  res.status(201).json({ data: created, message: 'User Berhasil Ditambahkan' });
+});
+
+export const getAllUser = asyncHandler(async (_req, res) => {
+  const rows = await svc.list();
+  res.status(200).json({ data: rows, message: 'Berhasil Mengambil Data User' });
+});
+
+export const getUserById = asyncHandler(async (req, res) => {
+  const id = parseIdParam(req.params.id);
+  const row = await svc.detail(id);
+  res.status(200).json({ data: row, message: 'Berhasil Mengambil Data User' });
+});
+
+export const updateUser = asyncHandler(async (req, res) => {
+  const id = parseIdParam(req.params.id);
+  const updated = await svc.update(id, req.body);
+  res.status(200).json({ data: updated, message: 'User Berhasil Diupdate' });
+});
+
+export const createDeleteUser = ({service = createDeletionService({db})} = {}) => async (req,res) => {
   try {
-    const { username, password, nama_lengkap, email, role } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    const [result] = await db.query(
-      "INSERT INTO user (username, password, nama_lengkap, email, role) VALUES (?, ?, ?, ?, ?)",
-      [username, hashedPassword, nama_lengkap, email, role]
-    );
-
-    const newUser = {
-      id: result.insertId,
-      username,
-      nama_lengkap,
-      email,
-      role
-    }
-
-    res.status(201).json({ 
-      data: newUser,
-      message: 'User Berhasil Ditambahkan '
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ 
-      message: 'Membuat User Baru Gagal' ,
-      error: error.message,
-    });
-  }
+    await service.remove('user',req.params.id,req.user);
+    res.status(200).json({message:'User Berhasil Dihapus'});
+  } catch(error) {sendDeletionError(res,error);}
 };
-
-//Get All User
-export const getAllUser = async (req, res) => {
-  try {
-    const [rows] = await db.query("SELECT * FROM user");
-    res.status(200).json({
-      data: rows,
-      message: 'Berhasil Mengambil Data User'
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ 
-      message: 'Mengambil Data User Gagal' ,
-      error: error.message,
-    });
-  }
-};
-
-//Get User By ID  
-export const getUserById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [rows] = await db.query("SELECT * FROM user WHERE user_id = ?", [id]);
-    
-    if (rows.length === 0) {
-      return res.status(404).json({ 
-        message: 'User Tidak Ditemukan' 
-      });
-    }
-
-    res.status(200).json({
-      data: rows[0],
-      message: 'Berhasil Mengambil Data User'
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ 
-      message: 'Mengambil Data User Gagal' ,
-      error: error.message,
-    });
-  }
-};
-
-//Update User
-export const updateUser = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { username, password, nama_lengkap, email, role, is_online } = req.body; 
-
-    let query = "UPDATE user SET username = ?, nama_lengkap = ?, email = ?, role = ?, is_online = ?"; // Tambahkan is_online di sini
-    const queryParams = [username, nama_lengkap, email, role, is_online];
-
-    if (is_online !== undefined) { // Atau periksa field lain seperti is_online
-       query += ", is_online = ?"; // atau is_online = ?
-       queryParams.push(is_online); // Kirim 1 atau 0
-    }
-
-
-    if (password && password.trim() !== "") {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      query += ", password = ?";
-      queryParams.push(hashedPassword);
-    }
-
-    query += " WHERE user_id = ?";
-    queryParams.push(id);
-
-    const [result] = await db.query(query, queryParams);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
-        message: 'User Tidak Ditemukan'
-      });
-    }
-
-    res.status(200).json({
-      message: 'User Berhasil Diupdate'
-    });
-  } catch (error) {
-    console.error("Error updating user:", error); // Logging yang lebih detail
-    res.status(500).json({
-      message: 'Mengupdate User Gagal',
-      error: error.message,
-    });
-  }
-};
-
-// Hapus User
-export const deleteUser = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Cek apakah user menjadi kepala lab
-    const [labRelation] = await db.query(
-      "SELECT * FROM laboratorium WHERE kepala_lab_id = ?",
-      [id]
-    );
-
-    if (labRelation.length > 0) {
-      return res.status(400).json({
-        message: "Harap ubah kepala lab jika ingin melanjutkan menghapus user"
-      });
-    }
-
-    // Lanjut hapus jika tidak ada relasi
-    const [result] = await db.query(
-      "DELETE FROM user WHERE user_id = ?",
-      [id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ 
-        message: 'User Tidak Ditemukan' 
-      });
-    }
-
-    res.status(200).json({
-      message: 'User Berhasil Dihapus'
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ 
-      message: 'Menghapus User Gagal',
-      error: error.message
-    });
-  }
-};
+export const deleteUser = createDeleteUser();

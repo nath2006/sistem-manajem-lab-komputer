@@ -2,8 +2,8 @@
 import db from "../config/db.js";
 
 export const getJadwalLabMingguan = async (req, res) => {
-    // const requesterUserId = req.user_id;
-    // const requesterRole = req.user.role;
+    const requesterUserId = req.user_id;
+    const requesterRole = req.user?.role;
 
     // if (!requesterUserId || !requesterRole) {
     //     console.error("Error di getJadwalLabMingguan: userId atau userRole tidak ditemukan dari token.");
@@ -93,7 +93,7 @@ export const getJadwalLabMingguan = async (req, res) => {
                 lab.nama_lab,
                 jl.guru_id,
                 usr.nama_lengkap AS nama_guru,
-                jl.tanggal,
+                DATE_FORMAT(jl.tanggal, '%Y-%m-%d') AS tanggal,
                 TIME_FORMAT(jl.jam_mulai, '%H:%i') AS jam_mulai,
                 TIME_FORMAT(jl.jam_selesai, '%H:%i') AS jam_selesai,
                 jl.kelas,

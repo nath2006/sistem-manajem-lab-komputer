@@ -114,6 +114,9 @@ export const login = async (req, res) => {
       responsePayload.lab_id_kepala = labIdKepala;
     }
 
+    // Identitas tervalidasi untuk middleware log, tanpa password dari row DB.
+    req.user_id = user.user_id;
+    req.user = { id: user.user_id, username: user.username, role: user.role };
     return res.status(200).json(responsePayload);
 
   } catch (error) {

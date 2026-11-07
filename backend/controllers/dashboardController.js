@@ -3,51 +3,30 @@ import db from "../config/db.js"; // Pastikan path ke konfigurasi database Anda 
 // Fungsi untuk mendapatkan semua statistik dashboard admin
 export const getDashboardStats = async (req, res) => {
   try {
-    // 1. Jumlah Pengguna Online
-    const [onlineUsersRows] = await db.query(
-      "SELECT COUNT(user_id) AS total_online_users FROM user WHERE is_online = true"
-    );
+    const [
+      [onlineUsersRows],
+      [devicesRows],
+      [labsRows],
+      [usersRows],
+      [announcementsRows],
+      [latestAnnouncements],
+      [perangkatByStatusRows],
+      [labByStatusRows],
+    ] = await Promise.all([
+      db.query("SELECT COUNT(user_id) AS total_online_users FROM user WHERE is_online = true"),
+      db.query("SELECT COUNT(perangkat_id) AS total_perangkat FROM perangkat"),
+      db.query("SELECT COUNT(lab_id) AS total_lab FROM laboratorium"),
+      db.query("SELECT COUNT(user_id) AS total_user FROM user"),
+      db.query("SELECT COUNT(id) AS total_pengumuman FROM pengumuman WHERE is_active = true"),
+      db.query("SELECT id, judul, content, DATE_FORMAT(created_at, '%d %M %Y %H:%i') AS tanggal_dibuat FROM pengumuman WHERE is_active = true ORDER BY created_at DESC LIMIT 5"),
+      db.query("SELECT status, COUNT(perangkat_id) AS jumlah FROM perangkat GROUP BY status"),
+      db.query("SELECT status, COUNT(lab_id) AS jumlah FROM laboratorium GROUP BY status"),
+    ]);
     const totalOnlineUsers = onlineUsersRows[0].total_online_users || 0;
-
-    // 2. Jumlah Total Perangkat
-    const [devicesRows] = await db.query(
-      "SELECT COUNT(perangkat_id) AS total_perangkat FROM perangkat"
-    );
     const totalPerangkat = devicesRows[0].total_perangkat || 0;
-
-    // 3. Jumlah Total Laboratorium
-    const [labsRows] = await db.query(
-      "SELECT COUNT(lab_id) AS total_lab FROM laboratorium"
-    );
     const totalLab = labsRows[0].total_lab || 0;
-
-    // 4. Jumlah Total Pengguna
-    const [usersRows] = await db.query(
-      "SELECT COUNT(user_id) AS total_user FROM user"
-    );
     const totalUser = usersRows[0].total_user || 0;
-
-    // 5. Jumlah Total Pengumuman yang Aktif
-    const [announcementsRows] = await db.query(
-      "SELECT COUNT(id) AS total_pengumuman FROM pengumuman WHERE is_active = true"
-    );
     const totalPengumuman = announcementsRows[0].total_pengumuman || 0;
-    
-    // 6. Mengambil beberapa pengumuman terbaru yang aktif (misalnya 5 terbaru)
-    const [latestAnnouncements] = await db.query(
-      "SELECT id, judul, content, DATE_FORMAT(created_at, '%d %M %Y %H:%i') AS tanggal_dibuat FROM pengumuman WHERE is_active = true ORDER BY created_at DESC LIMIT 5"
-    );
-
-    // 7. Jumlah perangkat berdasarkan status
-    const [perangkatByStatusRows] = await db.query(
-        "SELECT status, COUNT(perangkat_id) AS jumlah FROM perangkat GROUP BY status"
-    );
-
-    // 8. Jumlah laboratorium berdasarkan status
-    const [labByStatusRows] = await db.query(
-        "SELECT status, COUNT(lab_id) AS jumlah FROM laboratorium GROUP BY status"
-    );
-
 
     res.status(200).json({
       message: "Data statistik dashboard berhasil diambil",
