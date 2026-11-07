@@ -1,17 +1,19 @@
-import React, { useState, useEffect, useCallback, useContext, useMemo } from 'react';
+import LoadingSkeleton from '../../Components/Loading/Skeleton';
+import { useSettings } from '../../Context/SettingsContext';
+import { buildScheduleGrid } from '../../../../shared/schedule.mjs';
+import React, { useState, useRef, useEffect, useCallback, useContext, useMemo } from 'react';
 import Dashboard from '../../Layouts/Dashboard'; // Sesuaikan path jika perlu
 import { AuthContext } from '../../Context/AuthContext'; // Sesuaikan path jika perlu
 import { get } from '../../utils/api'; // Sesuaikan path jika perlu
 import useTitle from '../../utils/useTitle'; // Sesuaikan path jika perlu
 import Swal from 'sweetalert2';
 import { FaCalendarAlt, FaSyncAlt, FaPrint } from 'react-icons/fa';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { loadPdfTools } from '../../utils/loadPdfTools';
 
 const swalErrorButtonClass = 'px-5 py-2 text-sm font-semibold text-center bg-red-500 text-white border-2 border-red-500 rounded-md active:scale-95 focus:outline-none hover:bg-red-600';
 
 const HARI = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
-const JAM_SLOTS = Array.from({ length: 10 }, (_, i) => `${String(i + 7).padStart(2, '0')}:00`); // 07:00 - 16:00
+
 
 // Helper untuk memformat Date object ke "YYYY-MM-DD" berdasarkan tanggal lokalnya
 const formatDateToYYYYMMDD = (date) => {
@@ -101,13 +103,17 @@ const getGuruColor = (() => {
 
 
 export default function LihatJadwalLab() {
+  const printLock = useRef(false);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [printError, setPrintError] = useState('');
   useTitle('Lihat Jadwal Lab');
   const { state: authState, isLoading: authIsLoading } = useContext(AuthContext);
-  const { user: currentUser, role: userRole, lab_id_kepala: kepalaLabIdFromContext } = authState || {};
+  const { role: userRole, lab_id_kepala: kepalaLabIdFromContext } = authState || {};
 
-  console.log('DEBUG_AUTENTIKASI: AuthContext Data ->', { currentUser, userRole, authIsLoading, kepalaLabIdFromContext });
 
+  const { settings: scheduleSettings } = useSettings();
   const [labs, setLabs] = useState([]);
+  const [loadingLabs, setLoadingLabs] = useState(true);
   const [selectedLabId, setSelectedLabId] = useState('');
   const [namaSelectedLab, setNamaSelectedLab] = useState('');
   const [jadwalData, setJadwalData] = useState([]);
@@ -121,7 +127,9 @@ export default function LihatJadwalLab() {
   
   const inputTanggalPilihan = useMemo(() => periodeDataUntukAPI.start_date_api, [periodeDataUntukAPI.start_date_api]);
 
-  const [processedJadwal, setProcessedJadwal] = useState({});
+  const { slots: JAM_SLOTS, grid: processedJadwal } = useMemo(
+    () => buildScheduleGrid(jadwalData, tampilanMingguGrid.start_date_grid, scheduleSettings),
+    [jadwalData, tampilanMingguGrid.start_date_grid, scheduleSettings]);
 
   useEffect(() => {
     const getLabsList = async () => {
@@ -139,11 +147,11 @@ export default function LihatJadwalLab() {
                 confirmButtonText: 'OK', customClass: { confirmButton: swalErrorButtonClass, actions: 'flex justify-center mt-2' }, buttonsStyling: false,
             });
             return [];
+        } finally {
+            setLoadingLabs(false);
         }
     };
-    console.log('DEBUG_ROLE_EFFECT: Role Effect Triggered -> User Role:', userRole, 'kepalaLabIdFromContext:', kepalaLabIdFromContext);
     if (userRole === 'Admin') {
-      console.log('DEBUG_ROLE_EFFECT: Role is Admin');
       const initAdminLabs = async () => {
         await getLabsList();
         setSelectedLabId(''); 
@@ -151,7 +159,6 @@ export default function LihatJadwalLab() {
       };
       initAdminLabs();
     } else if (userRole === 'Kepala Lab' && kepalaLabIdFromContext) { 
-      console.log('DEBUG_ROLE_EFFECT: Role is Kepala Lab. Lab ID from context (authState.lab_id_kepala):', kepalaLabIdFromContext);
       setSelectedLabId(kepalaLabIdFromContext.toString());
       const fetchLabDetail = async () => {
           try {
@@ -161,17 +168,20 @@ export default function LihatJadwalLab() {
           } catch (e) {
             setNamaSelectedLab(`Lab ID ${kepalaLabIdFromContext}`);
             console.error(`DEBUG_KEPALA_LAB_ERROR: Error fetching detail for lab ID ${kepalaLabIdFromContext}:`, e);
+          } finally {
+            setLoadingLabs(false);
           }
       }
       fetchLabDetail();
     } else if (userRole === 'Guru') {
-      console.log('DEBUG_ROLE_EFFECT: Role is Guru');
       const initGuruLabs = async () => {
         await getLabsList(); 
         setSelectedLabId(''); 
         setNamaSelectedLab('');
       };
       initGuruLabs();
+    } else {
+      setLoadingLabs(false);
     }
   }, [userRole, kepalaLabIdFromContext]);
 
@@ -180,15 +190,15 @@ export default function LihatJadwalLab() {
     if (!selectedLabId) {
       console.log('[DEBUG_FETCH_JADWAL] selectedLabId is EMPTY, returning.');
       setJadwalData([]);
-      setProcessedJadwal({});
+
       return;
     }
     
     setIsLoading(true);
     try {
       const params = {
-        start_date: periodeDataUntukAPI.start_date_api, 
-        end_date: periodeDataUntukAPI.end_date_api,
+        start_date: tampilanMingguGrid.start_date_grid,
+        end_date: tampilanMingguGrid.end_date_grid,
         lab_id: selectedLabId,
       };
       console.log('[DEBUG_FETCH_JADWAL] API Request Params ->', params);
@@ -211,7 +221,7 @@ export default function LihatJadwalLab() {
         confirmButtonText: 'OK', customClass: { confirmButton: swalErrorButtonClass, actions: 'flex justify-center mt-2' }, buttonsStyling: false,
       });
     } finally { setIsLoading(false); }
-  }, [selectedLabId, periodeDataUntukAPI]); // Hanya periodeDataUntukAPI karena start_date_api dan end_date_api ada di dalamnya
+  }, [selectedLabId, periodeDataUntukAPI, tampilanMingguGrid]); // Hanya periodeDataUntukAPI karena start_date_api dan end_date_api ada di dalamnya
 
   useEffect(() => {
     console.log('DEBUG_EFFECT_FETCH_TRIGGER: Effect for fetchJadwal TRIGGERED. current selectedLabId:', selectedLabId);
@@ -219,102 +229,10 @@ export default function LihatJadwalLab() {
         fetchJadwal();
     } else {
         setJadwalData([]);
-        setProcessedJadwal({});
+  
     }
   }, [fetchJadwal, selectedLabId]);
 
-useEffect(() => {
-  console.log('[DEBUG_PROCESS_JADWAL] START Processing jadwalData. Current jadwalData (raw from API) ->', JSON.parse(JSON.stringify(jadwalData)));
-  console.log('[DEBUG_PROCESS_JADWAL] Grid dates for processing -> start_date_grid:', tampilanMingguGrid.start_date_grid, 'end_date_grid:', tampilanMingguGrid.end_date_grid);
-
-  const newProcessedJadwal = {};
-  HARI.forEach((hari) => {
-    newProcessedJadwal[hari] = {};
-    JAM_SLOTS.forEach(jam => { newProcessedJadwal[hari][jam] = null; });
-  });
-
-  const parseYYYYMMDDToLocalMidnight = (dateString_YYYY_MM_DD) => {
-    if (!dateString_YYYY_MM_DD || typeof dateString_YYYY_MM_DD !== 'string' || dateString_YYYY_MM_DD.length !== 10 || !dateString_YYYY_MM_DD.includes('-')) {
-        console.error(`[DEBUG parseYYYYMMDDToLocalMidnight] Invalid dateString input: '${dateString_YYYY_MM_DD}'`);
-        return new Date('Invalid Date');
-    }
-    const [year, month, day] = dateString_YYYY_MM_DD.split('-').map(Number);
-    return new Date(year, month - 1, day);
-  };
-
-  const tglGridMulaiObj = parseYYYYMMDDToLocalMidnight(tampilanMingguGrid.start_date_grid);
-  const tglGridSelesaiObj = parseYYYYMMDDToLocalMidnight(tampilanMingguGrid.end_date_grid);
-  console.log(`[DEBUG_PROCESS_JADWAL] Grid Date Objects (Local Midnight) -> GridStartObj: ${tglGridMulaiObj.toString()}, GridEndObj: ${tglGridSelesaiObj.toString()}`);
-
-  (jadwalData || []).forEach(item => {
-    console.log(
-        `[DEBUG_JADWAL_ITEM_RAW] ID: ${item.jadwal_id}, Tanggal API: '${item.tanggal}', Mulai API: '${item.jam_mulai}', Selesai API: '${item.jam_selesai}'`
-    );
-    const tanggalItemDariAPI = new Date(item.tanggal); 
-
-    console.log(`[DEBUG_PROCESS_JADWAL_ITEM] Processing item_id: ${item.jadwal_id}, Raw item.tanggal from API: '${item.tanggal}'`);
-    console.log(`[DEBUG_PROCESS_JADWAL_ITEM] Parsed item.tanggal to JS Date (tanggalItemDariAPI): ${tanggalItemDariAPI.toString()} (UTC: ${tanggalItemDariAPI.toUTCString()})`);
-
-    if (isNaN(tanggalItemDariAPI.getTime())) {
-        console.warn(`[DEBUG_PROCESS_JADWAL_ITEM] Skipping item_id: ${item.jadwal_id} due to invalid parsed date from '${item.tanggal}'`);
-        return; 
-    }
-
-    const tanggalItemUntukPerbandinganGrid = new Date(
-      tanggalItemDariAPI.getFullYear(),
-      tanggalItemDariAPI.getMonth(),
-      tanggalItemDariAPI.getDate()
-    );
-    
-    if (tanggalItemUntukPerbandinganGrid >= tglGridMulaiObj && tanggalItemUntukPerbandinganGrid <= tglGridSelesaiObj) {
-      console.log('[DEBUG_PROCESS_JADWAL_ITEM] Item ID', item.jadwal_id, 'IS IN grid date range.');
-      
-      const hariItemIndex = tanggalItemDariAPI.getDay(); 
-      const targetHariIndex = hariItemIndex === 0 ? 6 : hariItemIndex - 1; 
-      
-      console.log(`[DEBUG_PROCESS_JADWAL_ITEM] Item ID ${item.jadwal_id}: tanggalItemDariAPI.getDay() is ${hariItemIndex}, targetHariIndex is ${targetHariIndex}`);
-
-      if (targetHariIndex >= 0 && targetHariIndex < HARI.length) { 
-        const namaHari = HARI[targetHariIndex];
-        const jamMulaiInt = parseInt(item.jam_mulai.split(':')[0]);
-        const jamSelesaiInt = parseInt(item.jam_selesai.split(':')[0]);
-        
-        const duration = Math.max(1, (jamSelesaiInt - jamMulaiInt) + 1); 
-
-        console.log(
-            `[DEBUG_JADWAL_ITEM_CALC] ID: ${item.jadwal_id}, jamMulaiInt: ${jamMulaiInt}, jamSelesaiInt (dianggap inklusif): ${jamSelesaiInt}, duration (rowspan): ${duration}`
-        );
-
-        let jamCursor = jamMulaiInt;
-        let isStartCell = true;
-
-        while (jamCursor <= jamSelesaiInt && jamCursor < 17) { 
-          const jamKey = `${String(jamCursor).padStart(2, '0')}:00`;
-          if (JAM_SLOTS.includes(jamKey) && (!newProcessedJadwal[namaHari][jamKey] || !newProcessedJadwal[namaHari][jamKey]?.isOccupiedByOther)) {
-            if (isStartCell) {
-              newProcessedJadwal[namaHari][jamKey] = { 
-                ...item, 
-                rowspan: duration, 
-                isStartCell: true, 
-                tanggalObjectUntukDebug: tanggalItemDariAPI.toString() 
-              };
-              isStartCell = false;
-            } else {
-              newProcessedJadwal[namaHari][jamKey] = { isOccupiedByOther: true };
-            }
-          }
-          jamCursor++;
-        }
-      } else {
-        console.warn('[DEBUG_PROCESS_JADWAL_ITEM] Item ID', item.jadwal_id, 'targetHariIndex out of bounds (not Mon-Fri):', targetHariIndex);
-      }
-    } else {
-      console.log('[DEBUG_PROCESS_JADWAL_ITEM] Item ID', item.jadwal_id, 'IS NOT IN grid date range. ItemDateForCompare:', tanggalItemUntukPerbandinganGrid.toString(), 'GridStart:', tglGridMulaiObj.toString(), 'GridEnd:', tglGridSelesaiObj.toString());
-    }
-  });
-  console.log('[DEBUG_PROCESS_JADWAL] END setProcessedJadwal complete. newProcessedJadwal ->', JSON.parse(JSON.stringify(newProcessedJadwal)));
-  setProcessedJadwal(newProcessedJadwal);
-}, [jadwalData, tampilanMingguGrid.start_date_grid, tampilanMingguGrid.end_date_grid]);
 
   const handleLabChange = (event) => {
     const newLabId = event.target.value;
@@ -355,7 +273,7 @@ useEffect(() => {
     console.log('[DEBUG_PERIODE] kembaliKeModeOtomatis, referensiTanggalAwal baru (local) ->', tanggalHariIni.toISOString());
   };
 
-const handleCetakJadwal = () => {
+const handleCetakJadwal = async () => {
     if (!selectedLabId && (userRole === 'Admin' || userRole === 'Guru')) {
         Swal.fire('Info', 'Silakan pilih laboratorium terlebih dahulu.', 'info');
         return;
@@ -370,130 +288,142 @@ const handleCetakJadwal = () => {
         return;
     }
 
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 10;
+    if (printLock.current) return;
+    printLock.current = true;
+    setIsPrinting(true);
+    setPrintError('');
+    try {
+      const { jsPDF, autoTable } = await loadPdfTools();
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 10;
 
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    const namaLabUntukCetak = namaSelectedLab || (selectedLabId ? `Lab ID ${selectedLabId}` : 'Nama Lab Tidak Diketahui');
-    doc.text(`Jadwal Laboratorium: ${namaLabUntukCetak}`, pageWidth / 2, margin + 2, { align: 'center' });
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      const namaLabUntukCetak = namaSelectedLab || (selectedLabId ? `Lab ID ${selectedLabId}` : 'Nama Lab Tidak Diketahui');
+      doc.text(`Jadwal Laboratorium: ${namaLabUntukCetak}`, pageWidth / 2, margin + 2, { align: 'center' });
     
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Periode Tampilan Grid: ${tampilanMingguGrid.display_grid}`, pageWidth / 2, margin + 7, { align: 'center' });
-    doc.text(`Periode Data Aktual (API): ${periodeDataUntukAPI.display_api}`, pageWidth / 2, margin + 11, { align: 'center' });
-    doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, pageWidth - margin, margin + 2, { align: 'right' });
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Periode Tampilan Grid: ${tampilanMingguGrid.display_grid}`, pageWidth / 2, margin + 7, { align: 'center' });
+      doc.text(`Periode Data Aktual (API): ${periodeDataUntukAPI.display_api}`, pageWidth / 2, margin + 11, { align: 'center' });
+      doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, pageWidth - margin, margin + 2, { align: 'right' });
 
-    const head = [[
-        { content: "Jam", styles: { halign: 'center', fontStyle: 'bold', fillColor: [107, 33, 168], textColor: 255, fontSize: 7, cellWidth: 15, minCellHeight: 7 } },
-        ...HARI.map(hari => ({ content: hari, styles: { halign: 'center', fontStyle: 'bold', fillColor: [107, 33, 168], textColor: 255, fontSize: 7, minCellHeight: 7 } }))
-    ]];
+      const head = [[
+          { content: "Jam", styles: { halign: 'center', fontStyle: 'bold', fillColor: [107, 33, 168], textColor: 255, fontSize: 7, cellWidth: 15, minCellHeight: 7 } },
+          ...HARI.map(hari => ({ content: hari, styles: { halign: 'center', fontStyle: 'bold', fillColor: [107, 33, 168], textColor: 255, fontSize: 7, minCellHeight: 7 } }))
+      ]];
 
-    const body = [];
-    const guruColorsLegend = new Map(); 
+      const body = [];
+      const guruColorsLegend = new Map(); 
 
-    JAM_SLOTS.forEach(jam => {
-        const rowData = [];
-        rowData.push({
-            content: jam,
-            styles: { halign: 'center', fontStyle: 'bold', fontSize: 6, cellWidth: 15, minCellHeight: 10 } 
-        });
+      JAM_SLOTS.forEach(jam => {
+          const rowData = [];
+          rowData.push({
+              content: jam,
+              styles: { halign: 'center', fontStyle: 'bold', fontSize: 6, cellWidth: 15, minCellHeight: 10 } 
+          });
 
-        HARI.forEach(hari => {
-            const jadwalItem = processedJadwal[hari]?.[jam];
+          HARI.forEach(hari => {
+              const jadwalItem = processedJadwal[hari]?.[jam];
             
-            if (jadwalItem?.isStartCell) {
-                const guruColor = getGuruColor(jadwalItem.guru_id);
-                if (jadwalItem.guru_id && jadwalItem.nama_guru && !guruColorsLegend.has(jadwalItem.guru_id)) {
-                    guruColorsLegend.set(jadwalItem.guru_id, { nama: jadwalItem.nama_guru, color: guruColor });
-                }
-                rowData.push({
-                    content: `${jadwalItem.kelas || '-'}\n${jadwalItem.mata_pelajaran || '-'}\n(${jadwalItem.nama_guru || '-'})` +
-                             `${jadwalItem.kegiatan ? `\nKeg: ${jadwalItem.kegiatan.substring(0,18)}${jadwalItem.kegiatan.length > 18 ? '...' : ''}` : ''}`,
-                    rowSpan: jadwalItem.rowspan,
-                    styles: { 
-                        fillColor: guruColor, 
-                        valign: 'middle', 
-                        halign: 'center',
-                        fontSize: 5.5,
-                        minCellHeight: 10 * (jadwalItem.rowspan || 1) 
-                    }
-                });
-            } else if (jadwalItem?.isOccupiedByOther) {
-                // Sel ini ditutupi oleh rowspan, jadi tidak perlu ditambahkan ke rowData
-            } else {
-                rowData.push({ content: '', styles: { minCellHeight: 10 } });
-            }
-        });
-        body.push(rowData);
-    });
+              if (jadwalItem?.isStartCell) {
+                  const guruColor = getGuruColor(jadwalItem.guru_id);
+                  if (jadwalItem.guru_id && jadwalItem.nama_guru && !guruColorsLegend.has(jadwalItem.guru_id)) {
+                      guruColorsLegend.set(jadwalItem.guru_id, { nama: jadwalItem.nama_guru, color: guruColor });
+                  }
+                  rowData.push({
+                      content: `${jadwalItem.kelas || '-'}\n${jadwalItem.mata_pelajaran || '-'}\n(${jadwalItem.nama_guru || '-'})` +
+                               `${jadwalItem.kegiatan ? `\nKeg: ${jadwalItem.kegiatan.substring(0,18)}${jadwalItem.kegiatan.length > 18 ? '...' : ''}` : ''}`,
+                      rowSpan: jadwalItem.rowspan,
+                      styles: { 
+                          fillColor: guruColor, 
+                          valign: 'middle', 
+                          halign: 'center',
+                          fontSize: 5.5,
+                          minCellHeight: 10 * (jadwalItem.rowspan || 1) 
+                      }
+                  });
+              } else if (jadwalItem?.isOccupiedByOther) {
+                  // Sel ini ditutupi oleh rowspan, jadi tidak perlu ditambahkan ke rowData
+              } else {
+                  rowData.push({ content: '', styles: { minCellHeight: 10 } });
+              }
+          });
+          body.push(rowData);
+      });
 
-    const columnWidth = (pageWidth - (margin*2) - 15) / 5; // Lebar untuk kolom hari
-    const columnStyles = {
-        0: { cellWidth: 15 }, // Kolom Jam
-        1: { cellWidth: columnWidth }, 
-        2: { cellWidth: columnWidth },
-        3: { cellWidth: columnWidth },
-        4: { cellWidth: columnWidth },
-        5: { cellWidth: columnWidth },
-    };
+      const columnWidth = (pageWidth - (margin*2) - 15) / 5; // Lebar untuk kolom hari
+      const columnStyles = {
+          0: { cellWidth: 15 }, // Kolom Jam
+          1: { cellWidth: columnWidth }, 
+          2: { cellWidth: columnWidth },
+          3: { cellWidth: columnWidth },
+          4: { cellWidth: columnWidth },
+          5: { cellWidth: columnWidth },
+      };
     
-    // Jika tidak ada kolom sama sekali (misalnya karena HARI kosong, atau hanya kolom Jam)
-    // Autotable mungkin error. Ini hanya pengaman, HARI seharusnya tidak kosong.
-    const finalColumnStyles = HARI.length > 0 ? columnStyles : { 0: { cellWidth: 'auto'} };
+      // Jika tidak ada kolom sama sekali (misalnya karena HARI kosong, atau hanya kolom Jam)
+      // Autotable mungkin error. Ini hanya pengaman, HARI seharusnya tidak kosong.
+      const finalColumnStyles = HARI.length > 0 ? columnStyles : { 0: { cellWidth: 'auto'} };
 
 
-    autoTable(doc, {
-        head: head,
-        body: body,
-        startY: margin + 18,
-        theme: 'grid',
-        styles: { fontSize: 5.5, cellPadding: 0.7, halign: 'center', valign: 'middle', overflow: 'linebreak', lineWidth: 0.1, lineColor: [180,180,180] },
-        columnStyles: finalColumnStyles,
-        didDrawPage: (data) => {
-            if (guruColorsLegend.size > 0 && data.pageNumber === doc.getNumberOfPages()) {
-                let legendY = data.cursor.y + 7; 
-                const legendX = margin;
-                const legendItemHeight = 4;
-                const legendColorBoxSize = 3;
-                const legendTextOffsetX = 4;
-                const maxLegendItemsPerPage = 10; // Perkiraan
-                let itemsOnCurrentPage = 0;
+      autoTable(doc, {
+          head: head,
+          body: body,
+          startY: margin + 18,
+          theme: 'grid',
+          styles: { fontSize: 5.5, cellPadding: 0.7, halign: 'center', valign: 'middle', overflow: 'linebreak', lineWidth: 0.1, lineColor: [180,180,180] },
+          columnStyles: finalColumnStyles,
+          didDrawPage: (data) => {
+              if (guruColorsLegend.size > 0 && data.pageNumber === doc.getNumberOfPages()) {
+                  let legendY = data.cursor.y + 7; 
+                  const legendX = margin;
+                  const legendItemHeight = 4;
+                  const legendColorBoxSize = 3;
+                  const legendTextOffsetX = 4;
+                  const maxLegendItemsPerPage = 10; // Perkiraan
+                  let itemsOnCurrentPage = 0;
 
-                const drawLegendHeader = (yPos) => {
-                    doc.setFontSize(8);
-                    doc.setFont('helvetica', 'bold');
-                    doc.text("Legenda Warna Guru:", legendX, yPos);
-                    doc.setFont('helvetica', 'normal');
-                    return yPos + legendItemHeight;
-                };
+                  const drawLegendHeader = (yPos) => {
+                      doc.setFontSize(8);
+                      doc.setFont('helvetica', 'bold');
+                      doc.text("Legenda Warna Guru:", legendX, yPos);
+                      doc.setFont('helvetica', 'normal');
+                      return yPos + legendItemHeight;
+                  };
                 
-                legendY = drawLegendHeader(legendY);
+                  legendY = drawLegendHeader(legendY);
 
-                Array.from(guruColorsLegend.entries()).forEach(([guru_id, info]) => {
-                    if (legendY > doc.internal.pageSize.getHeight() - (margin + 5) || itemsOnCurrentPage >= maxLegendItemsPerPage) {
-                        doc.addPage();
-                        legendY = margin + 7;
-                        legendY = drawLegendHeader(legendY);
-                        itemsOnCurrentPage = 0;
-                    }
-                    doc.setFillColor(info.color[0], info.color[1], info.color[2]);
-                    doc.rect(legendX, legendY - (legendColorBoxSize/2) -1 , legendColorBoxSize, legendColorBoxSize, 'F'); 
-                    doc.text(`${info.nama || 'Tidak Diketahui'}`, legendX + legendTextOffsetX, legendY);
-                    legendY += legendItemHeight;
-                    itemsOnCurrentPage++;
-                });
-            }
-        }
-    });
+                  Array.from(guruColorsLegend.values()).forEach((info) => {
+                      if (legendY > doc.internal.pageSize.getHeight() - (margin + 5) || itemsOnCurrentPage >= maxLegendItemsPerPage) {
+                          doc.addPage();
+                          legendY = margin + 7;
+                          legendY = drawLegendHeader(legendY);
+                          itemsOnCurrentPage = 0;
+                      }
+                      doc.setFillColor(info.color[0], info.color[1], info.color[2]);
+                      doc.rect(legendX, legendY - (legendColorBoxSize/2) -1 , legendColorBoxSize, legendColorBoxSize, 'F'); 
+                      doc.text(`${info.nama || 'Tidak Diketahui'}`, legendX + legendTextOffsetX, legendY);
+                      legendY += legendItemHeight;
+                      itemsOnCurrentPage++;
+                  });
+              }
+          }
+      });
     
-    const namaFileLab = (namaSelectedLab || `Lab_ID_${selectedLabId}` || 'Jadwal_Lab').replace(/[\s/]/g, '_');
-    doc.save(`Jadwal_${namaFileLab}_${tampilanMingguGrid.start_date_grid}_hingga_${tampilanMingguGrid.end_date_grid}.pdf`);
+      const namaFileLab = (namaSelectedLab || `Lab_ID_${selectedLabId}` || 'Jadwal_Lab').replace(/[\s/]/g, '_');
+      doc.save(`Jadwal_${namaFileLab}_${tampilanMingguGrid.start_date_grid}_hingga_${tampilanMingguGrid.end_date_grid}.pdf`);
+    } catch {
+      setPrintError('Gagal membuat PDF. Periksa koneksi lalu coba cetak kembali.');
+    } finally {
+      printLock.current = false;
+      setIsPrinting(false);
+    }
 };
 
 
-  if (authIsLoading) return <Dashboard><div className="p-6 text-center">Memverifikasi autentikasi...</div></Dashboard>;
+  if (authIsLoading) return <Dashboard><LoadingSkeleton label="Memverifikasi autentikasi..." /></Dashboard>;
   if (!userRole) return <Dashboard><div className="p-6 text-center">Silakan login untuk melihat jadwal.</div></Dashboard>;
 
   const isLabValidForDisplay = !!selectedLabId; 
@@ -501,13 +431,14 @@ const handleCetakJadwal = () => {
 
   return (
     <Dashboard>
+      {printError && <p role="alert" className="p-3 text-red-700">{printError}</p>}
       <div className="p-4 md:p-6 space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-6">
           <h1 className="text-2xl font-semibold text-gray-800">Lihat Jadwal Laboratorium</h1>
           {(userRole === 'Admin' || userRole === 'Guru') && (
             <div className="w-full sm:w-auto sm:min-w-[200px] md:min-w-[250px]">
               <select id="labFilterJadwal" value={selectedLabId} onChange={handleLabChange}
-                className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-600 focus:border-red-600 block w-full p-2.5"
+                className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-maroon focus:border-maroon block w-full p-2.5"
                 disabled={isLoading || labs.length === 0}>
                 <option value="">{(labs.length === 0 && !isLoading && userRole !== 'Kepala Lab') ? 'Tidak ada lab' : 'Pilih Laboratorium'}</option>
                 {labs.map(lab => (<option key={lab.lab_id} value={lab.lab_id.toString()}>{lab.nama_lab}</option>))}
@@ -522,8 +453,8 @@ const handleCetakJadwal = () => {
         <div className="mb-4 p-4 bg-gray-50 rounded-lg shadow-sm space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
             <button onClick={() => gantiPeriodeData(-1)} disabled={isLoading}
-              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2">
-              &lt; <span className="hidden xs:inline">Periode Seb.</span>
+              className="min-h-11 px-4 py-2 bg-maroon text-white rounded-md hover:bg-maroon/90 hover:shadow-md active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none transition-all duration-150 text-sm flex items-center justify-center gap-2">
+              &lt; <span className="inline">Periode Seb.</span>
             </button>
             <div className="text-center">
               <div className="text-lg font-semibold text-gray-700">
@@ -534,14 +465,14 @@ const handleCetakJadwal = () => {
               </div>
             </div>
             <button onClick={() => gantiPeriodeData(1)} disabled={isLoading}
-              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2">
-              <span className="hidden xs:inline">Periode Berik.</span> &gt;
+              className="min-h-11 px-4 py-2 bg-maroon text-white rounded-md hover:bg-maroon/90 hover:shadow-md active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none transition-all duration-150 text-sm flex items-center justify-center gap-2">
+              <span className="inline">Periode Berik.</span> &gt;
             </button>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3 border-t border-gray-200">
             <button onClick={kembaliKeModeOtomatis}
               disabled={isLoading || modeTanggal === 'otomatis'}
-              className="w-full sm:w-auto px-4 py-2 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-4 py-2 text-sm bg-maroon text-white rounded-md hover:bg-maroon/90 hover:shadow-md active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none transition-all duration-150 flex items-center justify-center gap-2"
               title="Lihat data untuk 7 hari mulai hari ini">
               <FaSyncAlt /> 7 Hari (Hari Ini)
             </button>
@@ -550,7 +481,7 @@ const handleCetakJadwal = () => {
                 <FaCalendarAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input type="date" id="inputTanggalManual" value={inputTanggalPilihan}
                     onChange={handleTanggalManualChange} disabled={isLoading}
-                    className="w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-purple-600 focus:border-purple-600 block p-2.5 pl-10"
+                    className="w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-maroon focus:border-maroon block p-2.5 pl-10"
                     title="Pilih tanggal awal untuk periode data 7 hari" />
             </div>
           </div>
@@ -559,25 +490,16 @@ const handleCetakJadwal = () => {
         
         {isLabValidForDisplay && !isLoading && (userRole === 'Admin' || userRole === 'Kepala Lab') && (
             <div className="flex justify-end mb-4">
-                <button onClick={handleCetakJadwal}
-                    className="px-4 py-2 bg-teal-500 text-white rounded-md hover:bg-teal-600 flex items-center gap-2 text-sm"
+                <button disabled={isPrinting} aria-busy={isPrinting} onClick={handleCetakJadwal}
+                    className="min-h-11 px-4 py-2 bg-maroon text-white rounded-md hover:bg-maroon/90 hover:shadow-md active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon focus-visible:ring-offset-2 transition-all duration-150 flex items-center gap-2 text-sm"
                     title="Cetak Jadwal Mingguan (Grid)">
-                    <FaPrint /> Cetak Jadwal Grid
+                    {isPrinting && <span role="status">Menyiapkan PDF… </span>}<FaPrint /> Cetak Jadwal Grid
                 </button>
             </div>
         )}
 
-        {isLoading && (
-          <div className="text-center py-10 text-gray-500">
-            <div className="flex flex-col justify-center items-center">
-              <svg className="animate-spin h-8 w-8 text-purple-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span>Memuat jadwal...</span>
-            </div>
-          </div>
-        )}
+        {loadingLabs && labs.length === 0 && <LoadingSkeleton variant="form" rows={1} label="Memuat laboratorium..." />}
+        {isLoading && jadwalData.length === 0 && <LoadingSkeleton variant="table" label="Memuat jadwal..." />}
 
         {!isLoading && (userRole === 'Admin' || userRole === 'Guru') && !selectedLabId && (
             <div className="text-center py-10 text-gray-500 bg-white rounded-lg shadow"> Silakan pilih laboratorium untuk menampilkan jadwal. </div>
@@ -587,8 +509,10 @@ const handleCetakJadwal = () => {
             <div className="text-center py-10 text-gray-500 bg-white rounded-lg shadow"> Tidak ada jadwal untuk laboratorium dan periode data yang dipilih. </div>
         )}
 
-        {!isLoading && isLabValidForDisplay && jadwalData.length > 0 && (
-          <div className="overflow-x-auto bg-white rounded-lg shadow">
+        {isLabValidForDisplay && jadwalData.length > 0 && (
+          <div>
+          <p className="text-xs text-gray-600 mb-2 sm:hidden">Geser tabel ke samping untuk melihat semua hari.</p>
+          <div tabIndex={0} role="region" aria-label="Jadwal mingguan, geser untuk melihat semua hari" className="overflow-x-auto bg-white rounded-lg shadow">
             <table className="min-w-full w-full border-collapse border border-gray-300">
               <thead>
                 <tr className="bg-gray-100">
@@ -605,7 +529,7 @@ const handleCetakJadwal = () => {
                       if (jadwalItem?.isStartCell) {
                         return (
                           <td key={`${hari}-${jam}`} 
-                            className="p-2 border border-gray-300 align-top relative bg-red-50 hover:bg-purple-100 transition-colors" // Warna dasar bisa dihilangkan jika mau full dari getGuruColor
+                            className="p-2 border border-gray-300 align-top relative hover:brightness-95 transition-[filter] duration-150"
                             style={{ backgroundColor: `rgb(${getGuruColor(jadwalItem.guru_id).join(',')})` }} // Dinamis background color
                             rowSpan={jadwalItem.rowspan}>
                             <div className="text-xs text-gray-800 h-full flex flex-col justify-start"> {/* Warna teks bisa disesuaikan agar kontras */}
@@ -626,6 +550,7 @@ const handleCetakJadwal = () => {
                 ))}
               </tbody>
             </table>
+          </div>
           </div>
         )}
       </div>

@@ -7,11 +7,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Notification from '../../Components/Notification/Notif';
 import useTitle from '../../utils/useTitle';
 import { AuthContext } from '../../Context/AuthContext';
-import DeleteConfirmation from '../../components/Notification/DeleteConfirmation';
+import useDeletionDialog from '../../Components/Deletion/useDeletionDialog';
 import DetailPengecekan from '../../Components/Pengecekan/DetailPengecekan'; // Pastikan path ini benar
 import EditPengecekan from '../../Components/Pengecekan/EditPengecekan';   // Pastikan path ini benar
 import truncateText from '../../utils/truncateText';
 import BuatPerbaikanModal from '../../Components/Perbaikan/AddPerbaikan'; // Pastikan path ini benar
+
+import AddPengecekan from '../../Components/Pengecekan/AddPengecekan';
 
 const Pengecekan = () => {
   useTitle('Data Pengecekan Perangkat'); // Judul lebih deskriptif
@@ -20,6 +22,8 @@ const Pengecekan = () => {
 
   const [successMsg, setSuccessMsg] = useState(location.state?.successMsg || '');
   const [errorMsg, setErrorMsg] = useState(location.state?.errorMsg || '');
+  const [showHistory, setShowHistory] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
   const [data, setData] = useState([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
@@ -36,16 +40,16 @@ const Pengecekan = () => {
   // --- Penyesuaian Hak Akses ---
   const canViewDetail = true; // Semua role yang masuk halaman ini bisa lihat detail
   const canEditPengecekan = userRole === 'Admin';
-  const canDeletePengecekan = userRole === 'Admin';
+  const canDeletePengecekan = false; // Temuan dipertahankan sebagai riwayat.
   const canInitiatePerbaikan = userRole === 'Admin' || userRole === 'Teknisi'; // Admin & Teknisi bisa buat perbaikan
-  const canAddPengecekan = userRole === 'Admin'; // Hanya Admin yang bisa tambah data pengecekan baru
+  const canAddPengecekan = userRole === 'Admin' || userRole === 'Teknisi'; // Hanya Admin yang bisa tambah data pengecekan baru
 
   useEffect(() => {
     if (successMsg || errorMsg) {
       const timer = setTimeout(() => {
         setSuccessMsg('');
         setErrorMsg('');
-        if (location.state) {
+        if (location.state && !location.state.deletionContext) {
           navigate(location.pathname, { replace: true });
         }
       }, 3000);
@@ -103,7 +107,8 @@ const Pengecekan = () => {
     setShowBuatPerbaikanModal(true);
   };
 
-  const handleDelete = DeleteConfirmation({
+  const {requestDeletion:handleDelete,dialog:deletionDialog} = useDeletionDialog({
+    resource: 'pengecekan',
     onDelete: (id) => deleteData(`/pengecekan/delete/${id}`), // Endpoint untuk menghapus pengecekan
     itemName: 'data pengecekan',
     onSuccess: (deletedId) => {
@@ -221,41 +226,26 @@ const Pengecekan = () => {
           <Notification type="error" message={errorMsg} onClose={() => setErrorMsg('')} />
         )}
 
+        <div className="mb-4 flex flex-wrap gap-3">
+          <button className={`rounded-md border px-4 py-2 text-sm ${!showHistory ? 'bg-maroon hover:bg-maroon/90 text-white' : 'bg-white'}`} onClick={() => setShowHistory(false)}>Antrian Aktif</button>
+          <button className={`rounded-md border px-4 py-2 text-sm ${showHistory ? 'bg-maroon hover:bg-maroon/90 text-white' : 'bg-white'}`} onClick={() => setShowHistory(true)}>Riwayat Selesai</button>
+          {canAddPengecekan && <button className="rounded-md border bg-white px-4 py-2 text-sm" onClick={() => setShowAdd(true)}>Troubleshoot Baru</button>}
+          <button className="rounded-md border bg-white px-4 py-2 text-sm" onClick={() => fetchData(true)}>Muat Ulang</button>
+        </div>
         <Tabel
+          isLoading={isInitialLoading}
           title="Data Pengecekan Perangkat"
           breadcrumbContext={userRole}
           headers={headTable}
           // Tombol "Tambah Pengecekan Baru" hanya muncul untuk Admin
-          to={canAddPengecekan ? "/add-pengecekan" : null} 
+          to={null} 
           buttonText={canAddPengecekan ? "Tambah Pengecekan Baru" : ""} // Kosongkan teks jika tidak ada tombol
-          data={data}
+          data={data.filter(item => showHistory ? item.status_pengecekan === 'Sudah Ditangani' : item.status_pengecekan !== 'Sudah Ditangani')}
           itemsPerPage={10}
           renderRow={renderPengecekanRow}
-          // Jika Teknisi hanya cari data, mungkin perlu tambahkan komponen filter/search di sini atau di dalam Tabel
-          // Untuk saat ini, fungsionalitas pencarian belum ditambahkan secara eksplisit di sini.
-        >
-          {isInitialLoading && (
-            <tr>
-              <td colSpan={headTable.length} className="text-center py-20 text-gray-500">
-                <div className="flex flex-col justify-center items-center">
-                  <svg className="animate-spin h-10 w-10 text-blue-600 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span className="text-lg">Memuat data pengecekan...</span>
-                </div>
-              </td>
-            </tr>
-          )}
-          {!isInitialLoading && data.length === 0 && (
-            <tr>
-              <td colSpan={headTable.length} className="text-center py-20 text-gray-500 text-lg">
-                Tidak ada data pengecekan yang ditemukan.
-              </td>
-            </tr>
-          )}
-        </Tabel>
+        />
 
+        {showAdd && <AddPengecekan onClose={() => setShowAdd(false)} onSuccess={() => { setSuccessMsg('Temuan baru masuk antrian teknisi.'); fetchData(true); }} />}
         {showDetailModal && selectedId && <DetailPengecekan id={selectedId} onClose={() => setShowDetailModal(false)} />}
         {showEditModal && selectedId && canEditPengecekan && <EditPengecekan id={selectedId} onClose={() => setShowEditModal(false)} onUpdate={() => fetchData(true)} />}
         
@@ -268,6 +258,7 @@ const Pengecekan = () => {
           />
         )}
       </div>
+      {deletionDialog}
     </Dashboard>
   );
 }

@@ -1,7 +1,7 @@
 // AddPerbaikan.jsx
 // (Biasanya ditempatkan di folder seperti src/Components/Perbaikan/AddPerbaikan.jsx)
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { post } from '../../utils/api'; // Sesuaikan path jika perlu
 import ModalContainer from '../../Components/DetailModal/ModalContainer'; // Asumsi Anda punya komponen ModalContainer generik
 // Jika ModalContainer Anda ada di DetailModal, gunakan path itu:

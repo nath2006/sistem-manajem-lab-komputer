@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
+import LoadingSkeleton from '../Loading/Skeleton';
 import { useNavigate, useLocation } from "react-router-dom";
 import { postWithFile, get } from "../../utils/api";
 import Dashboard from "../../Layouts/Dashboard";
@@ -133,7 +134,6 @@ const AddPerangkat = () => {
 
     try {
       const response = await postWithFile("/perangkat/create", dataToSubmit);
-      const labIdParam = formData.lab_id ? `?lab_id=${formData.lab_id}` : "";
       // Mengarahkan kembali ke daftar perangkat, idealnya dengan filter lab jika relevan
       navigate(`/kelola-perangkat${isAdmin && formData.lab_id ? `?initialLabId=${formData.lab_id}` : ''}`, {
         state: { successMsg: response.message || "Data perangkat berhasil ditambahkan" },
@@ -158,7 +158,7 @@ const AddPerangkat = () => {
     : "/kelola-perangkat";
 
   if (loadingPage && isAdmin && !preselectedLabId) {
-      return <Dashboard title="Tambah Perangkat Baru"><div className="p-6 text-center">Memuat data...</div></Dashboard>;
+      return <Dashboard title="Tambah Perangkat Baru"><LoadingSkeleton variant="form" label="Memuat data laboratorium..." /></Dashboard>;
   }
 
   return (
@@ -188,7 +188,7 @@ const AddPerangkat = () => {
         
         <div className="mb-4">
           <label htmlFor="lab_id" className="block mb-2 font-medium text-md">Laboratorium <span className="text-red-500">*</span></label>
-          {isLabIdFieldDisabled ? (
+          {isLabIdFieldDisabled && isKepalaLab && kepalaLabAssignedLabId && !preselectedLabName && !displayLabName ? <LoadingSkeleton variant="text" rows={1} label="Memuat nama lab..." /> : isLabIdFieldDisabled ? (
             <input 
               type="text"
               value={displayLabName || `Memuat nama lab...`} // Tampilkan nama lab jika ada

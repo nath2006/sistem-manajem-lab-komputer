@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { SkeletonRows } from '../Loading/Skeleton';
 import Dashboard from '../../Layouts/Dashboard'; 
 import Tabel from '../../Layouts/Table';       
 import { get } from '../../utils/api';           
 import useTitle from '../../utils/useTitle';     
-import { AuthContext } from '../../context/AuthContext'; 
+import { AuthContext } from '../../Context/AuthContext'; 
 import Notification from '../../Components/Notification/Notif'; 
 
 // Fungsi untuk memotong teks jika terlalu panjang
@@ -47,7 +48,7 @@ export default function PengecekanStatus() {
     
     if (!authState.userId) {
       const noUserMsg = "Data pengguna tidak lengkap (userId tidak ditemukan di AuthContext). Tidak dapat mengambil data pengajuan.";
-      console.warn("fetchData check failed:", noUserMsg, "Current authState:", authState);
+      console.warn(noUserMsg);
       setErrorMsg(noUserMsg);
       setIsLoading(false); 
       setPengajuanData([]);
@@ -56,18 +57,13 @@ export default function PengecekanStatus() {
 
     setIsLoading(true); 
     setErrorMsg('');
-    console.log(`Memulai fetchData untuk userId: ${authState.userId}`);
 
     try {
       const dataArray = await get('/pengajuan/status');
 
-      // Tambahkan log ini untuk memastikan apa yang Anda terima dari 'get'
-      console.log("Data diterima langsung dari get('/pengajuan/status'):", dataArray);
-      console.log("Apakah dataArray sebuah array?", Array.isArray(dataArray));
 
       // Sesuaikan kondisi if untuk langsung memeriksa apakah dataArray adalah array
       if (dataArray && Array.isArray(dataArray)) {
-        console.log("Data array valid dan akan di-set ke state:", JSON.stringify(dataArray, null, 2));
         setPengajuanData(dataArray); // Langsung set dataArray ke state
       } else {
         console.warn("Data dari /pengajuan/status tidak seperti yang diharapkan (bukan array, null, atau undefined):", dataArray);
@@ -92,7 +88,6 @@ export default function PengecekanStatus() {
   };
 
   useEffect(() => {
-    console.log("useEffect PengecekanStatus - authState dari AuthContext:", authState);
     
     // Sinkronkan isLoading state lokal dengan isLoading dari AuthContext jika perlu
     // Ini membantu jika ada loading global yang ingin ditampilkan komponen ini juga
@@ -113,7 +108,6 @@ export default function PengecekanStatus() {
       } else { // Terautentikasi (menurut context) tapi tidak ada userId (ini seharusnya tidak terjadi jika LOGIN_SUCCESS benar)
           msg += " Data pengguna (userId) tidak ditemukan setelah autentikasi.";
       }
-      console.log("useEffect PengecekanStatus - Kondisi userId tidak ada:", msg, "authState:", authState);
       setErrorMsg(msg);
       setPengajuanData([]);
     }
@@ -126,8 +120,8 @@ export default function PengecekanStatus() {
       return ( <tr className="bg-red-50 border-b dark:bg-red-900 dark:border-red-700"><td colSpan={headTable.length} className="px-4 py-3 text-center text-red-700 dark:text-red-300">Data baris tidak valid.</td></tr> );
     }
 
-    const formatDate = (dateString) => { /* ... implementasi sama ... */ if (!dateString) return '-'; try { return new Date(dateString).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }); } catch (e) { console.warn("Invalid date for formatDate:", dateString); return 'Tanggal Invalid'; } };
-    const formatDateTime = (dateString) => { /* ... implementasi sama ... */ if (!dateString) return '-'; try { return new Date(dateString).toLocaleString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { console.warn("Invalid date for formatDateTime:", dateString); return 'Waktu Invalid'; } };
+    const formatDate = (dateString) => { /* ... implementasi sama ... */ if (!dateString) return '-'; try { return new Date(dateString).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }); } catch { console.warn("Invalid date for formatDate:", dateString); return 'Tanggal Invalid'; } };
+    const formatDateTime = (dateString) => { /* ... implementasi sama ... */ if (!dateString) return '-'; try { return new Date(dateString).toLocaleString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch { console.warn("Invalid date for formatDateTime:", dateString); return 'Waktu Invalid'; } };
 
     let statusClass = 'bg-gray-100 text-gray-900';
     let statusText = item.status ? String(item.status) : 'N/A';
@@ -161,7 +155,6 @@ export default function PengecekanStatus() {
     );
   };
 
-  console.log("Render PengecekanStatus - isLoading:", isLoading, "| authState.isLoading:", authState.isLoading, "| authState.userId:", authState.userId, "| pengajuanData count:", pengajuanData.length, "| errorMsg:", `"${errorMsg}"`);
 
   return (
     <Dashboard title="Status Pengajuan Jadwal Lab Saya">
@@ -183,15 +176,8 @@ export default function PengecekanStatus() {
           itemsPerPage={10}
         >
           {/* State Loading dan Data Kosong */}
-          {isLoading && ( // Menggunakan isLoading state lokal, yang bisa dipengaruhi authState.isLoading
-            <tr>
-              <td colSpan={headTable.length} className="text-center py-20 text-gray-500 dark:text-gray-400">
-                <div className="flex flex-col justify-center items-center">
-                  <svg className="animate-spin h-10 w-10 text-indigo-600 mb-3" /* ...ikon loading... */ ></svg>
-                  <span className="text-lg">Memuat riwayat pengajuan Anda...</span>
-                </div>
-              </td>
-            </tr>
+          {isLoading && pengajuanData.length === 0 && (
+            <SkeletonRows columns={headTable.length} label="Memuat riwayat pengajuan Anda..." />
           )}
           {!isLoading && pengajuanData.length === 0 && (
             <tr>

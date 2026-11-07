@@ -1,9 +1,10 @@
+import LoadingSkeleton from '../../Components/Loading/Skeleton';
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import Dashboard from '../../Layouts/Dashboard';
 import { get, post } from '../../utils/api';
 import useTitle from '../../utils/useTitle';
 import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
-import { AuthContext } from '../../context/AuthContext';
+import { AuthContext } from '../../Context/AuthContext';
 import Tabel from '../../Layouts/Table';
 import Swal from 'sweetalert2';
 import RejectPengajuanModal from '../../Components/KelolaJadwalLab/RejectModal';
@@ -22,7 +23,6 @@ const swalCustomClasses = {
 
 const successButtonClass = `${swalCustomClasses.confirmButton} bg-green-500 text-white border-green-500 hover:bg-green-600`;
 const errorButtonClass = `${swalCustomClasses.confirmButton} bg-red-500 text-white border-red-500 hover:bg-red-600`;
-const warningButtonClass = `${swalCustomClasses.confirmButton} bg-yellow-500 text-white border-yellow-500 hover:bg-yellow-600`;
 const cancelButtonClass = `${swalCustomClasses.cancelButton} text-gray-700 border-gray-400 hover:bg-gray-100`;
 
 export default function JadwalLab() {
@@ -38,7 +38,7 @@ export default function JadwalLab() {
   const [pendingRequests, setPendingRequests] = useState([]);
   const [labs, setLabs] = useState([]);
   const [selectedLabId, setSelectedLabId] = useState('all');
-  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [currentRequestToProcess, setCurrentRequestToProcess] = useState(null);
@@ -271,7 +271,7 @@ export default function JadwalLab() {
   };
 
   if (authIsLoading) {
-    return ( <Dashboard> <div className="p-5 text-center"><p>Memverifikasi autentikasi pengguna...</p></div> </Dashboard> );
+    return ( <Dashboard> <LoadingSkeleton label="Memverifikasi autentikasi pengguna..." /> </Dashboard> );
   }
   if (!currentUser) {
     return ( <Dashboard> <div className="p-5 text-center"><p>Silakan login untuk mengakses halaman ini.</p></div> </Dashboard> );
@@ -305,34 +305,14 @@ export default function JadwalLab() {
         </div>
         
         <Tabel
+          isLoading={isLoadingData}
           title={`Pengajuan Menunggu Persetujuan (${stats.menunggu || 0})`}
           breadcrumbContext={userRole || "User"}
           headers={headTablePengajuan}
           data={pendingRequests}
           renderRow={renderPendingRequestRow}
           itemsPerPage={10}
-        >
-          {isLoadingData && (
-            <tr>
-              <td colSpan={headTablePengajuan.length} className="text-center py-10 text-gray-500">
-                <div className="flex flex-col justify-center items-center">
-                  <svg className="animate-spin h-8 w-8 text-maroon-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>Memuat data pengajuan...</span>
-                </div>
-              </td>
-            </tr>
-          )}
-          {!isLoadingData && pendingRequests.length === 0 && (
-             <tr>
-                <td colSpan={headTablePengajuan.length} className="text-center py-10 text-gray-500">
-                    Tidak ada pengajuan yang menunggu persetujuan.
-                </td>
-            </tr>
-          )}
-        </Tabel>
+        />
 
         {showRejectModal && currentRequestToProcess && (
           <RejectPengajuanModal

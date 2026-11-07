@@ -1,7 +1,7 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import Dashboard from '../../Layouts/Dashboard'
-import Footer from '../../components/Footer'
+import Footer from '../../Components/Footer'
 import useTitle from '../../utils/useTitle'
 import moment from "moment";
 import { AuthContext } from "../../Context/AuthContext";
@@ -34,8 +34,8 @@ export default function KepalaLabPage() {
             </div>
 
             <div className="mb-8 md:mb-12 group">
-              <div
-                className="h-[70px] max-w-full bg-gradient-to-r from-red-500 to-red-600 rounded-xl shadow-lg hover:shadow-xl hover:cursor-pointer transition-all duration-300 ease-in-out transform hover:-translate-y-1 active:translate-y-0"
+              <button type="button"
+                className="min-h-[70px] w-full text-left py-3 max-w-full bg-gradient-to-r from-maroon to-maroon/75 rounded-xl shadow-lg hover:shadow-xl hover:cursor-pointer transition-all duration-300 ease-in-out transform hover:-translate-y-1 active:translate-y-0"
                 onClick={() => navigate("/pengajuan-jadwal-lab")}
               >
                 <div className="flex justify-start items-center h-full mx-4 sm:mx-6">
@@ -46,7 +46,7 @@ export default function KepalaLabPage() {
                     Buat Pengajuan Jadwal Lab
                   </h1>
                 </div>
-              </div>
+              </button>
             </div>
           </div>
           <Footer />

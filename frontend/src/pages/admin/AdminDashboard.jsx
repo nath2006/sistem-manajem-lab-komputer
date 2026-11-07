@@ -1,3 +1,4 @@
+import LoadingSkeleton, { SkeletonRows } from '../../Components/Loading/Skeleton';
 import React, { useState, useEffect} from "react";
 import { 
   FaUser,
@@ -5,6 +6,7 @@ import {
   FaComputer,
   FaRegNewspaper 
 } from "react-icons/fa6"; 
+import DashboardTablePanel from '../../Components/DashboardTablePanel';
 import Dashboard from "../../Layouts/Dashboard";
 import Footer from "../../components/Footer";
 import useTitle from "../../utils/useTitle";
@@ -15,6 +17,7 @@ const DasboardAdmin = () => {
   useTitle("Dashboard Admin - SIM Lab Komputer");
 
   // State untuk menyimpan data dari API baru
+  const [isLoading, setIsLoading] = useState(true);
   const [dashboardStats, setDashboardStats] = useState(null);
   const [labsData, setLabsData] = useState([]);
   const [usersData, setUsersData] = useState([]);
@@ -22,16 +25,13 @@ const DasboardAdmin = () => {
   // Fungsi untuk mengambil semua data dashboard admin
   const fetchAdminDashboardData = async () => {
     try {
-      const statsResponse = await get("/dashboard/admin/stats");
-      
-      setDashboardStats(statsResponse.data || {}); 
-
-      const labsResponse = await get("/dashboard/admin/labs-with-heads");
-
-      setLabsData(labsResponse.data || []); 
-
-      const usersResponse = await get("/dashboard/admin/users-with-roles");
-      
+      const [statsResponse, labsResponse, usersResponse] = await Promise.all([
+        get("/dashboard/admin/stats"),
+        get("/dashboard/admin/labs-with-heads"),
+        get("/dashboard/admin/users-with-roles"),
+      ]);
+      setDashboardStats(statsResponse.data || {});
+      setLabsData(labsResponse.data || []);
       setUsersData(usersResponse.data || []); 
 
     } catch (error) {
@@ -40,6 +40,8 @@ const DasboardAdmin = () => {
       setDashboardStats({});
       setLabsData([]);
       setUsersData([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -68,12 +70,12 @@ const DasboardAdmin = () => {
                 <span className="relative inline-flex rounded-full h-6 w-6 bg-maroon"></span>
               </span>
               <div className="p-4">
-                <h1 className="text-xl font-semibold text-red-900">
+                <h1 className="text-xl font-semibold text-maroon">
                   Total Online User
                 </h1>
                 <div className="flex justify-center items-center p-4">
                   <h2 className="mt-4 text-5xl font-extrabold text-gray-600">
-                    {dashboardStats?.totalOnlineUsers || 0}
+                    {isLoading && !dashboardStats ? <LoadingSkeleton variant="text" rows={1} /> : dashboardStats?.totalOnlineUsers || 0}
                   </h2>
                 </div>
               </div>
@@ -83,7 +85,7 @@ const DasboardAdmin = () => {
             <div className="col-span-12 md:col-span-9 overflow-hidden group rounded-lg bg-white shadow-md relative transition-all duration-300 ease-in-out">
               <div className="p-4">
                 <div className="flex justify-between items-center pb-2">
-                  <h1 className="text-xl font-semibold text-red-900">
+                  <h1 className="text-xl font-semibold text-maroon">
                     Statistik Data
                   </h1>
                   <p className="text-sm text-gray-500">
@@ -93,22 +95,22 @@ const DasboardAdmin = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-5">
                   <CardStatAdmin
                     icon={FaLaptopFile} // Ganti ikon sesuai kebutuhan
-                    count={dashboardStats?.totalPerangkat || 0}
+                    count={isLoading && !dashboardStats ? <LoadingSkeleton variant="text" rows={1} /> : dashboardStats?.totalPerangkat || 0}
                     label="Perangkat"
                   />
                   <CardStatAdmin
                     icon={FaComputer} // Ganti ikon sesuai kebutuhan
-                    count={dashboardStats?.totalLab || 0}
+                    count={isLoading && !dashboardStats ? <LoadingSkeleton variant="text" rows={1} /> : dashboardStats?.totalLab || 0}
                     label="Lab Kom"
                   />
                   <CardStatAdmin
                     icon={FaUser}
-                    count={dashboardStats?.totalUser || 0}
+                    count={isLoading && !dashboardStats ? <LoadingSkeleton variant="text" rows={1} /> : dashboardStats?.totalUser || 0}
                     label="User"
                   />
                   <CardStatAdmin
                     icon={FaRegNewspaper} // Ganti ikon sesuai kebutuhan
-                    count={dashboardStats?.totalPengumuman || 0}
+                    count={isLoading && !dashboardStats ? <LoadingSkeleton variant="text" rows={1} /> : dashboardStats?.totalPengumuman || 0}
                     label="Pengumuman"
                   />
                 </div>
@@ -116,11 +118,9 @@ const DasboardAdmin = () => {
             </div>
 
             {/* Tabel Data Lab */}
-            <div className="mt-4 col-span-12 md:col-span-6 h-[500px] overflow-hidden group rounded-lg bg-white shadow-md relative transition-all duration-300 ease-in-out">
-              <div className="DataWrapper">
-                <div className="overflow-y-auto h-[calc(500px-60px)]"> 
+            <DashboardTablePanel className="mt-4 col-span-12 md:col-span-6"> 
                   <table className="min-w-full">
-                    <thead className="bg-red-900 sticky top-0 z-10">
+                    <thead className="bg-maroon sticky top-0 z-10">
                       <tr className="rounded-t-lg">
                         {headTableLabs.map((head, index) => (
                           <th
@@ -139,7 +139,7 @@ const DasboardAdmin = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {labsData.length > 0 ? (
+                      {isLoading && labsData.length === 0 ? <SkeletonRows columns={headTableLabs.length} label="Memuat laboratorium..." /> : labsData.length > 0 ? (
                         labsData.map((lab, index) => (
                           <tr key={lab.lab_id || index} className="hover:bg-gray-50">
                             <td className="py-3 px-4 text-sm text-gray-700">{index + 1}</td>
@@ -156,16 +156,12 @@ const DasboardAdmin = () => {
                       )}
                     </tbody>
                   </table>
-                </div>
-              </div>
-            </div>
+            </DashboardTablePanel>
 
             {/* Tabel Data User */}
-            <div className="mt-4 col-span-12 md:col-span-6 h-[500px] overflow-hidden group rounded-lg bg-white shadow-md relative transition-all duration-300 ease-in-out">
-              <div className="DataWrapper">
-                <div className="overflow-y-auto h-[calc(500px-60px)]">
+            <DashboardTablePanel className="mt-4 col-span-12 md:col-span-6">
                   <table className="min-w-full">
-                    <thead className="bg-red-900 sticky top-0 z-10">
+                    <thead className="bg-maroon sticky top-0 z-10">
                       <tr className="rounded-t-lg">
                         {headTableUsers.map((head, index) => (
                           <th
@@ -184,7 +180,7 @@ const DasboardAdmin = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {usersData.length > 0 ? (
+                      {isLoading && usersData.length === 0 ? <SkeletonRows columns={headTableUsers.length} label="Memuat pengguna..." /> : usersData.length > 0 ? (
                         usersData.map((user, index) => (
                           <tr key={user.user_id || index} className="hover:bg-gray-50">
                             <td className="py-3 px-4 text-sm text-gray-700">{index + 1}</td>
@@ -201,9 +197,7 @@ const DasboardAdmin = () => {
                       )}
                     </tbody>
                   </table>
-                </div>
-              </div>
-            </div>
+            </DashboardTablePanel>
 
           </div>
         </div>

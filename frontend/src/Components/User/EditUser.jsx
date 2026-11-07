@@ -59,7 +59,7 @@ const EditUser = ({ id, onClose, onUpdate }) => {
       onClose();
     } catch (error) {
       console.error("Gagal menyimpan data:", error);
-      setError("Gagal mengubah data user");
+      setError(error.message);
     } finally {
       setSaving(false);
     }
@@ -77,7 +77,7 @@ const EditUser = ({ id, onClose, onUpdate }) => {
     <button
       onClick={handleSubmit}
       disabled={saving}
-      className="w-full px-5 py-2 text-sm font-semibold text-center rounded-md bg-red-500 text-white active:scale-95 focus:outline-none"
+      className="w-full px-5 py-2 text-sm font-semibold text-center rounded-md bg-maroon text-white hover:bg-maroon/90 hover:shadow-md active:scale-95 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none"
     >
       {saving ? "Menyimpan..." : "Simpan"}
     </button>
@@ -86,7 +86,7 @@ const EditUser = ({ id, onClose, onUpdate }) => {
   const secondaryButton = (
     <button
       onClick={onClose}
-      className="w-full px-5 py-2 text-sm font-semibold text-center bg-white border-2 rounded-md text-red-500 border-red-500 active:scale-95 focus:outline-none"
+      className="w-full px-5 py-2 text-sm font-semibold text-center bg-white border-2 rounded-md text-maroon border-maroon hover:bg-maroon/10 hover:shadow-sm active:scale-95 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon focus-visible:ring-offset-2"
     >
       Batal
     </button>
@@ -187,10 +187,10 @@ const EditUser = ({ id, onClose, onUpdate }) => {
                 <option value="Teknisi" className="text-gray-500">
                   Teknisi
                 </option>
-                <option value="Kepala Lab" className="text-gray-500">
+                <option value="Kepala_Lab" className="text-gray-500">
                   Kepala Lab
                 </option>
-                <option value="Koordinator Lab" className="text-gray-500">
+                <option value="Koordinator_Lab" className="text-gray-500">
                   Koordinator Lab
                 </option>
               </select>
@@ -202,7 +202,7 @@ const EditUser = ({ id, onClose, onUpdate }) => {
                   name="is_online"
                   checked={formData.is_online}
                   onChange={handleChange}
-                  className="mr-2 h-5 w-5 text-red-500 focus:ring-red-400"
+                  className="mr-2 h-5 w-5 text-maroon focus:ring-maroon"
                 />
                 <span className="text-gray-700 font-medium">
                   Status Onlines

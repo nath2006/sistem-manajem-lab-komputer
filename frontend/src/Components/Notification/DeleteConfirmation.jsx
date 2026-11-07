@@ -1,4 +1,4 @@
-import React from 'react';
+import { alertTheme, deleteAlertTheme } from '../../utils/alertTheme';
 import Swal from 'sweetalert2';
 
 /**
@@ -26,12 +26,7 @@ const DeleteConfirmation = ({
       showConfirmButton: true,
       confirmButtonText: 'Ya, hapus!',
       cancelButtonText: 'Batal',
-      customClass: {
-        confirmButton: 'px-5 py-2 text-sm font-semibold text-center border-2 border-red-500 rounded-md bg-red-500 text-white active:scale-95 focus:outline-none',
-        cancelButton: 'px-5 py-2 text-sm font-semibold text-center bg-white border-2 rounded-md text-red-500 border-red-500 active:scale-95 focus:outline-none',
-        actions: 'flex justify-center gap-4 mt-2'
-      },
-      buttonsStyling: false,
+      ...deleteAlertTheme,
       reverseButtons: true
     }).then(async (result) => {
       if (result.isConfirmed) {
@@ -43,11 +38,7 @@ const DeleteConfirmation = ({
             text: `${itemName} berhasil dihapus.`,
             icon: 'success',
             confirmButtonText: 'OK',
-            customClass: {
-              confirmButton: 'px-5 py-2 text-sm font-semibold text-center rounded-md bg-red-500 text-white active:scale-95 focus:outline-none',
-              actions: 'flex justify-center mt-2'
-            },
-            buttonsStyling: false
+            ...alertTheme
           });
           
           onSuccess(id);
@@ -59,11 +50,7 @@ const DeleteConfirmation = ({
             text: `Gagal menghapus ${itemName}.`,
             icon: 'error',
             confirmButtonText: 'OK',
-            customClass: {
-              confirmButton: 'px-5 py-2 text-sm font-semibold text-center rounded-md bg-red-500 text-white active:scale-95 focus:outline-none',
-              actions: 'flex justify-center mt-2'
-            },
-            buttonsStyling: false
+            ...alertTheme
           });
           
           onError(error);

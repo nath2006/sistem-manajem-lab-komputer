@@ -54,8 +54,8 @@ const AddUser = () => {
       navigate("/user", {
         state: { successMsg: "User berhasil ditambahkan" },
       });
-    } catch {
-      setError("Gagal menambahkan user. Silakan coba lagi.");
+    } catch(error) {
+      setError(error.message);
       setIsSubmitting(false);
     }
   };
@@ -77,7 +77,7 @@ const AddUser = () => {
               name="nama_lengkap"
               value={formData.nama_lengkap}
               onChange={handleChange}
-              className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-red-500 focus:border-red-500 block w-full p-2.5 h-12"
+              className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12"
               required
             />
           </div>
@@ -90,7 +90,7 @@ const AddUser = () => {
               name="username"
               value={formData.username}
               onChange={handleChange}
-              className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-red-500 focus:border-red-500 block w-full p-2.5 h-12"
+              className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12"
               required
             />
           </div>
@@ -102,7 +102,7 @@ const AddUser = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-red-500 focus:border-red-500 block w-full p-2.5 h-12"
+              className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12"
               required
             />
           </div>
@@ -115,7 +115,7 @@ const AddUser = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-red-500 focus:border-red-500 block w-full p-2.5 h-12 pr-10"
+                className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12 pr-10"
                 required
               />
               <button
@@ -136,7 +136,7 @@ const AddUser = () => {
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-red-500 focus:border-red-500 block w-full p-2.5 h-12 pr-10"
+                className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12 pr-10"
                 required
               />
               <button
@@ -155,7 +155,7 @@ const AddUser = () => {
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-red-500 focus:border-red-500 block w-full p-2.5 h-12"
+              className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12"
               required
             >
               <option value="" disabled>Pilih Role</option>

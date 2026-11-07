@@ -1,16 +1,15 @@
 // AddLaboratorium.js
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
+import LoadingSkeleton from '../Loading/Skeleton';
 import { useNavigate } from "react-router-dom";
 import { postWithFile, get } from "../../utils/api"; 
 import Dashboard from "../../Layouts/Dashboard";
 import useTitle from "../../utils/useTitle";
 import FormContainer from "../../Components/FormContainer"; 
-import { AuthContext } from "../../Context/AuthContext"; 
 
 const AddLaboratorium = () => {
   useTitle("Tambah Laboratorium - Dashboard");
   const navigate = useNavigate();
-  const { state: authState } = useContext(AuthContext); // Info user yang login
 
   const [formData, setFormData] = useState({
     nama_lab: "",
@@ -24,6 +23,7 @@ const AddLaboratorium = () => {
   });
   const [selectedFoto, setSelectedFoto] = useState(null); 
   const [users, setUsers] = useState([]); 
+  const [loadingUsers, setLoadingUsers] = useState(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -42,6 +42,8 @@ const AddLaboratorium = () => {
       } catch (err) {
         console.error("Gagal mengambil data user untuk Kepala Lab:", err.response?.data || err.message || err);
         // Tidak set error utama di sini agar form tetap bisa digunakan
+      } finally {
+        setLoadingUsers(false);
       }
     };
     fetchUsers();
@@ -119,6 +121,8 @@ const AddLaboratorium = () => {
     }
   };
 
+  if (loadingUsers) return <Dashboard title="Tambah Laboratorium"><LoadingSkeleton variant="form" label="Memuat daftar kepala lab..." /></Dashboard>;
+
   return (
     <Dashboard title="Tambah Laboratorium">
       <FormContainer
@@ -194,7 +198,7 @@ const AddLaboratorium = () => {
                   </option>
                 ))
               ) : (
-                <option value="" disabled>Memuat daftar user...</option>
+                <option value="" disabled>Daftar user tidak tersedia</option>
               )}
             </select>
           </div>

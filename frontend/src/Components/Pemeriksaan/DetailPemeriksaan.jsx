@@ -6,6 +6,8 @@ import InfoSection from "../DetailModal/InfoSection"; // Sesuaikan path jika per
 import ModalContainer from "../DetailModal/ModalContainer"; // Sesuaikan path jika perlu
 import LoadingSpinner from "../DetailModal/LoadingSpinner"; // Sesuaikan path jika perlu
 
+import MaintenanceMilestones from './MaintenanceMilestones';
+
 const DetailPemeriksaan = ({ id, onClose }) => {
   const [pemeriksaanData, setPemeriksaanData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -97,6 +99,7 @@ const DetailPemeriksaan = ({ id, onClose }) => {
       ) : (
         pemeriksaanData && (
           <div className="space-y-6">
+            <MaintenanceMilestones pemeriksaan={pemeriksaanData} pengecekan={pemeriksaanData.pengecekan || []} perbaikan={pemeriksaanData.perbaikan || []} />
             <InfoSection title="Informasi Pemeriksaan">
               <InfoItem label="ID Pemeriksaan" value={pemeriksaanData.pemeriksaan_id} />
               <InfoItem label="Tanggal Pemeriksaan" value={formatDate(pemeriksaanData.tanggal_pemeriksaan)} />

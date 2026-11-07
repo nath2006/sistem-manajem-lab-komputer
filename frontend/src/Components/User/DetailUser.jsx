@@ -55,9 +55,9 @@ const DetailUser = ({ id, onClose }) => {
                         ? "bg-green-100 text-green-800"
                         : userData.role === "Teknisi"
                         ? "bg-blue-100 text-blue-800"
-                        : userData.role === "Kepala Lab"
+                        : userData.role === "Kepala_Lab"
                         ? "bg-indigo-100 text-indigo-800"
-                        : userData.role === "Koordinator Lab"
+                        : userData.role === "Koordinator_Lab"
                         ? "bg-purple-100 text-purple-800"
                         : "bg-gray-100 text-gray-800"
                     }`}

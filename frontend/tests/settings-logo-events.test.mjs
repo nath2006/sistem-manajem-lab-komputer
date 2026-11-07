@@ -1,0 +1,36 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { build } from 'esbuild';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+test('actual settings callbacks stage file until save, cancel selection and publish only successful response', async () => {
+  const React = require('react'); let cursor = 0; const state = []; const writes = []; const published = [];
+  const defaults = { school_name: 'School', logo_url: '', primary_color: '#800000', schedule_start: '07:00', schedule_end: '17:00', lesson_duration: 60 };
+  const hooks = { ...React, useContext: () => ({ state: { role: 'Admin' } }), useRef: () => ({ current: null }), useEffect() {}, useState(initial) { const i = cursor++; if (!(i in state)) state[i] = initial; return [state[i], next => { state[i] = typeof next === 'function' ? next(state[i]) : next; }]; } };
+  let failed = false;
+  globalThis.__logoTest = { settings: defaults, updateSettings: value => published.push(value), api: { put: async (...args) => { writes.push(args); if (failed) throw Error('offline'); return { data: { data: { ...defaults, logo_url: '/uploads/branding/' + 'a'.repeat(32) + '.png' } } }; } } };
+  const result = await build({ entryPoints: ['src/features/Pengaturan/Pengaturan.jsx'], bundle: true, platform: 'node', format: 'cjs', write: false, jsx: 'automatic', external: ['react', 'react/jsx-runtime'], define: { 'import.meta.env': '{}' }, plugins: [{ name: 'boundaries', setup(b) {
+    b.onResolve({ filter: /Context\/SettingsContext$/ }, () => ({ path: 'settings', namespace: 'test' }));
+    b.onResolve({ filter: /Context\/AuthContext$/ }, () => ({ path: 'auth', namespace: 'test' }));
+    b.onResolve({ filter: /utils\/api$/ }, () => ({ path: 'api', namespace: 'test' }));
+    b.onResolve({ filter: /(Layouts\/Dashboard|Components\/FormContainer)$/ }, () => ({ path: 'layout', namespace: 'test' }));
+    b.onLoad({ filter: /.*/, namespace: 'test' }, ({ path }) => ({ contents: path === 'settings' ? 'export const useSettings=()=>globalThis.__logoTest;' : path === 'auth' ? 'export const AuthContext={};' : path === 'api' ? 'export default globalThis.__logoTest.api;' : 'export default function Layout({children}) { return children; }' }));
+  } }] });
+  const module = { exports: {} };
+  new Function('require', 'module', 'exports', result.outputFiles[0].text)(name => name === 'react' ? hooks : require(name), module, module.exports);
+  const render = () => { cursor = 0; return module.exports.default(); };
+  const nodes = element => !element || typeof element !== 'object' ? [] : [element, ...React.Children.toArray(element.props?.children).flatMap(nodes)];
+  const find = predicate => nodes(render()).find(predicate);
+  const form = () => find(el => typeof el.props?.onSubmit === 'function');
+  render(); state[1] = false; state[2] = true;
+  const select = () => find(el => el.props?.type === 'file').props.onChange({ target: { files: [new File(['png'], 'logo.png', { type: 'image/png' })] } });
+  select(); assert.equal(writes.length, 0);
+  form().props.onCancel(); assert.equal(state[7], null); assert.equal(writes.length, 0);
+  select(); failed = true; await form().props.onSubmit({ preventDefault() {} });
+  assert.equal(published.length, 0); assert.ok(state[7]);
+  failed = false; await form().props.onSubmit({ preventDefault() {} });
+  assert.equal(writes.length, 2); assert.ok(writes[1][1] instanceof FormData);
+  assert.equal(writes[1][2].headers['Content-Type'], undefined);
+  assert.equal(published.length, 1); assert.equal(state[7], null);
+  delete globalThis.__logoTest;
+});

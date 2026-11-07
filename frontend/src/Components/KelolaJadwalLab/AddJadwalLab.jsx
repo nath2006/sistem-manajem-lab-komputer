@@ -1,18 +1,21 @@
+import { useSettings } from '../../Context/SettingsContext';
+import LoadingSkeleton from '../Loading/Skeleton';
 // src/pages/Pengajuan/AddJadwalLab.js
 // (Sesuaikan path jika direktori Anda berbeda)
 
-import React, { useState, useEffect, useContext } from "react";
+import { validateScheduleTime } from "../../../../shared/schedule.mjs";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { post, get } from "../../utils/api"; 
 import Dashboard from "../../Layouts/Dashboard";
 import useTitle from "../../utils/useTitle";
 import FormContainer from "../FormContainer"; 
-import { AuthContext } from "../../Context/AuthContext"; 
+ 
 
 const AddJadwalLab = () => {
   useTitle("Pengajuan Jadwal Lab - Dashboard");
   const navigate = useNavigate();
-  const { state: authState } = useContext(AuthContext); 
+ 
 
   const [formData, setFormData] = useState({
     lab_id: "",
@@ -23,7 +26,10 @@ const AddJadwalLab = () => {
     mata_pelajaran: "",
     kegiatan: "Jadwal Biasa", 
   });
+  const { settings, loaded: settingsLoaded, loading: settingsLoading, error: settingsError, reloadSettings } = useSettings();
+  const settingsReady = settingsLoaded && !settingsLoading && !settingsError;
   const [labs, setLabs] = useState([]);
+  const [loadingLabs, setLoadingLabs] = useState(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -50,6 +56,8 @@ const AddJadwalLab = () => {
         setError(
           "Gagal memuat daftar laboratorium. Silakan coba muat ulang halaman."
         );
+      } finally {
+        setLoadingLabs(false);
       }
     };
     fetchLabs();
@@ -68,6 +76,12 @@ const AddJadwalLab = () => {
     setIsSubmitting(true);
     setError("");
 
+    const scheduleError = validateScheduleTime(formData.jam_mulai, formData.jam_selesai, settings);
+    if (!settingsReady || scheduleError) {
+      setError(!settingsReady ? 'Konfigurasi jadwal belum dimuat.' : scheduleError);
+      setIsSubmitting(false);
+      return;
+    }
     // Validasi dasar
     if (
       !formData.lab_id ||
@@ -198,18 +212,23 @@ const AddJadwalLab = () => {
     }
   };
 
+
   return (
     <Dashboard title="Pengajuan Jadwal Laboratorium">
       <FormContainer
         title="Form Pengajuan Jadwal Lab"
         description="Isi detail pengajuan penggunaan laboratorium"
-        error={error}
+        error={error || settingsError}
         isSubmitting={isSubmitting}
         onSubmit={handleSubmit}
         onCancel={() => navigate(-1)} // Kembali ke halaman sebelumnya
         submitText="Kirim Pengajuan"
       >
+        {!settingsReady && <div role="status" className="mb-4">Konfigurasi jadwal belum siap.
+          {!settingsLoading && <button type="button" onClick={reloadSettings} className="min-h-11 px-3 underline">Coba muat konfigurasi</button>}
+        </div>}
         {/* Baris 1: Lab dan Tanggal Pakai */}
+        {loadingLabs || (!settingsLoaded && settingsLoading && !settingsError) ? <LoadingSkeleton variant="form" label="Memuat konfigurasi dan laboratorium..." /> : <>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <div className="mb-1">
             <label
@@ -225,11 +244,11 @@ const AddJadwalLab = () => {
               onChange={handleChange}
               required
               className="shadow-sm bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-              disabled={labs.length === 0 && !error} // Disable jika lab belum load dan tidak ada error load lab
+              disabled={loadingLabs || labs.length === 0}
             >
               <option value="" disabled>
                 {labs.length === 0 && !error
-                  ? "Memuat daftar lab..."
+                  ? "Tidak ada laboratorium tersedia"
                   : "Pilih Laboratorium"}
               </option>
               {labs.map((lab) => (
@@ -278,6 +297,9 @@ const AddJadwalLab = () => {
             </label>
             <input
               type="time"
+              min={settings.schedule_start || '07:00'}
+              max={settings.schedule_end || '17:00'}
+              step="60"
               id="jam_mulai"
               name="jam_mulai"
               value={formData.jam_mulai}
@@ -295,6 +317,9 @@ const AddJadwalLab = () => {
             </label>
             <input
               type="time"
+              min={settings.schedule_start || '07:00'}
+              max={settings.schedule_end || '17:00'}
+              step="60"
               id="jam_selesai"
               name="jam_selesai"
               value={formData.jam_selesai}
@@ -305,6 +330,7 @@ const AddJadwalLab = () => {
           </div>
         </div>
 
+        <p className="mt-2 text-xs text-gray-500">Jam operasional {settings.schedule_start || '07:00'}–{settings.schedule_end || '17:00'} · Durasi pelajaran {settings.lesson_duration || 60} menit (sesuai konfigurasi admin).</p>
         {/* Baris 3: Kelas dan Mata Pelajaran */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-4">
           <div className="mb-1">
@@ -364,6 +390,7 @@ const AddJadwalLab = () => {
             required
           />
         </div>
+        </>}
       </FormContainer>
     </Dashboard>
   );

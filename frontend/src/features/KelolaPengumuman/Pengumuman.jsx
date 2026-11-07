@@ -3,11 +3,11 @@ import Dashboard from '../../Layouts/Dashboard';
 import Tabel from '../../Layouts/Table';
 import { FaEye, FaTrash, FaFilePen } from "react-icons/fa6";
 import { get, deleteData } from '../../utils/api'; 
-import { useLocation, useNavigate } from 'react-router-dom'; 
+import { useLocation } from 'react-router-dom'; 
 import Notification from '../../Components/Notification/Notif';
 import useTitle from '../../utils/useTitle';
 import { AuthContext } from '../../Context/AuthContext';
-import DeleteConfirmation from '../../components/Notification/DeleteConfirmation';
+import useDeletionDialog from '../../Components/Deletion/useDeletionDialog';
 import DetailPenguman from '../../Components/Pengumuman/DetailPenguman';
 import EditPegumuman from '../../Components/Pengumuman/EditPengumuman';
 import truncateText from '../../utils/truncateText';
@@ -18,7 +18,6 @@ import formatDate from '../../utils/formatDateView';
 const Pengumuman = () => {
     useTitle('Kelola Data Pengumuman');
     const location = useLocation();
-    const navigate = useNavigate();
     const [successMsg, setSuccessMsg] = useState(location.state?.successMsg);
     const [errorMsg, setErrorMsg] = useState(location.state?.errorMsg);
     const [data, setData] = useState([]);
@@ -50,11 +49,12 @@ const Pengumuman = () => {
         setShowEditModal(true);
     };
 
-    const handleDelete = DeleteConfirmation({
+    const {requestDeletion:handleDelete,dialog:deletionDialog} = useDeletionDialog({
+        resource: 'pengumuman',
         onDelete: (id) => deleteData(`/pengumuman/delete/${id}`),
         itemName: 'data Pengumuman',
         onSuccess: (id) => {
-            setData(data.filter(item => item.id !== id));
+            setData(previous => previous.filter(item => item.id !== id));
             setSuccessMsg('Data Pengumuman berhasil dihapus');
         },
         onError: (error) => {
@@ -77,10 +77,10 @@ const Pengumuman = () => {
         try {
             const response = await get('/pengumuman');
             setData(response.data);
-            setIsLoading(false);
         } catch (err) {
             // setErrorMsg('Gagal Mengambil Data');
             console.error("Error fetching pengumuman data:", err);
+        } finally {
             setIsLoading(false);
         }
     };
@@ -148,27 +148,21 @@ const Pengumuman = () => {
                 )}
                 
                 <Tabel
+          isLoading={isLoading}
                     title="Kelola Data Pengumuman"
                     breadcrumbContext={userRole}
                     headers={headTable}
                     to="/add-pengumuman"
-                    data={isLoading ? [] : data}
+                    data={data}
                     itemsPerPage={5}
                     renderRow={renderPengumumanRow}
-                >
-                    {isLoading && (
-                        <tr>
-                        <td colSpan={headTable.length} className="text-center py-4">
-                            Loading...
-                        </td>
-                        </tr>
-                    )}
-                </Tabel>
+                />
 
                 {showModal && <DetailPenguman id={selectedId} onClose={() => setShowModal(false)} />}
                 {showEditModal && <EditPegumuman id={selectedId} onClose={() => setShowEditModal(false)} onUpdate={fetchData} />}
             
             </div>
+            {deletionDialog}
         </Dashboard>
     )
 }

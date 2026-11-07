@@ -9,7 +9,7 @@ export const verifyToken = (token) => {
 
   try {
     const decoded = jwtDecode(token);
-    console.log("TokenValidator - Decoded JWT payload:", decoded); 
+
 
     if (decoded.exp && decoded.exp < Date.now() / 1000) {
       console.warn("TokenValidator: Token kedaluwarsa.");

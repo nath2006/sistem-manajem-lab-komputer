@@ -1,9 +1,10 @@
+import LoadingSkeleton from '../../Components/Loading/Skeleton';
 // src/pages/KepalaLab/KepalaLabPage.js
 import React, { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../Context/AuthContext"; 
 import Dashboard from "../../Layouts/Dashboard"; 
-import Footer from "../../components/Footer"; 
+import Footer from "../../Components/Footer"; 
 import { getGreetingTime } from "../../utils/greetingTime"; 
 import moment from "moment";
 import useTitle from "../../utils/useTitle"; 
@@ -38,14 +39,14 @@ export default function KepalaLabPage() {
   const { state: authState } = useContext(AuthContext);
   const userName = authState?.fullName || authState?.user || "Pengguna";
 
-  const [pengajuanStats, setPengajuanStats] = useState({
+  const [, setPengajuanStats] = useState({
     menunggu: 0,
     disetujui: 0,
     ditolak: 0,
     total_filter: 0,
   });
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
-  const [errorStats, setErrorStats] = useState("");
+  const [, setIsLoadingStats] = useState(true);
+  const [, setErrorStats] = useState("");
 
   const fetchPengajuanStats = async (isInitialLoad = false) => {
     if (isInitialLoad) setIsLoadingStats(true);
@@ -131,6 +132,7 @@ export default function KepalaLabPage() {
   return (
     <>
       <Dashboard title={`Dashboard Kepala Lab`}>
+        {authState?.isLoading ? <LoadingSkeleton label="Memuat sesi Kepala Lab..." /> :
         <div className="min-h-[calc(100vh-80px)] flex flex-col px-4 py-6 md:px-6 lg:px-8 bg-white text-gray-800">
           <div className="flex-grow">
             {/* Ucapan Selamat Datang */}
@@ -144,8 +146,8 @@ export default function KepalaLabPage() {
             </div>
 
             <div className="mb-8 md:mb-12 group">
-              <div
-                className="h-[70px] max-w-full bg-gradient-to-r from-red-500 to-red-600 rounded-xl shadow-lg hover:shadow-xl hover:cursor-pointer transition-all duration-300 ease-in-out transform hover:-translate-y-1 active:translate-y-0"
+              <button type="button"
+                className="min-h-[70px] w-full text-left py-3 max-w-full bg-gradient-to-r from-maroon to-maroon/75 rounded-xl shadow-lg hover:shadow-xl hover:cursor-pointer transition-all duration-300 ease-in-out transform hover:-translate-y-1 active:translate-y-0"
                 onClick={() => navigate("/kelola-jadwal-lab")}
               >
                 <div className="flex justify-start items-center h-full mx-4 sm:mx-6">
@@ -156,11 +158,12 @@ export default function KepalaLabPage() {
                     Cek Pengajuan Lab
                   </h1>
                 </div>
-              </div>
+              </button>
             </div>
           </div>
           <Footer />
         </div>
+        }
       </Dashboard>
     </>
   );

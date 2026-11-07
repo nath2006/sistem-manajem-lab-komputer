@@ -6,6 +6,8 @@ import ModalContainer from "../DetailModal/ModalContainer"; // Pastikan path ini
 import LoadingSpinner from "../DetailModal/LoadingSpinner"; // Pastikan path ini benar
 //import formatDate from '../../utils/formatDateView'; // Asumsi Anda punya utilitas ini atau sesuaikan
 
+import MaintenanceHistory from '../Pemeriksaan/MaintenanceHistory';
+
 const DetailPerbaikan = ({ id, onClose }) => {
   const [perbaikanData, setPerbaikanData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -77,6 +79,7 @@ const DetailPerbaikan = ({ id, onClose }) => {
       ) : (
         perbaikanData && (
           <div className="space-y-6">
+            <MaintenanceHistory pengecekanId={perbaikanData.pengecekan_id} />
             <InfoSection title="Informasi Perbaikan">
               <InfoItem label="ID Perbaikan" value={perbaikanData.perbaikan_id || '-'} />
               <InfoItem label="Tanggal Perbaikan" value={formatTanggal(perbaikanData.tanggal_perbaikan) || '-'} />

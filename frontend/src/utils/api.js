@@ -4,6 +4,11 @@ import Cookies from 'js-cookie';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
+const AUTHLESS_ROUTES = [
+  '/auth/login',
+  '/auth/refresh-token'
+];
+
 const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: {
@@ -11,80 +16,98 @@ const apiClient = axios.create({
   },
 });
 
-// Request interceptor: untuk menambahkan token otentikasi
+// ===== Request interceptor =====
 apiClient.interceptors.request.use(
   (config) => {
+    const url = config.url || '';
+    const skipAuth = config._skipAuth || AUTHLESS_ROUTES.some(p => url.includes(p));
+
     const token = Cookies.get('auth_token');
-    if (token) {
+    // catat apakah request INI awalnya punya token (penting untuk keputusan refresh)
+    config._hadAuthToken = Boolean(token);
+
+    if (!skipAuth && token) {
+      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor untuk menangani token refresh
+// ===== Response interceptor (refresh logic) =====
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
-    
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true; 
-      
+    const originalRequest = error.config || {};
+    const status = error.response?.status;
+    const url = originalRequest.url || '';
+
+    const isAuthlessRoute = AUTHLESS_ROUTES.some(p => url.includes(p));
+    const skipRefresh = originalRequest._skipRefresh || isAuthlessRoute || url.includes('/auth/logout');
+
+    // Hanya refresh jika:
+    // - 401
+    // - belum di-retry
+    // - request sebelumnya MEMBAWA token (bukan login awal)
+    // - bukan endpoint authless (login/refresh)
+    if (status === 401 && !originalRequest._retry && originalRequest._hadAuthToken && !skipRefresh) {
+      originalRequest._retry = true;
+
       try {
-        console.log("Attempting to refresh token...");
-        const refreshApiClient = axios.create({ baseURL: BASE_URL }); 
         const refreshToken = Cookies.get('refresh_token');
-
         if (!refreshToken) {
-          console.error("No refresh token found. Redirecting to login.");
+          // Tidak ada refresh token: anggap sesi habis → bersihkan & lempar error
           Cookies.remove('auth_token');
-          // window.location.href = '/login'; // Pertimbangkan cara penanganan yang lebih baik daripada redirect paksa
-          return Promise.reject(new Error("No refresh token available for refresh attempt."));
+          Cookies.remove('refresh_token');
+          return Promise.reject(error);
         }
 
-        // Sesuaikan endpoint dan payload untuk refresh token Anda
-        const response = await refreshApiClient.post(`/auth/refresh-token`, { refreshToken }); 
-        const newAuthToken = response.data.token; 
-        const newRefreshToken = response.data.refreshToken; 
-        
-        if (newAuthToken) {
-          console.log("Token refreshed successfully.");
-          Cookies.set('auth_token', newAuthToken, { 
-            expires: 7, 
-            secure: import.meta.env.PROD, 
-            sameSite: 'Strict'
-          });
-          if (newRefreshToken) {
-            Cookies.set('refresh_token', newRefreshToken, { /* opsi cookie, misal httpOnly, secure, sameSite */ });
-          }
-          
-          // Update default header 
-          apiClient.defaults.headers.common['Authorization'] = `Bearer ${newAuthToken}`;
-          // Update header untuk request asli yang gagal
-          originalRequest.headers['Authorization'] = `Bearer ${newAuthToken}`;
-          return apiClient(originalRequest); 
-        } else {
-          throw new Error("New token not received after refresh attempt.");
+        // Pakai client "bersih" tanpa interceptor untuk refresh
+        const refreshApiClient = axios.create({ baseURL: BASE_URL });
+        const resp = await refreshApiClient.post('/auth/refresh-token', { refreshToken });
+
+        const newAuthToken = resp.data?.token;
+        const newRefreshToken = resp.data?.refreshToken;
+
+        if (!newAuthToken) {
+          Cookies.remove('auth_token');
+          Cookies.remove('refresh_token');
+          return Promise.reject(error);
         }
+
+        // Simpan token baru
+        Cookies.set('auth_token', newAuthToken, {
+          expires: 7,
+          secure: import.meta.env.PROD,
+          sameSite: 'Strict',
+        });
+        if (newRefreshToken) {
+          Cookies.set('refresh_token', newRefreshToken, {
+            expires: 30,
+            secure: import.meta.env.PROD,
+            sameSite: 'Strict',
+          });
+        }
+
+        // Update header default & request asli
+        apiClient.defaults.headers.common.Authorization = `Bearer ${newAuthToken}`;
+        originalRequest.headers = originalRequest.headers || {};
+        originalRequest.headers.Authorization = `Bearer ${newAuthToken}`;
+
+        // Ulangi request asli
+        return apiClient(originalRequest);
       } catch (refreshError) {
-        console.error("Refresh token failed, logging out:", refreshError.response?.data || refreshError.message);
         Cookies.remove('auth_token');
         Cookies.remove('refresh_token');
-        // window.location.href = '/login';
-        return Promise.reject(refreshError); 
+        return Promise.reject(refreshError);
       }
     }
-    
 
+    // Kasus login awal salah kredensial: biarkan error lewat ke caller
     return Promise.reject(error);
   }
 );
-
-
 export const get = async (endpoint, params = {}) => {
   try {
     const response = await apiClient.get(endpoint, { params });
@@ -100,8 +123,9 @@ export const post = async (endpoint, data = {}) => {
     const response = await apiClient.post(endpoint, data);
     return response; 
   } catch (error) {
-    console.error(`Error in POST request to ${endpoint}:`, error.response?.data || error.message || error);
-    throw error.response?.data || error;
+    const apiMessage = error.response?.data?.message || error.message || "Terjadi kesalahan";
+    console.error(`Error in POST request to ${endpoint}:`, apiMessage);
+    throw new Error(apiMessage); 
   }
 };
 

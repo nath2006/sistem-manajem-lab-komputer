@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import Dashboard from '../../Layouts/Dashboard';
 import Tabel from '../../Layouts/Table';
 import { FaEye, FaTrash, FaFilePen, FaPrint } from "react-icons/fa6";
@@ -7,15 +7,17 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Notification from '../../Components/Notification/Notif';
 import useTitle from '../../utils/useTitle';
 import { AuthContext } from '../../Context/AuthContext';
-import DeleteConfirmation from '../../components/Notification/DeleteConfirmation';
+import useDeletionDialog from '../../Components/Deletion/useDeletionDialog';
 import DetailPerbaikan from '../../Components/Perbaikan/DetailPerbaikan';
 import EditPerbaikan from '../../Components/Perbaikan/EditPerbaikan';
 import truncateText from '../../utils/truncateText';
 
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { loadPdfTools } from '../../utils/loadPdfTools';
 
 const Perbaikan = () => {
+  const printLock = useRef(false);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [printError, setPrintError] = useState('');
   useTitle('Data Perbaikan Perangkat');
   const location = useLocation();
   const navigate = useNavigate();
@@ -34,7 +36,7 @@ const Perbaikan = () => {
 
   const canViewDetail = true;
   const canEditPerbaikan = userRole === 'Admin' || userRole === 'Teknisi';
-  const canDeletePerbaikan = userRole === 'Admin';
+  const canDeletePerbaikan = false; // Riwayat tidak dihapus; gunakan koreksi.
   const canPrintData = userRole === 'Admin' || userRole === 'Teknisi';
 
   useEffect(() => {
@@ -42,7 +44,7 @@ const Perbaikan = () => {
       const timer = setTimeout(() => {
         setSuccessMsg('');
         setErrorMsg('');
-        if (location.state) {
+        if (location.state && !location.state.deletionContext) {
           navigate(location.pathname, { replace: true });
         }
       }, 3000);
@@ -86,7 +88,8 @@ const Perbaikan = () => {
     setShowEditModal(true);
   };
 
-  const handleDelete = DeleteConfirmation({
+  const {requestDeletion:handleDelete,dialog:deletionDialog} = useDeletionDialog({
+    resource: 'perbaikan',
     onDelete: (id) => deleteData(`/perbaikan/delete/${id}`),
     itemName: 'data perbaikan',
     onSuccess: (deletedId) => {
@@ -106,56 +109,68 @@ const Perbaikan = () => {
     return `${day}/${month}/${year}`;
   };
 
-const handlePrintData = () => {
+const handlePrintData = async () => {
     if (data.length === 0) {
         alert("Tidak ada data perbaikan untuk dicetak.");
         return;
     }
 
-    const doc = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm',
-        format: 'a4'
-    });
+    if (printLock.current) return;
+    printLock.current = true;
+    setIsPrinting(true);
+    setPrintError('');
+    try {
+      const { jsPDF, autoTable } = await loadPdfTools();
+      const doc = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: 'a4'
+      });
 
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 10;
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 10;
 
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text("Laporan Data Perbaikan Perangkat", pageWidth / 2, margin + 5, { align: 'center' });
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, pageWidth / 2, margin + 10, { align: 'center' });
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text("Laporan Data Perbaikan Perangkat", pageWidth / 2, margin + 5, { align: 'center' });
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, pageWidth / 2, margin + 10, { align: 'center' });
 
-    // --- PERUBAHAN DI SINI ---
-    // Hapus "ID Pengecekan" dari header PDF
-    const tableColumn = ["ID", "Teknisi", "Perangkat", "Lab", "Tgl Perbaikan", "Tindakan", "Hasil", "Catatan"];
+      // --- PERUBAHAN DI SINI ---
+      // Hapus "ID Pengecekan" dari header PDF
+      const tableColumn = ["ID", "Teknisi", "Perangkat", "Lab", "Tgl Perbaikan", "Tindakan", "Hasil", "Catatan"];
     
-    // Hapus item.pengecekan_id dari data baris PDF
-    const tableRows = data.map(item => [
-        item.perbaikan_id || '-',
-        item.nama_user || '-',
-        item.nama_perangkat || (item.perangkat_id_snapshot ? `ID: ${item.perangkat_id_snapshot}` : 'N/A'),
-        item.nama_lab || '-',
-        formatDateForPDF(item.tanggal_perbaikan),
-        item.tindakan || '-',
-        item.hasil_perbaikan || 'N/A',
-        item.catatan_tambahan || '-',
-        // item.pengecekan_id || 'N/A' // Ini Dihapus/Dikomentari
-    ]);
-    // --- AKHIR PERUBAHAN PDF ---
+      // Hapus item.pengecekan_id dari data baris PDF
+      const tableRows = data.map(item => [
+          item.perbaikan_id || '-',
+          item.nama_user || '-',
+          item.nama_perangkat || (item.perangkat_id_snapshot ? `ID: ${item.perangkat_id_snapshot}` : 'N/A'),
+          item.nama_lab || '-',
+          formatDateForPDF(item.tanggal_perbaikan),
+          item.tindakan || '-',
+          item.hasil_perbaikan || 'N/A',
+          item.catatan_tambahan || '-',
+          // item.pengecekan_id || 'N/A' // Ini Dihapus/Dikomentari
+      ]);
+      // --- AKHIR PERUBAHAN PDF ---
 
-    autoTable(doc, { 
-        head: [tableColumn],
-        body: tableRows,
-        startY: margin + 20,
-        theme: 'grid',
-        headStyles: { fillColor: [170, 25, 25] }, // Warna merah maroon
-        styles: { fontSize: 8, cellPadding: 1.5, overflow: 'linebreak' },
-    });
+      autoTable(doc, { 
+          head: [tableColumn],
+          body: tableRows,
+          startY: margin + 20,
+          theme: 'grid',
+          headStyles: { fillColor: [170, 25, 25] }, // Warna merah maroon
+          styles: { fontSize: 8, cellPadding: 1.5, overflow: 'linebreak' },
+      });
     
-    doc.save(`laporan_perbaikan_perangkat_${formatDateForPDF(new Date())}.pdf`);
+      doc.save(`laporan_perbaikan_perangkat_${formatDateForPDF(new Date())}.pdf`);
+    } catch {
+      setPrintError('Gagal membuat PDF. Periksa koneksi lalu coba cetak kembali.');
+    } finally {
+      printLock.current = false;
+      setIsPrinting(false);
+    }
 };
 
   // --- PERUBAHAN DI SINI ---
@@ -219,7 +234,7 @@ const handlePrintData = () => {
                 </button>
             )}
             
-            {canEditPerbaikan && (
+            {canEditPerbaikan && (userRole === 'Admin' || Number(item.user_id) === Number(authState?.userId)) && (
               <button
                 onClick={() => handleOpenEditModal(item.perbaikan_id)}
                 className="p-2 text-yellow-500 hover:text-yellow-700 rounded-full hover:bg-yellow-100 transition-colors duration-150"
@@ -246,6 +261,7 @@ const handlePrintData = () => {
 
   return (
     <Dashboard title="Data Perbaikan Perangkat">
+      {printError && <p role="alert" className="p-3 text-red-700">{printError}</p>}
       <div className="px-2">
         {(successMsg && !errorMsg) && (
           <Notification type="success" message={successMsg} onClose={() => setSuccessMsg('')} />
@@ -257,16 +273,17 @@ const handlePrintData = () => {
         {canPrintData && data.length > 0 && (
             <div className="mb-4 flex justify-end">
                 <button
-                    onClick={handlePrintData}
+                    disabled={isPrinting} aria-busy={isPrinting} onClick={handlePrintData}
                     className="px-4 py-2 bg-teal-500 text-white rounded-md hover:bg-teal-600 flex items-center"
                     title="Cetak Data Perbaikan ke PDF"
                 >
-                    <FaPrint className="mr-2" /> Cetak Data
+                    {isPrinting && <span role="status">Menyiapkan PDF… </span>}<FaPrint className="mr-2" /> Cetak Data
                 </button>
             </div>
         )}
 
         <Tabel
+          isLoading={isInitialLoading}
           title="Riwayat Perbaikan Perangkat"
           breadcrumbContext={userRole}
           headers={headTable} // headTable yang sudah dimodifikasi
@@ -275,29 +292,7 @@ const handlePrintData = () => {
           data={data}
           itemsPerPage={10}
           renderRow={renderPerbaikanRow} // renderPerbaikanRow yang sudah dimodifikasi
-        >
-          {/* Loading dan No Data state tetap sama */}
-          {isInitialLoading && (
-            <tr>
-              <td colSpan={headTable.length} className="text-center py-20 text-gray-500"> {/* colSpan disesuaikan */}
-                <div className="flex flex-col justify-center items-center">
-                  <svg className="animate-spin h-10 w-10 text-blue-600 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span className="text-lg">Memuat data perbaikan...</span>
-                </div>
-              </td>
-            </tr>
-          )}
-          {!isInitialLoading && data.length === 0 && (
-            <tr>
-              <td colSpan={headTable.length} className="text-center py-20 text-gray-500 text-lg"> {/* colSpan disesuaikan */}
-                Tidak ada data perbaikan yang ditemukan.
-              </td>
-            </tr>
-          )}
-        </Tabel>
+        />
 
         {showDetailModal && selectedId && 
             <DetailPerbaikan id={selectedId} onClose={() => setShowDetailModal(false)} />
@@ -307,6 +302,7 @@ const handlePrintData = () => {
         }
         
       </div>
+      {deletionDialog}
     </Dashboard>
   );
 }

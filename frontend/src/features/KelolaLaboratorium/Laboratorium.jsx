@@ -7,7 +7,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Notification from '../../Components/Notification/Notif';
 import useTitle from '../../utils/useTitle';
 import { AuthContext } from '../../Context/AuthContext';
-import DeleteConfirmation from '../../components/Notification/DeleteConfirmation';
+import useDeletionDialog from '../../Components/Deletion/useDeletionDialog';
 import DetailLaboratorium from '../../Components/DataLab/DetailLaboratorium';
 import EditLaboratorium from '../../Components/DataLab/EditLaboratorium';
 import truncateText from '../../utils/truncateText';
@@ -37,7 +37,7 @@ const Lab = () => {
       const timer = setTimeout(() => {
         setSuccessMsg('');
         setErrorMsg('');
-        if (location.state) {
+        if (location.state && !location.state.deletionContext) {
             navigate(location.pathname, { replace: true });
         }
       }, 3000);
@@ -55,7 +55,8 @@ const Lab = () => {
     setShowEditModal(true);
   };
 
-  const handleDelete = DeleteConfirmation({
+  const {requestDeletion:handleDelete,dialog:deletionDialog} = useDeletionDialog({
+    resource: 'laboratorium',
     onDelete: (id) => deleteData(`/lab/delete/${id}`),
     itemName: 'data laboratorium',
     onSuccess: (deletedId) => {
@@ -166,8 +167,9 @@ const Lab = () => {
         <td className='px-6 py-4 text-center'>
           <div className='flex items-center justify-center space-x-2'>
             <button 
+              type="button" aria-label={`Lihat detail laboratorium ${item.nama_lab}`}
               onClick={() => handleOpenDetailModal(item.lab_id)} 
-              className="p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-100 transition-colors duration-150"
+              className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 text-maroon rounded-full hover:bg-maroon/10 hover:shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon transition-all duration-150"
               title="Lihat Detail"
             >
               <FaEye size={18} />
@@ -175,15 +177,17 @@ const Lab = () => {
             {isAuthorized && ( // Logika isAuthorized tetap sama
               <>
                 <button 
-                  onClick={() => handleOpenEditModal(item.lab_id)} 
-                  className="p-2 text-red-600 hover:text-red-8000 rounded-full hover:bg-red-100 transition-colors duration-150"
+                  type="button" aria-label={`Edit laboratorium ${item.nama_lab}`}
+              onClick={() => handleOpenEditModal(item.lab_id)} 
+                  className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 text-maroon rounded-full hover:bg-maroon/10 hover:shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon transition-all duration-150"
                   title="Edit Data"
                 >
                   <FaFilePen size={17} />
                 </button>
                 <button
-                  onClick={() => handleDelete(item.lab_id)}
-                  className="p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-100 transition-colors duration-150"
+                  type="button" aria-label={`Hapus laboratorium ${item.nama_lab}`}
+              onClick={() => handleDelete(item.lab_id)}
+                  className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 text-maroon rounded-full hover:bg-maroon/10 hover:shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon transition-all duration-150"
                   title="Hapus Data"
                 >
                   <FaTrash size={17}/>
@@ -207,6 +211,7 @@ const Lab = () => {
         )}
         
         <Tabel
+          isLoading={isInitialLoading}
           title="Data Laboratorium"
           breadcrumbContext={userRole}
           headers={headTable}
@@ -215,36 +220,14 @@ const Lab = () => {
           data={data} // Data tetap dikirim, loading dihandle di children
           itemsPerPage={10}
           renderRow={renderLabRow}
-          //isLoading={isInitialLoading} // Prop ini bisa dihapus jika Tabel tidak menggunakannya secara internal
-                                         // dan loading dihandle oleh children seperti di bawah
-        > 
-          {/* Children untuk menangani loading dan data kosong */}
-          {isInitialLoading && (
-            <tr>
-              <td colSpan={headTable.length} className="text-center py-20 text-gray-500">
-                <div className="flex flex-col justify-center items-center">
-                  <svg className="animate-spin h-10 w-10 text-blue-600 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span className="text-lg">Memuat data laboratorium...</span>
-                </div>
-              </td>
-            </tr>
-          )}
-         {!isInitialLoading && data.length === 0 && (
-            <tr>
-                <td colSpan={headTable.length} className="text-center py-20 text-gray-500 text-lg">
-                    Tidak ada data laboratorium yang ditemukan.
-                </td>
-            </tr>
-         )}
-        </Tabel>
+
+        />
 
         {showDetailModal && <DetailLaboratorium id={selectedId} onClose={() => setShowDetailModal(false)} />}
         {/* Saat update selesai, panggil fetchData(true) agar ada indikator loading */}
         {showEditModal && <EditLaboratorium id={selectedId} onClose={() => setShowEditModal(false)} onUpdate={() => fetchData(true)} />}
       </div>
+      {deletionDialog}
     </Dashboard>
   );
 }

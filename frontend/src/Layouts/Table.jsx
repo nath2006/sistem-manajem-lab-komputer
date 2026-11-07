@@ -1,251 +1,263 @@
-/* eslint-disable no-unused-vars */
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaSearch } from 'react-icons/fa';
 import { FaAngleRight, FaAngleLeft } from 'react-icons/fa6';
+import { filterTableData, getPaginationItems } from '../utils/tableData';
+import { SkeletonRows } from '../Components/Loading/Skeleton';
+import { deletionContext, deletionRelation } from '../utils/deletionContext';
+
+const pageButton =
+  'min-h-11 min-w-11 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-maroon/10 focus-visible:ring-2 focus-visible:ring-maroon disabled:opacity-50 disabled:pointer-events-none';
+
+function labelRow(row, headers) {
+  if (!React.isValidElement(row) || row.type !== 'tr') return row;
+  const cells = React.Children.map(row.props.children, (cell, index) => {
+    if (
+      !React.isValidElement(cell) ||
+      !['td', 'th'].includes(cell.type) ||
+      Number(cell.props.colSpan) > 1
+    )
+      return cell;
+    const heading = headers[index]?.judul || `Kolom ${index + 1}`;
+    const label = typeof heading === 'string' ? heading : `Kolom ${index + 1}`;
+    return React.cloneElement(
+      cell,
+      { 'data-label': label, role: cell.props.role || 'cell' },
+      <>
+        <span
+          aria-hidden="true"
+          className="mobile-cell-label text-xs font-semibold text-gray-500 sm:hidden"
+        >
+          {heading}
+        </span>
+        <div className="min-w-0 break-words sm:contents">
+          {cell.props.children}
+        </div>
+      </>
+    );
+  });
+  return React.cloneElement(row, { role: row.props.role || 'row' }, cells);
+}
 
 const Tabel = ({
-  title,
-  breadcrumbContext, 
-  headers,
+  title = 'Data',
+  breadcrumbContext,
+  headers = [],
   children,
   to,
   data,
   itemsPerPage = 5,
   renderRow,
-  buttonText = "Tambah Data" 
+  buttonText = 'Tambah Data',
+  isLoading = false,
 }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const relatedContext = useMemo(() => deletionContext(location.state?.deletionContext), [location.state?.deletionContext]);
+  const relation = useMemo(() => deletionRelation(location.pathname, relatedContext), [location.pathname, relatedContext]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [filteredData, setFilteredData] = useState([]);
-  const [currentItemsPerPage, setCurrentItemsPerPage] = useState(itemsPerPage);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, currentItemsPerPage]);
-
-  useEffect(() => {
-    setCurrentItemsPerPage(itemsPerPage);
-  }, [itemsPerPage]);
-
-  useEffect(() => {
-    if (Array.isArray(data)) {
-      if (!searchTerm.trim()) {
-        setFilteredData(data);
-      } else {
-        const filtered = data.filter(item => {
-          return Object.values(item).some(value => {
-            const strValue = String(value).toLowerCase();
-            return strValue.includes(searchTerm.toLowerCase());
-          });
-        });
-        setFilteredData(filtered);
-      }
-    } else {
-      setFilteredData([]);
-    }
-  }, [data, searchTerm]);
-
+  const [pageSize, setPageSize] = useState(itemsPerPage);
+  const filteredData = useMemo(
+    () => filterTableData(data, searchTerm, relation),
+    [data, searchTerm, relation]
+  );
   const totalItems = filteredData.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / currentItemsPerPage));
+  const size =
+    pageSize === 'all'
+      ? Math.max(1, totalItems)
+      : Math.max(1, Number(pageSize) || 5);
+  const totalPages = Math.max(1, Math.ceil(totalItems / size));
+  const page = Math.min(currentPage, totalPages);
+  const first = (page - 1) * size;
+  const currentItems = filteredData.slice(first, first + size);
 
   useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(Math.max(1, totalPages));
-    }
+    setPageSize(itemsPerPage);
+    setCurrentPage(1);
+  }, [itemsPerPage]);
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
 
-  const indexOfLastItem = currentPage * currentItemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - currentItemsPerPage;
-  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
-
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-  const nextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
-  const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
-
-  const handleItemsPerPageChange = (e) => {
-    const value = e.target.value === 'all' ? filteredData.length || 1 : Number(e.target.value); // Pastikan tidak 0 jika all
-    setCurrentItemsPerPage(value);
-  };
-
   const renderChildren = () => {
-    if (!Array.isArray(data) || data.length === 0 && searchTerm.trim() === '' ) { // Jika data bukan array atau data memang kosong (bukan hasil filter)
+    if (isLoading && (!Array.isArray(data) || data.length === 0)) return <SkeletonRows columns={Math.max(1, headers.length)} rows={Math.min(size, 5)} label={`Memuat data ${title}...`} />;
+    if (totalItems === 0)
       return (
-        <tr>
-          <td colSpan={headers.length} className="text-center py-10 text-gray-500">
-            Tidak ada data yang tersedia.
+        <tr role="row">
+          <td
+            role="cell"
+            colSpan={Math.max(1, headers.length)}
+            className="px-4 py-10 text-center text-gray-500"
+          >
+            {searchTerm.trim()
+              ? `Data tidak ditemukan untuk pencarian "${searchTerm}".`
+              : 'Tidak ada data yang tersedia.'}
           </td>
         </tr>
       );
-    }
-
-    if (totalItems === 0 && searchTerm.trim() !== '') { // Jika hasil filter kosong
-        return (
-            <tr>
-                <td colSpan={headers.length} className="text-center py-10 text-gray-500">
-                    Data tidak ditemukan untuk pencarian "{searchTerm}".
-                </td>
-            </tr>
-        );
-    }
-
-
-    if (renderRow && typeof renderRow === 'function') {
-      return currentItems.map((item, index) => renderRow(item, indexOfFirstItem + index)); // Mengirimkan index global jika dibutuhkan
-    }
-
-    // Fallback jika children disediakan secara eksplisit dan bukan renderRow
-    // Namun, pola yang lebih umum adalah menggunakan renderRow untuk data array
-    if (children) {
-        return children;
-    }
-
-    return null; // Seharusnya tidak sampai sini jika renderRow atau children valid
+    if (typeof renderRow === 'function')
+      return currentItems.map((item, index) =>
+        labelRow(renderRow(item, first + index), headers)
+      );
+    return React.Children.map(children, (row) => labelRow(row, headers));
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-5 border-b border-gray-200">
-        <div className='flex-grow'> {/* Memastikan bagian kiri mengambil ruang yang tersedia */}
-          <h1 className='text-xl font-semibold text-gray-900'>
-            {title} {/* Menampilkan title utama, misal: "Kelola Data User" */}
+    <section aria-busy={isLoading} className="min-w-0 rounded-lg bg-white shadow-md">
+      {relatedContext && <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-t-lg border-b border-maroon bg-maroon/10 p-4 text-sm text-gray-800">
+        <p>Data terkait <strong>{relatedContext.label}</strong> (#{relatedContext.id}). {relation ? 'Daftar difilter berdasarkan keterkaitan, bukan pencarian nama.' : 'Tinjau keterkaitan yang disebutkan pada dialog sebelumnya.'}</p>
+        <button type="button" className="min-h-11 rounded-md border border-maroon px-3 py-2 font-semibold text-maroon hover:bg-maroon/10" onClick={()=>{
+          const {deletionContext: _removed, ...state} = location.state || {};
+          setSearchTerm('');
+          setCurrentPage(1);
+          navigate({pathname:location.pathname,search:location.search},{replace:true,state});
+        }}>Tampilkan semua</button>
+      </div>}
+      <header className="flex flex-col items-start justify-between gap-4 border-b border-gray-200 p-4 sm:p-5 lg:flex-row lg:items-center">
+        <div className="min-w-0 flex-1">
+          <h1 className="break-words text-xl font-semibold text-gray-900">
+            {title}
           </h1>
-          <p className="mt-1 text-sm font-normal text-gray-500">
-            {/* Menampilkan breadcrumb: [role] / title */}
+          <p className="mt-1 break-words text-sm text-gray-500">
             {breadcrumbContext ? `${breadcrumbContext} / ${title}` : title}
           </p>
         </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center w-full sm:w-auto"> {/* Penyesuaian untuk mobile */}
-          <div className="relative w-full sm:w-auto">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <FaSearch className="text-gray-400 w-4 h-4" />
-            </div>
+        <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+          <div className="relative min-w-0 flex-1">
+            <FaSearch
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+            />
             <input
-              type="text"
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm font-normal rounded-lg focus:ring-maroon focus:border-maroon block w-full pl-10 p-2.5" // p-2.5 untuk tinggi yang konsisten
+              type="search"
+              aria-label={`Cari data ${title}`}
+              className="block min-h-11 w-full rounded-lg border border-gray-300 bg-gray-50 py-2.5 pl-10 pr-3 text-sm text-gray-900 focus:border-maroon focus:ring-maroon"
               placeholder="Cari data..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(event) => {
+                setSearchTerm(event.target.value);
+                setCurrentPage(1);
+              }}
             />
           </div>
           {to && (
             <Link
-              className='px-4 py-2.5 text-sm font-medium text-white rounded-lg bg-maroon hover:bg-red-800 active:scale-95 transition-all whitespace-nowrap w-full sm:w-auto text-center' // text-center untuk mobile
               to={to}
+              className="min-h-11 w-full rounded-lg bg-maroon px-4 py-2.5 text-center text-sm font-medium text-white transition-all hover:bg-maroon/90 hover:shadow-md active:scale-95 focus-visible:ring-2 focus-visible:ring-maroon sm:w-auto"
             >
-              {buttonText} {/* Menggunakan prop buttonText */}
+              {buttonText}
             </Link>
           )}
         </div>
-      </div>
-
-      <div className="relative overflow-x-auto custom-scrollbar">
-        <table className="w-full text-sm text-left text-gray-500 rtl:text-right">
-          <thead className="text-xs text-white uppercase bg-maroon">
-            <tr>
-              {headers.map((item, i) => (
-                <th key={i} scope="col" className="px-6 py-3 whitespace-nowrap"> {/* whitespace-nowrap menjadi text-nowrap */}
-                  {item.judul}
+      </header>
+      <div className="min-w-0 overflow-x-auto custom-scrollbar">
+        <table
+          role="table"
+          aria-label={title}
+          className="mobile-data-table w-full text-left text-sm text-gray-600"
+        >
+          <thead
+            role="rowgroup"
+            className="text-xs uppercase text-white bg-maroon"
+          >
+            <tr role="row">
+              {headers.map((header, index) => (
+                <th
+                  role="columnheader"
+                  key={index}
+                  scope="col"
+                  className="whitespace-nowrap px-6 py-3"
+                >
+                  {header.judul}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
-            {/* Jika Anda ingin menampilkan children dari parent saat loading, bisa diatur di sini */}
-            {/* Contoh: isLoading ? childrenLoadingState : renderChildren() */}
-            {renderChildren()}
-          </tbody>
+          <tbody role="rowgroup">{renderChildren()}</tbody>
         </table>
       </div>
-
-      {/* Pagination controls */}
-      {Array.isArray(data) && filteredData.length > 0 && totalPages > 0 && ( // Hanya tampilkan jika ada data dan lebih dari 0 halaman
-        <div className="flex flex-col sm:flex-row items-center justify-between mt-4 p-4 border-t border-gray-200 gap-y-4">
-          <div className="flex items-center gap-2 border p-2 border-gray-300 rounded-lg relative shadow-sm">
-            <span className="text-sm font-medium text-gray-700 pr-2">Per halaman</span>
-            <div className="h-full absolute left-1/2 transform -translate-x-1/2 top-0 w-px bg-gray-300" style={{left: "calc(50% - 8px)"}}></div> {/* Penyesuaian posisi garis */}
+      {totalItems > 0 && (
+        <footer className="flex flex-col gap-3 border-t border-gray-200 p-4 lg:flex-row lg:items-center lg:justify-between">
+          <label className="flex min-h-11 items-center gap-2 text-sm text-gray-700">
+            Per halaman
             <select
-              value={currentItemsPerPage >= filteredData.length && filteredData.length > 0 ? 'all' : currentItemsPerPage} // Handle 'all' jika jumlah item cukup
-              onChange={handleItemsPerPageChange}
-              className="border-none focus:ring-0 text-sm p-0 pl-2 bg-transparent text-gray-700 font-medium"
+              aria-label={`Jumlah data per halaman ${title}`}
+              className="min-h-11 rounded-lg border border-gray-300 bg-white px-3 focus:ring-maroon"
+              value={pageSize}
+              onChange={(event) => {
+                setPageSize(
+                  event.target.value === 'all'
+                    ? 'all'
+                    : Number(event.target.value)
+                );
+                setCurrentPage(1);
+              }}
             >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              {filteredData.length > 0 && <option value="all">Semua ({filteredData.length})</option>}
+              {[5, 10, 25, 50].map((value) => (
+                <option value={value} key={value}>
+                  {value}
+                </option>
+              ))}
+              <option value="all">Semua ({totalItems})</option>
             </select>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-end gap-x-4 gap-y-2 w-full sm:w-auto">
-            <div className="text-sm text-gray-700">
-              Menampilkan {totalItems === 0 ? 0 : indexOfFirstItem + 1} - {Math.min(indexOfLastItem, totalItems)} dari {totalItems} data
-            </div>
-
+          </label>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-gray-600" aria-live="polite">
+              Menampilkan {first + 1} - {Math.min(first + size, totalItems)}{' '}
+              dari {totalItems} data
+            </p>
             {totalPages > 1 && (
-              <nav className="flex items-center gap-x-1" aria-label="Pagination">
+              <nav
+                aria-label="Pagination"
+                className="flex items-center justify-between gap-2 sm:justify-end"
+              >
                 <button
                   type="button"
-                  className="min-h-[38px] min-w-[38px] py-2 px-2.5 inline-flex items-center gap-x-1.5 text-sm text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-maroon disabled:opacity-50 disabled:pointer-events-none shadow-sm"
-                  onClick={prevPage}
-                  disabled={currentPage === 1}
-                  aria-label="Previous"
+                  className={pageButton}
+                  onClick={() => setCurrentPage(page - 1)}
+                  disabled={page === 1}
+                  aria-label="Halaman sebelumnya"
                 >
-                  <FaAngleLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">Prev</span>
+                  <FaAngleLeft aria-hidden="true" />
                 </button>
-
-                <div className="flex items-center gap-x-1">
-                  {/* Logika untuk menampilkan nomor halaman bisa lebih kompleks jika banyak halaman */}
-                  {Array.from({ length: totalPages }, (_, i) => {
-                     // Logika untuk menampilkan elipsis jika halaman terlalu banyak
-                    const pageNumber = i + 1;
-                    if (totalPages <= 5 || // Tampilkan semua jika <= 5 halaman
-                        (pageNumber <= 2) || // Tampilkan 2 halaman pertama
-                        (pageNumber >= totalPages - 1) || // Tampilkan 2 halaman terakhir
-                        (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1) // Tampilkan halaman sekitar halaman aktif
-                    ) {
-                        return (
-                            <button
-                                key={i}
-                                onClick={() => paginate(pageNumber)}
-                                className={`min-h-[38px] min-w-[38px] py-2 px-3.5 inline-flex items-center justify-center text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-maroon shadow-sm ${
-                                currentPage === pageNumber
-                                    ? 'bg-maroon text-white font-semibold border border-maroon'
-                                    : 'text-gray-700 bg-white hover:bg-gray-100 border border-gray-300'
-                                }`}
-                            >
-                                {pageNumber}
-                            </button>
-                        );
-                    } else if (
-                        (pageNumber === currentPage - 2 && pageNumber > 2) ||
-                        (pageNumber === currentPage + 2 && pageNumber < totalPages - 1)
-                    ) {
-                        // Tampilkan elipsis
-                        return <span key={`ellipsis-${i}`} className="px-2 py-2 text-gray-500">...</span>;
-                    }
-                    return null;
-                  })}
+                <span className="text-sm text-gray-600 sm:hidden">
+                  {page} / {totalPages}
+                </span>
+                <div className="hidden items-center gap-1 sm:flex">
+                  {getPaginationItems(totalPages, page).map((item) =>
+                    typeof item === 'number' ? (
+                      <button
+                        type="button"
+                        key={item}
+                        aria-current={page === item ? 'page' : undefined}
+                        className={`${pageButton} ${page === item ? '!border-maroon !bg-maroon !text-white' : ''}`}
+                        onClick={() => setCurrentPage(item)}
+                      >
+                        {item}
+                      </button>
+                    ) : (
+                      <span key={item} aria-hidden="true" className="px-1">
+                        …
+                      </span>
+                    )
+                  )}
                 </div>
-
                 <button
                   type="button"
-                  className="min-h-[38px] min-w-[38px] py-2 px-2.5 inline-flex items-center gap-x-1.5 text-sm text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-maroon disabled:opacity-50 disabled:pointer-events-none shadow-sm"
-                  onClick={nextPage}
-                  disabled={currentPage === totalPages}
-                  aria-label="Next"
+                  className={pageButton}
+                  onClick={() => setCurrentPage(page + 1)}
+                  disabled={page === totalPages}
+                  aria-label="Halaman berikutnya"
                 >
-                  <span className="hidden sm:inline">Next</span>
-                  <FaAngleRight className="w-4 h-4" />
+                  <FaAngleRight aria-hidden="true" />
                 </button>
               </nav>
             )}
           </div>
-        </div>
+        </footer>
       )}
-    </div>
+    </section>
   );
 };
 

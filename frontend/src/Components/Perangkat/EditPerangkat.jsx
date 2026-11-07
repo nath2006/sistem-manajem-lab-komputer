@@ -4,6 +4,8 @@ import { get, putWithFile } from "../../utils/api";
 import ModalFormContainer from "../DetailModal/ModalContainer";
 import { AuthContext } from "../../Context/AuthContext";
 import LoadingSpinner from "../DetailModal/LoadingSpinner";
+import LoadingSkeleton from '../Loading/Skeleton';
+import useObjectUrl from "../../utils/useObjectUrl";
 
 const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
   // ... (semua state dan useEffect Anda yang sudah ada tetap di sini) ...
@@ -22,7 +24,7 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
   
   const [selectedFile, setSelectedFile] = useState(null);
   const [currentImageUrl, setCurrentImageUrl] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const previewUrl = useObjectUrl(selectedFile);
   const [allLabsForAdminDropdown, setAllLabsForAdminDropdown] = useState([]);
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [isFetchingLabs, setIsFetchingLabs] = useState(false);
@@ -97,14 +99,7 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        setSelectedFile(file);
-        setPreviewUrl(URL.createObjectURL(file));
-    } else {
-        setSelectedFile(null);
-        setPreviewUrl(null);
-    }
+    setSelectedFile(e.target.files[0] || null);
   };
 
   const handleSubmit = async (e) => {
@@ -165,9 +160,10 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
   // Definisikan tombol-tombol di sini
   const primarySubmitButton = (
     <button
+      type="submit"
       form="editPerangkatForm" 
-      disabled={isSubmitting}
-      className="w-full bg-red-900 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors duration-200 font-medium disabled:opacity-50"
+      disabled={isSubmitting || (isFetchingLabs && allLabsForAdminDropdown.length === 0)}
+      className="min-h-11 w-full bg-maroon text-white px-6 py-3 rounded-lg hover:bg-maroon/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon focus-visible:ring-offset-2 transition-colors duration-200 font-medium disabled:opacity-50"
     >
       {isSubmitting ? 'Menyimpan...' : 'Update Perangkat'}
     </button>
@@ -175,6 +171,7 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
 
   const secondaryCancelButton = (
     <button
+      type="button"
       onClick={onClose}
       disabled={isSubmitting} // Opsional: nonaktifkan saat submit
       className="w-full bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors duration-200 font-medium disabled:opacity-50"
@@ -204,7 +201,7 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
         <div className="mb-4">
           <label htmlFor="nama_perangkat" className="block mb-2 font-medium text-md">Nama Perangkat <span className="text-red-500">*</span></label>
           <input type="text" id="nama_perangkat" name="nama_perangkat" value={formData.nama_perangkat} onChange={handleChange}
-            className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 h-12"
+            className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12"
             placeholder="Cth: PC-01, Proyektor Epson L200" required />
         </div>
 
@@ -212,16 +209,16 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
         <div className="mb-4">
           <label htmlFor="nomor_inventaris" className="block mb-2 font-medium text-md">Nomor Inventaris <span className="text-red-500">*</span></label>
           <input type="text" id="nomor_inventaris" name="nomor_inventaris" value={formData.nomor_inventaris} onChange={handleChange}
-            className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 h-12"
+            className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12"
             placeholder="Masukkan Nomor Inventaris Unik" required />
         </div>
 
         {/* Laboratorium */}
         <div className="mb-4">
           <label htmlFor="lab_id" className="block mb-2 font-medium text-md">Laboratorium <span className="text-red-500">*</span></label>
-          <select
+          {isFetchingLabs && allLabsForAdminDropdown.length === 0 && !isLabIdFieldDisabled ? <LoadingSkeleton variant="text" rows={1} label="Memuat laboratorium..." /> : <select
             id="lab_id" name="lab_id" value={formData.lab_id} onChange={handleChange}
-            className={`shadow-sm border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 h-12 ${isLabIdFieldDisabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
+            className={`shadow-sm border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12 ${isLabIdFieldDisabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
             required
             disabled={isLabIdFieldDisabled || (isAdmin && !isLabIdFieldDisabled && (isFetchingLabs || allLabsForAdminDropdown.length === 0))}
           >
@@ -239,7 +236,7 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
                 ))}
               </>
             )}
-          </select>
+          </select>}
           {isAdmin && !isLabIdFieldDisabled && allLabsForAdminDropdown.length === 0 && !isFetchingLabs &&
             <p className="text-xs text-red-500 mt-1">Tidak ada data lab. Tambahkan lab terlebih dahulu.</p>
           }
@@ -249,7 +246,7 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
         <div className="mb-4">
           <label htmlFor="status" className="block mb-2 font-medium text-md">Status Perangkat <span className="text-red-500">*</span></label>
           <select id="status" name="status" value={formData.status} onChange={handleChange}
-            className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 h-12" required >
+            className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12" required >
             {statusPerangkatOptions.map(option => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
@@ -260,7 +257,7 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
         <div className="mb-4">
           <label htmlFor="spesifikasi" className="block mb-2 font-medium text-md">Spesifikasi (Opsional)</label>
           <textarea id="spesifikasi" name="spesifikasi" rows="4" value={formData.spesifikasi} onChange={handleChange}
-            className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5"
             placeholder="Cth: RAM 8GB, SSD 256GB, Intel i5 Gen 7" />
         </div>
 
@@ -277,7 +274,7 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
               </div>
           )}
           <input type="file" id="foto_perangkat_input" name="foto_perangkat_input" onChange={handleFileChange} accept="image/*"
-            className="block w-full text-sm text-gray-900 border border-gray-300 rounded-md cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+            className="block w-full text-sm text-gray-900 border border-gray-300 rounded-md cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-semibold file:bg-maroon/10 file:text-maroon hover:file:bg-maroon/20" />
           {selectedFile && (
             <div className="mt-2 text-xs text-gray-500">File baru dipilih: {selectedFile.name} ({Math.round(selectedFile.size / 1024)} KB)</div>
           )}
