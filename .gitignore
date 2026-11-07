@@ -1,0 +1,30 @@
+# Local configuration and secrets (never publish).
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+
+# Installed dependencies and generated build output.
+node_modules/
+frontend/dist/
+backend/generated/
+
+# User uploads, local databases and runtime output.
+backend/uploads/
+*.sqlite
+*.sqlite3
+*.db
+*.log
+
+# Local review evidence (contains machine paths and fixture state).
+docs/*-result.json
+docs/onboarding-tour/
+
+# Local scratch experiment; not part of the application.
+backend/ayam.js
+
+# Legacy data-bearing dumps stay local; publish schema-only migrations instead.
+/backend/DB-COBA.sql
+/backend/Sistem Infromasi Manajemen Lab FIX-2.sql

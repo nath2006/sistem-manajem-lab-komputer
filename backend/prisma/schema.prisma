@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client-js"
+  //output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model jadwal_lab {
+  jadwal_id         Int                @id @default(autoincrement())
+  lab_id            Int
+  guru_id           Int
+  tanggal           DateTime           @db.Date
+  jam_mulai         DateTime           @db.Time(0)
+  jam_selesai       DateTime           @db.Time(0)
+  kelas             String             @db.VarChar(50)
+  mata_pelajaran    String             @db.VarChar(100)
+  kegiatan          String?            @db.VarChar(255)
+  status            jadwal_lab_status? @default(Terisi)
+  pengajuan_id_asal Int?
+  user              user               @relation(fields: [guru_id], references: [user_id], onDelete: Cascade, map: "fk_jadwal_guru")
+  laboratorium      laboratorium       @relation(fields: [lab_id], references: [lab_id], onDelete: Cascade, map: "fk_jadwal_lab")
+  pengajuan_lab     pengajuan_lab?     @relation(fields: [pengajuan_id_asal], references: [pengajuan_id], map: "fk_jadwal_pengajuan_asal")
+
+  @@unique([lab_id, tanggal, jam_mulai], map: "no_schedule_overlap")
+  @@index([guru_id], map: "fk_jadwal_guru")
+  @@index([pengajuan_id_asal], map: "fk_jadwal_pengajuan_asal")
+}
+
+model laboratorium {
+  lab_id        Int                 @id @default(autoincrement())
+  nama_lab      String              @db.VarChar(100)
+  lokasi        String              @db.VarChar(100)
+  kapasitas     Int
+  kepala_lab_id Int?
+  deskripsi     String?             @db.Text
+  status        laboratorium_status @default(Tersedia)
+  jam_buka      DateTime            @default(dbgenerated("'07:00:00'")) @db.Time(0)
+  jam_tutup     DateTime            @default(dbgenerated("'16:00:00'")) @db.Time(0)
+  foto_lab      String?             @db.VarChar(255)
+  jadwal_lab    jadwal_lab[]
+  user          user?               @relation(fields: [kepala_lab_id], references: [user_id], map: "fk_lab_kepala")
+  pengajuan_lab pengajuan_lab[]
+  perangkat     perangkat[]
+
+  @@index([kepala_lab_id], map: "fk_lab_kepala")
+}
+
+model laporan {
+  laporan_id        Int                   @id @default(autoincrement())
+  jenis_laporan     laporan_jenis_laporan
+  periode_mulai     DateTime?             @db.Date
+  periode_selesai   DateTime?             @db.Date
+  deskripsi_laporan String?               @db.Text
+  file_path         String?               @db.VarChar(255)
+  tanggal_dibuat    DateTime              @default(dbgenerated("(now())")) @db.DateTime(0)
+  dibuat_oleh       Int
+  user              user                  @relation(fields: [dibuat_oleh], references: [user_id], map: "fk_laporan_user")
+
+  @@index([dibuat_oleh], map: "fk_laporan_user")
+}
+
+model pemeriksaan {
+  pemeriksaan_id      Int                           @id @default(autoincrement())
+  user_id             Int
+  perangkat_id        Int
+  tanggal_pemeriksaan DateTime                      @default(dbgenerated("(now())")) @db.DateTime(0)
+  hasil_pemeriksaan   pemeriksaan_hasil_pemeriksaan
+  catatan             String?                       @db.Text
+  perangkat           perangkat                     @relation(fields: [perangkat_id], references: [perangkat_id], map: "fk_pemeriksaan_perangkat")
+  user                user                          @relation(fields: [user_id], references: [user_id], map: "fk_pemeriksaan_user")
+  pengecekan          pengecekan[]
+
+  @@index([perangkat_id], map: "fk_pemeriksaan_perangkat")
+  @@index([user_id], map: "fk_pemeriksaan_user")
+}
+
+model pengajuan_lab {
+  pengajuan_id                            Int                  @id @default(autoincrement())
+  lab_id                                  Int
+  guru_id                                 Int
+  tanggal_pengajuan                       DateTime             @default(dbgenerated("(now())")) @db.DateTime(0)
+  tanggal_pakai                           DateTime             @db.Date
+  jam_mulai                               DateTime             @db.Time(0)
+  jam_selesai                             DateTime             @db.Time(0)
+  kelas                                   String               @db.VarChar(50)
+  mata_pelajaran                          String               @db.VarChar(100)
+  kegiatan                                String               @db.VarChar(255)
+  status                                  pengajuan_lab_status @default(Menunggu)
+  alasan_penolakan                        String?              @db.Text
+  disetujui_oleh                          Int?
+  waktu_persetujuan                       DateTime?            @db.DateTime(0)
+  jadwal_lab                              jadwal_lab[]
+  user_pengajuan_lab_disetujui_olehTouser user?                @relation("pengajuan_lab_disetujui_olehTouser", fields: [disetujui_oleh], references: [user_id], map: "fk_pengajuan_disetujui")
+  user_pengajuan_lab_guru_idTouser        user                 @relation("pengajuan_lab_guru_idTouser", fields: [guru_id], references: [user_id], onDelete: Cascade, map: "fk_pengajuan_guru")
+  laboratorium                            laboratorium         @relation(fields: [lab_id], references: [lab_id], onDelete: Cascade, map: "fk_pengajuan_lab")
+
+  @@unique([lab_id, tanggal_pakai, jam_mulai], map: "prevent_overlapping_requests")
+  @@index([disetujui_oleh], map: "fk_pengajuan_disetujui")
+  @@index([guru_id], map: "fk_pengajuan_guru")
+}
+
+model pengecekan {
+  pengecekan_id       Int                          @id @default(autoincrement())
+  user_id             Int
+  perangkat_id        Int
+  pemeriksaan_id      Int?
+  tanggal_pengecekan  DateTime                     @default(dbgenerated("(now())")) @db.DateTime(0)
+  ditemukan_kerusakan String                       @db.Text
+  status_pengecekan   pengecekan_status_pengecekan @default(Baru)
+  pemeriksaan         pemeriksaan?                 @relation(fields: [pemeriksaan_id], references: [pemeriksaan_id], map: "fk_pengecekan_pemeriksaan")
+  perangkat           perangkat                    @relation(fields: [perangkat_id], references: [perangkat_id], map: "fk_pengecekan_perangkat")
+  user                user                         @relation(fields: [user_id], references: [user_id], map: "fk_pengecekan_user")
+  perbaikan           perbaikan[]
+
+  @@index([pemeriksaan_id], map: "fk_pengecekan_pemeriksaan")
+  @@index([perangkat_id], map: "fk_pengecekan_perangkat")
+  @@index([user_id], map: "fk_pengecekan_user")
+}
+
+model pengumuman {
+  id         Int       @id @default(autoincrement())
+  judul      String    @db.VarChar(255)
+  content    String    @db.Text
+  file_path  String?   @db.VarChar(255)
+  created_at DateTime? @default(dbgenerated("(now())")) @db.Timestamp(0)
+  updated_at DateTime? @default(now()) @db.Timestamp(0)
+  created_by Int
+  is_active  Boolean?  @default(true)
+  user       user      @relation(fields: [created_by], references: [user_id], map: "fk_pengumuman_user")
+
+  @@index([created_by], map: "fk_pengumuman_user")
+}
+
+model perangkat {
+  perangkat_id     Int              @id @default(autoincrement())
+  nama_perangkat   String           @db.VarChar(100)
+  spesifikasi      String?          @db.Text
+  status           perangkat_status @default(Baik)
+  lab_id           Int
+  foto_perangkat   String?          @db.VarChar(255)
+  nomor_inventaris String?          @unique(map: "nomor_inventaris") @db.VarChar(50)
+  pemeriksaan      pemeriksaan[]
+  pengecekan       pengecekan[]
+  laboratorium     laboratorium     @relation(fields: [lab_id], references: [lab_id], map: "fk_perangkat_lab")
+  perbaikan        perbaikan[]
+
+  @@index([lab_id], map: "fk_perangkat_lab")
+}
+
+model perbaikan {
+  perbaikan_id              Int                       @id @default(autoincrement())
+  pengecekan_id             Int?
+  user_id                   Int
+  perangkat_id_snapshot     Int?
+  tanggal_perbaikan         DateTime                  @db.Date
+  tindakan                  String                    @db.Text
+  hasil_perbaikan           perbaikan_hasil_perbaikan
+  catatan_tambahan          String?                   @db.Text
+  tanggal_selesai_perbaikan DateTime?                 @db.Date
+  pengecekan                pengecekan?               @relation(fields: [pengecekan_id], references: [pengecekan_id], map: "fk_perbaikan_pengecekan")
+  perangkat                 perangkat?                @relation(fields: [perangkat_id_snapshot], references: [perangkat_id], onDelete: Restrict, map: "fk_perbaikan_perangkat_snapshot")
+  user                      user                      @relation(fields: [user_id], references: [user_id], map: "fk_perbaikan_user")
+
+  @@index([pengecekan_id], map: "fk_perbaikan_pengecekan")
+  @@index([perangkat_id_snapshot], map: "fk_perbaikan_perangkat_snapshot")
+  @@index([user_id], map: "fk_perbaikan_user")
+}
+
+model user {
+  user_id                                          Int             @id @default(autoincrement())
+  username                                         String          @unique(map: "username") @db.VarChar(50)
+  password                                         String          @db.VarChar(255)
+  nama_lengkap                                     String          @db.VarChar(100)
+  email                                            String          @unique(map: "email") @db.VarChar(100)
+  role                                             user_role
+  is_online                                        Boolean         @default(false)
+  jadwal_lab                                       jadwal_lab[]
+  laboratorium                                     laboratorium[]
+  laporan                                          laporan[]
+  pemeriksaan                                      pemeriksaan[]
+  pengajuan_lab_pengajuan_lab_disetujui_olehTouser pengajuan_lab[] @relation("pengajuan_lab_disetujui_olehTouser")
+  pengajuan_lab_pengajuan_lab_guru_idTouser        pengajuan_lab[] @relation("pengajuan_lab_guru_idTouser")
+  pengecekan                                       pengecekan[]
+  pengumuman                                       pengumuman[]
+  perbaikan                                        perbaikan[]
+}
+
+enum laporan_jenis_laporan {
+  Pemeriksaan
+  Pengecekan
+  Perbaikan
+  Penggunaan_Lab       @map("Penggunaan Lab")
+  Inventaris_Perangkat @map("Inventaris Perangkat")
+}
+
+enum perangkat_status {
+  Baik
+  Rusak
+  Perlu_Perbaikan @map("Perlu Perbaikan")
+  Dalam_Perbaikan @map("Dalam Perbaikan")
+}
+
+enum pemeriksaan_hasil_pemeriksaan {
+  Baik
+  Bermasalah
+}
+
+enum user_role {
+  Guru
+  Kepala_Lab      @map("Kepala Lab")
+  Koordinator_Lab @map("Koordinator Lab")
+  Teknisi
+  Admin
+}
+
+enum laboratorium_status {
+  Tersedia
+  Tidak_Tersedia @map("Tidak Tersedia")
+  Pemeliharaan
+}
+
+enum pengecekan_status_pengecekan {
+  Baru
+  Sudah_Ditangani    @map("Sudah Ditangani")
+  Menunggu_Perbaikan @map("Menunggu Perbaikan")
+}
+
+enum perbaikan_hasil_perbaikan {
+  Berhasil
+  Gagal
+  Perlu_Penggantian_Komponen @map("Perlu Penggantian Komponen")
+}
+
+enum jadwal_lab_status {
+  Terisi
+  Selesai
+  Dibatalkan
+  Berlangsung
+}
+
+enum pengajuan_lab_status {
+  Menunggu
+  Disetujui
+  Ditolak
+  Dibatalkan
+}

@@ -1,303 +1,102 @@
-// File: controllers/PemeriksaanController.js (atau nama file controller Anda)
-import db from "../config/db.js"; // Pastikan path ini benar
+import db from "../config/db.js";
+import {createDeletionService,sendDeletionError} from "../services/deletionService.js";
 
-// Create Pemeriksaan Baru (Tidak ada perubahan, kode Anda sudah cukup baik)
+const selectInspection = `SELECT pm.*, pm.user_id AS pemeriksa_user_id,
+  u.nama_lengkap AS nama_pemeriksa, pr.nama_perangkat, pr.nomor_inventaris,
+  pr.spesifikasi AS spesifikasi_perangkat, pr.status AS status_perangkat_saat_ini,
+  l.lab_id, l.nama_lab, l.kepala_lab_id FROM pemeriksaan pm
+  LEFT JOIN user u ON pm.user_id = u.user_id
+  JOIN perangkat pr ON pm.perangkat_id = pr.perangkat_id
+  JOIN laboratorium l ON pr.lab_id = l.lab_id`;
+const validInspection = b => ['Baik', 'Bermasalah'].includes(b.hasil_pemeriksaan)
+  && typeof b.tanggal_pemeriksaan === 'string' && !Number.isNaN(Date.parse(b.tanggal_pemeriksaan));
+const allowed = (req, row) => req.user.role !== 'Kepala Lab' || Number(row.kepala_lab_id) === Number(req.user.id);
+
 export const createPemeriksaan = async (req, res) => {
-  const conn = await db.getConnection();
+  const b = req.body;
+  if (!validInspection(b) || !Number.isSafeInteger(Number(b.perangkat_id)) || Number(b.perangkat_id) <= 0)
+    return res.status(400).json({ message: 'Perangkat, tanggal dan hasil pemeriksaan wajib valid.' });
+  let conn;
   try {
-    const {
-      user_id,
-      perangkat_id,
-      tanggal_pemeriksaan,
-      hasil_pemeriksaan,
-      catatan
-    } = req.body;
-
+    conn = await db.getConnection();
     await conn.beginTransaction();
-
-    // 1. Simpan ke tabel pemeriksaan
-    const [result] = await conn.query(
-      `INSERT INTO pemeriksaan 
-      (user_id, perangkat_id, tanggal_pemeriksaan, hasil_pemeriksaan, catatan)
-      VALUES (?, ?, ?, ?, ?)`,
-      [user_id, perangkat_id, tanggal_pemeriksaan, hasil_pemeriksaan, catatan]
-    );
-    const pemeriksaan_id = result.insertId;
-
-    // 2. Jika hasil pemeriksaan "Bermasalah", tambahkan ke tabel pengecekan
-    if (hasil_pemeriksaan === 'Bermasalah') {
-      await conn.query(
-        `INSERT INTO pengecekan 
+    const [devices] = await conn.query(`SELECT pr.perangkat_id, l.kepala_lab_id FROM perangkat pr
+      JOIN laboratorium l ON pr.lab_id = l.lab_id WHERE pr.perangkat_id = ? FOR UPDATE`, [b.perangkat_id]);
+    if (!devices.length || !allowed(req, devices[0])) {
+      await conn.rollback(); return res.status(404).json({ message: 'Perangkat tidak ditemukan dalam laboratorium Anda.' });
+    }
+    const [result] = await conn.query(`INSERT INTO pemeriksaan
+      (user_id, perangkat_id, tanggal_pemeriksaan, hasil_pemeriksaan, catatan) VALUES (?, ?, ?, ?, ?)`,
+      [req.user.id, b.perangkat_id, b.tanggal_pemeriksaan, b.hasil_pemeriksaan, b.catatan || null]);
+    if (b.hasil_pemeriksaan === 'Bermasalah') {
+      await conn.query(`INSERT INTO pengecekan
         (user_id, perangkat_id, pemeriksaan_id, tanggal_pengecekan, ditemukan_kerusakan, status_pengecekan)
-        VALUES (?, ?, ?, ?, ?, ?)`, // Tambahkan pemeriksaan_id dan status_pengecekan
-        [user_id, perangkat_id, pemeriksaan_id, tanggal_pemeriksaan, catatan || 'Belum ada catatan', 'Baru'] // Set status default
-      );
+        VALUES (?, ?, ?, ?, ?, ?)`, [req.user.id, b.perangkat_id, result.insertId, b.tanggal_pemeriksaan, b.catatan || 'Masalah ditemukan saat pemeriksaan', 'Baru']);
+      await conn.query('UPDATE perangkat SET status = ? WHERE perangkat_id = ?', ['Perlu Perbaikan', b.perangkat_id]);
     }
     await conn.commit();
-    res.status(201).json({
-      data: {
-        id: pemeriksaan_id, user_id, perangkat_id, tanggal_pemeriksaan, hasil_pemeriksaan, catatan
-      },
-      message: "Data Pemeriksaan Berhasil Ditambahkan"
-    });
+    res.status(201).json({ data: { ...b, id: result.insertId, pemeriksaan_id: result.insertId, user_id: req.user.id }, message: 'Pemeriksaan tersimpan. Temuan bermasalah otomatis masuk antrian teknisi.' });
   } catch (error) {
-    await conn.rollback();
-    console.error("Error in createPemeriksaan:", error);
-    res.status(500).json({
-      message: "Menambahkan Data Pemeriksaan Gagal",
-      error: error.message
-    });
-  } finally {
-    conn.release();
-  }
+    if (conn) await conn.rollback();
+    res.status(500).json({ message: 'Gagal menyimpan pemeriksaan.', error: error.message });
+  } finally { conn?.release(); }
 };
 
-// Ambil Semua Pemeriksaan (MODIFIKASI DI SINI)
 export const getAllPemeriksaan = async (req, res) => {
   try {
-    const query = `
-      SELECT 
-        pm.pemeriksaan_id, 
-        pm.tanggal_pemeriksaan, 
-        pm.hasil_pemeriksaan, 
-        pm.catatan,
-        pm.user_id AS pemeriksa_user_id,       -- ID User yang melakukan pemeriksaan
-        u_pemeriksa.nama_lengkap AS nama_pemeriksa, -- Nama lengkap user pemeriksa
-        pm.perangkat_id,                      -- ID Perangkat yang diperiksa
-        pr.nama_perangkat,
-        pr.nomor_inventaris,
-        l.lab_id,
-        l.nama_lab
-      FROM pemeriksaan pm
-      LEFT JOIN user u_pemeriksa ON pm.user_id = u_pemeriksa.user_id
-      LEFT JOIN perangkat pr ON pm.perangkat_id = pr.perangkat_id
-      LEFT JOIN laboratorium l ON pr.lab_id = l.lab_id
-      ORDER BY pm.tanggal_pemeriksaan DESC, pm.pemeriksaan_id DESC
-    `;
-    
-    const [rows] = await db.query(query);
-
-    res.status(200).json({
-      data: rows,
-      message: "Berhasil Mengambil Data Pemeriksaan"
-    });
-  } catch (error) {
-    console.error("Error in getAllPemeriksaan:", error);
-    res.status(500).json({
-      message: "Mengambil Data Pemeriksaan Gagal",
-      error: error.message
-    });
-  }
+    const scope = req.user.role === 'Kepala Lab';
+    const [rows] = await db.query(`${selectInspection}${scope ? ' WHERE l.kepala_lab_id = ?' : ''}
+      ORDER BY pm.tanggal_pemeriksaan DESC, pm.pemeriksaan_id DESC`, scope ? [req.user.id] : []);
+    res.status(200).json({ data: rows });
+  } catch (error) { res.status(500).json({ message: 'Gagal mengambil pemeriksaan.', error: error.message }); }
 };
 
-// Ambil Pemeriksaan Berdasarkan ID (MODIFIKASI DI SINI JUGA)
 export const getPemeriksaanById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const query = `
-      SELECT 
-        pm.pemeriksaan_id, 
-        pm.tanggal_pemeriksaan, 
-        pm.hasil_pemeriksaan, 
-        pm.catatan,
-        pm.user_id AS pemeriksa_user_id,
-        u_pemeriksa.nama_lengkap AS nama_pemeriksa,
-        pm.perangkat_id,
-        pr.nama_perangkat,
-        pr.nomor_inventaris,
-        pr.spesifikasi AS spesifikasi_perangkat,
-        pr.status AS status_perangkat_saat_ini,
-        l.lab_id,
-        l.nama_lab
-      FROM pemeriksaan pm
-      LEFT JOIN user u_pemeriksa ON pm.user_id = u_pemeriksa.user_id
-      LEFT JOIN perangkat pr ON pm.perangkat_id = pr.perangkat_id
-      LEFT JOIN laboratorium l ON pr.lab_id = l.lab_id
-      WHERE pm.pemeriksaan_id = ?
-    `;
-
-    const [rows] = await db.query(query, [id]);
-
-    if (rows.length === 0) {
-      return res.status(404).json({
-        message: "Data Pemeriksaan Tidak Ditemukan"
-      });
-    }
-
-    res.status(200).json({
-      data: rows[0],
-      message: "Berhasil Mengambil Data Pemeriksaan"
-    });
-  } catch (error) {
-    console.error("Error in getPemeriksaanById:", error);
-    res.status(500).json({
-      message: "Mengambil Data Pemeriksaan Gagal",
-      error: error.message
-    });
-  }
+    const [rows] = await db.query(`${selectInspection} WHERE pm.pemeriksaan_id = ?`, [req.params.id]);
+    if (!rows.length || !allowed(req, rows[0])) return res.status(404).json({ message: 'Pemeriksaan tidak ditemukan.' });
+    const [pengecekan] = await db.query(`SELECT pc.*, u.nama_lengkap AS nama_user FROM pengecekan pc
+      LEFT JOIN user u ON pc.user_id = u.user_id WHERE pc.pemeriksaan_id = ? ORDER BY pc.pengecekan_id`, [req.params.id]);
+    const [perbaikan] = await db.query(`SELECT pb.*, u.nama_lengkap AS nama_user FROM perbaikan pb
+      JOIN pengecekan pc ON pb.pengecekan_id = pc.pengecekan_id
+      LEFT JOIN user u ON pb.user_id = u.user_id WHERE pc.pemeriksaan_id = ? ORDER BY pb.perbaikan_id`, [req.params.id]);
+    res.status(200).json({ data: { ...rows[0], pengecekan, perbaikan } });
+  } catch (error) { res.status(500).json({ message: 'Gagal mengambil pemeriksaan.', error: error.message }); }
 };
 
-// Update Pemeriksaan (MODIFIKASI DI SINI JUGA jika ingin mengembalikan data yang di-join)
 export const updatePemeriksaan = async (req, res) => {
-  const conn = await db.getConnection();
+  const b = req.body;
+  if (!validInspection(b)) return res.status(400).json({ message: 'Tanggal dan hasil pemeriksaan wajib valid.' });
+  let conn;
   try {
-    const { id } = req.params;
-    const {
-      // user_id, // User yang mengupdate mungkin berbeda, atau tetap sama. Sesuaikan kebutuhan.
-      // perangkat_id, // Perangkat yang diperiksa biasanya tidak diubah saat update riwayat pemeriksaan
-      tanggal_pemeriksaan,
-      hasil_pemeriksaan,
-      catatan
-    } = req.body;
-
-    // Ambil user_id yang melakukan update dari token/sesi jika perlu, atau biarkan dari body jika boleh diubah
-    const user_id_updater = req.body.user_id || req.user?.user_id; // Contoh jika user_id dari token ada di req.user
-
+    conn = await db.getConnection();
     await conn.beginTransaction();
-
-    // 1. Cek apakah data pemeriksaan ada
-    const [existingRows] = await conn.query(
-      "SELECT * FROM pemeriksaan WHERE pemeriksaan_id = ?",
-      [id]
-    );
-
-    if (existingRows.length === 0) {
-      await conn.rollback();
-      return res.status(404).json({
-        message: "Data Pemeriksaan Tidak Ditemukan"
-      });
+    const [rows] = await conn.query(`${selectInspection} WHERE pm.pemeriksaan_id = ? FOR UPDATE`, [req.params.id]);
+    if (!rows.length || !allowed(req, rows[0])) { await conn.rollback(); return res.status(404).json({ message: 'Pemeriksaan tidak ditemukan.' }); }
+    const original = rows[0];
+    const [tickets] = await conn.query('SELECT * FROM pengecekan WHERE pemeriksaan_id = ? FOR UPDATE', [req.params.id]);
+    if (tickets.length && original.hasil_pemeriksaan !== b.hasil_pemeriksaan) {
+      await conn.rollback(); return res.status(409).json({ message: 'Status temuan disinkronkan oleh perbaikan teknisi. Buat pemeriksaan baru untuk masalah baru.' });
     }
-    const existingPemeriksaan = existingRows[0];
-
-    // 2. Update data pemeriksaan
-    // Perhatikan: user_id dan perangkat_id mungkin tidak seharusnya diubah saat update riwayat.
-    // Jika hanya hasil dan catatan yang boleh diubah:
-    const [updateResult] = await conn.query(
-      `UPDATE pemeriksaan SET 
-        tanggal_pemeriksaan = ?, 
-        hasil_pemeriksaan = ?, 
-        catatan = ? 
-        -- user_id = ?,  -- Mungkin tidak diupdate, atau diisi user yg mengupdate
-        -- perangkat_id = ? -- Hampir pasti tidak diupdate
-      WHERE pemeriksaan_id = ?`,
-      [tanggal_pemeriksaan, hasil_pemeriksaan, catatan, /* user_id_updater, existingPemeriksaan.perangkat_id, */ id]
-    );
-    
-    // --- Logika untuk tabel pengecekan setelah UPDATE pemeriksaan ---
-    const prevResult = existingPemeriksaan.hasil_pemeriksaan;
-    const currentPerangkatId = existingPemeriksaan.perangkat_id;
-    const userIdForPengecekan = existingPemeriksaan.user_id; // User yang melakukan pemeriksaan awal
-
-    // Jika hasil pemeriksaan yang baru adalah 'Bermasalah'
-    if (hasil_pemeriksaan === 'Bermasalah') {
-      // Cek apakah sudah ada pengecekan terkait pemeriksaan_id ini
-      const [cekPengecekanExistingByPemeriksaanId] = await conn.query(
-        `SELECT * FROM pengecekan WHERE pemeriksaan_id = ?`,
-        [id]
-      );
-
-      if (cekPengecekanExistingByPemeriksaanId.length > 0) {
-        // Update pengecekan yang sudah ada terkait pemeriksaan_id ini
-        await conn.query(
-          `UPDATE pengecekan SET 
-            user_id = ?, 
-            perangkat_id = ?,
-            tanggal_pengecekan = ?, 
-            ditemukan_kerusakan = ?,
-            status_pengecekan = 'Baru' -- Set status kembali ke Baru jika diupdate jadi bermasalah lagi
-          WHERE pemeriksaan_id = ?`,
-          [userIdForPengecekan, currentPerangkatId, tanggal_pemeriksaan, catatan || 'Belum ada catatan', id]
-        );
-      } else {
-        // Tambahkan pengecekan baru jika belum ada untuk pemeriksaan_id ini
-        await conn.query(
-          `INSERT INTO pengecekan (user_id, perangkat_id, pemeriksaan_id, tanggal_pengecekan, ditemukan_kerusakan, status_pengecekan)
-          VALUES (?, ?, ?, ?, ?, ?)`,
-          [userIdForPengecekan, currentPerangkatId, id, tanggal_pemeriksaan, catatan || 'Belum ada catatan', 'Baru']
-        );
-      }
-    }
-    // Jika hasil pemeriksaan yang baru adalah 'Baik', DAN sebelumnya 'Bermasalah'
-    else if (hasil_pemeriksaan === 'Baik' && prevResult === 'Bermasalah') {
-      // Hapus atau update status pengecekan yang terkait dengan pemeriksaan_id ini
-      // Opsi 1: Hapus pengecekan (jika tidak ingin ada riwayat pengecekan jika perangkat sudah baik)
-      // await conn.query(
-      //   `DELETE FROM pengecekan WHERE pemeriksaan_id = ?`,
-      //   [id]
-      // );
-      // Opsi 2: Update status pengecekan menjadi 'Sudah Ditangani' atau sejenisnya
-      await conn.query(
-        `UPDATE pengecekan SET status_pengecekan = 'Sudah Ditangani' WHERE pemeriksaan_id = ?`,
-        [id]
-      );
-    }
-    // --- Akhir logika tabel pengecekan ---
-
-    await conn.commit();
-
-    // Mengambil data yang sudah di-join untuk respons (opsional, tapi bagus untuk frontend)
-    const [updatedDataJoined] = await db.query(query.replace('WHERE pm.pemeriksaan_id = ?', 'WHERE pm.pemeriksaan_id = ? LIMIT 1'), [id]);
-
-
-    res.status(200).json({
-      data: updatedDataJoined[0] || { id, tanggal_pemeriksaan, hasil_pemeriksaan, catatan }, // Kirim data yang di-join jika berhasil
-      message: "Data Pemeriksaan Berhasil Diupdate"
-    });
-  } catch (error) {
-    await conn.rollback();
-    console.error("Error in updatePemeriksaan:", error);
-    res.status(500).json({
-      message: "Mengupdate Data Pemeriksaan Gagal",
-      error: error.message
-    });
-  } finally {
-    conn.release();
-  }
-};
-
-
-// Hapus Pemeriksaan (Tidak ada perubahan signifikan di sini)
-export const deletePemeriksaan = async (req, res) => {
-  // ... (kode Anda yang sudah ada, tapi pertimbangkan efek pada tabel pengecekan jika pemeriksaan dihapus) ...
-  // Jika pemeriksaan dihapus, mungkin pengecekan yang terkait juga perlu dihapus atau pemeriksaan_id-nya di-set NULL
-  const conn = await db.getConnection();
-  try {
-    const { id } = req.params;
-    await conn.beginTransaction();
-
-    // Opsional: Hapus/update referensi di tabel pengecekan sebelum menghapus pemeriksaan
-    // Contoh: Set pemeriksaan_id menjadi NULL di tabel pengecekan
-    await conn.query(
-        "UPDATE pengecekan SET pemeriksaan_id = NULL WHERE pemeriksaan_id = ?",
-        [id]
-    );
-    // Atau hapus entri pengecekan jika itu kebijakan Anda:
-    // await conn.query("DELETE FROM pengecekan WHERE pemeriksaan_id = ?", [id]);
-
-
-    const [result] = await db.query(
-      "DELETE FROM pemeriksaan WHERE pemeriksaan_id = ?",
-      [id]
-    );
-
-    if (result.affectedRows === 0) {
-      await conn.rollback();
-      return res.status(404).json({
-        message: "Data Pemeriksaan Tidak Ditemukan"
-      });
+    await conn.query('UPDATE pemeriksaan SET tanggal_pemeriksaan = ?, hasil_pemeriksaan = ?, catatan = ? WHERE pemeriksaan_id = ?',
+      [b.tanggal_pemeriksaan, b.hasil_pemeriksaan, b.catatan || null, req.params.id]);
+    if (b.hasil_pemeriksaan === 'Bermasalah' && !tickets.length) {
+      await conn.query(`INSERT INTO pengecekan (user_id, perangkat_id, pemeriksaan_id, tanggal_pengecekan, ditemukan_kerusakan, status_pengecekan)
+        VALUES (?, ?, ?, ?, ?, ?)`, [original.user_id, original.perangkat_id, req.params.id, b.tanggal_pemeriksaan, b.catatan || 'Masalah ditemukan saat pemeriksaan', 'Baru']);
+      await conn.query('UPDATE perangkat SET status = ? WHERE perangkat_id = ?', ['Perlu Perbaikan', original.perangkat_id]);
     }
     await conn.commit();
-    res.status(200).json({
-      message: "Data Pemeriksaan Berhasil Dihapus"
-    });
+    res.status(200).json({ data: { ...original, ...b }, message: 'Pemeriksaan berhasil diperbarui.' });
   } catch (error) {
-    await conn.rollback();
-    console.error("Error in deletePemeriksaan:", error);
-    res.status(500).json({
-      message: "Menghapus Data Pemeriksaan Gagal",
-      error: error.message
-    });
-  } finally {
-    conn.release();
-  }
+    if (conn) await conn.rollback();
+    res.status(500).json({ message: 'Gagal memperbarui pemeriksaan.', error: error.message });
+  } finally { conn?.release(); }
 };
+
+export const createDeletePemeriksaan = ({service = createDeletionService({db})} = {}) => async (req,res) => {
+ try {
+  await service.remove('pemeriksaan',req.params.id,req.user);
+  res.status(200).json({message:'Pemeriksaan berhasil dihapus.'});
+ } catch(error) {sendDeletionError(res,error);}
+};
+export const deletePemeriksaan = createDeletePemeriksaan();

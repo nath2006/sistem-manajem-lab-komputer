@@ -1,4 +1,7 @@
 import db from "../config/db.js";
+import { createSettingsService } from '../services/settingsService.js';
+import { validateScheduleTime } from '../../shared/schedule.mjs';
+const settingsService = createSettingsService(db);
 
 // Di dalam controllers/pengajuanLabController.js
 
@@ -59,6 +62,8 @@ export const createPengajuan = async (req, res) => {
       return res.status(400).json({ error: "Jam selesai harus setelah jam mulai." });
     }
 
+    const scheduleError = validateScheduleTime(jam_mulai, jam_selesai, await settingsService.get());
+    if (scheduleError) return res.status(400).json({ error: scheduleError });
     // --- PENAMBAHAN CONSOLE.LOG SEBELUM QUERY OVERLAP ---
     console.log(`[DEBUG BE CREATE] Checking overlap with tanggal_pakai: '${tanggal_pakai}' (for query)`);
     // --- AKHIR PENAMBAHAN CONSOLE.LOG ---

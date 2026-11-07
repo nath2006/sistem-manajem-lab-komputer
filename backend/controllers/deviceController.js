@@ -1,4 +1,5 @@
 import db from "../config/db.js";
+import {createDeletionService,sendDeletionError} from "../services/deletionService.js";
 import path from "path";
 import fs from "fs";
 
@@ -212,64 +213,11 @@ export const updateDevice = async (req, res) => {
 }
 
 //Delete Perangkat
-export const deleteDevice = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const [oldRows] = await db.query(
-      "SELECT foto_perangkat FROM perangkat WHERE perangkat_id = ?",
-      [id]
-    );
-
-    if (oldRows.length === 0) {
-      return res.status(404).json({ 
-        message: 'Data Perangkat Tidak Ditemukan untuk dihapus' 
-      });
-    }
-    const oldFotoPerangkat = oldRows[0].foto_perangkat;
-
-    // Hapus record dari database terlebih dahulu
-    const [result] = await db.query(
-      "DELETE FROM perangkat WHERE perangkat_id = ?",
-      [id]
-    );
-
-    if (result.affectedRows === 0) {
-      // Ini seharusnya tidak terjadi jika oldRows.length > 0 dan tidak ada proses lain
-      return res.status(404).json({ 
-        message: 'Data Perangkat Tidak Ditemukan saat mencoba menghapus dari DB' 
-      });
-    }
-
-    // Jika record berhasil dihapus dari DB, baru hapus file gambar
-    if (oldFotoPerangkat) {
-      const oldPath = path.join("uploads/perangkat", oldFotoPerangkat); // Pastikan base path benar
-      if (fs.existsSync(oldPath)) {
-        try {
-          fs.unlinkSync(oldPath);
-        } catch (unlinkErr) {
-          console.error("Gagal menghapus file gambar setelah record DB dihapus:", unlinkErr);
-          // Ini bukan error fatal untuk respons ke client, tapi perlu di-log
-          // Anda bisa memilih untuk mengirim pesan tambahan di respons jika ini terjadi
-        }
-      }
-    }
-
-    res.status(200).json({
-      message: "Data Perangkat Berhasil Dihapus",
-    });
-  } catch (error) {
-    console.error("Error deleting device:", error); // Log error lebih spesifik
-    // Cek apakah error karena foreign key constraint (misalnya jika perangkat masih dirujuk)
-    if (error.code === 'ER_ROW_IS_REFERENCED_2' || error.errno === 1451) {
-        return res.status(400).json({
-            message: `karena data ini masih digunakan di data lain (misalnya pemeriksaan, pengecekan, atau perbaikan)  !!!MOHON UNLINK DARI DATA YANG TERTAUT!!!.`,
-            error: error.message
-        });
-    }
-    res.status(500).json({ 
-      message: 'Menghapus Data Perangkat Gagal' ,
-      error: error.message,
-    });
-  }
+export const createDeleteDevice = ({service = createDeletionService({db}), removeImage = filename => { const target = path.join("uploads/perangkat", path.basename(filename)); if (fs.existsSync(target)) fs.unlinkSync(target); }} = {}) => async (req,res) => {
+ try {
+  const row = await service.remove('perangkat',req.params.id,req.user);
+  if(row.foto_perangkat) {try {removeImage(row.foto_perangkat);} catch { /* DB committed; image cleanup is best effort. */ }}
+  res.status(200).json({message:'Data Perangkat Berhasil Dihapus'});
+ } catch(error) {sendDeletionError(res,error);}
 };
+export const deleteDevice = createDeleteDevice();
