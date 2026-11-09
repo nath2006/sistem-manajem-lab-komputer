@@ -21,5 +21,5 @@ test('login menyediakan tombol aksesibel untuk menampilkan password tanpa submit
     assert.match(html, /aria-controls="login-password"/);
     assert.match(html, /aria-pressed="false"/);
     assert.match(html, /type="submit"[^>]*class="[^"]*bg-maroon/);
-    assert.match(html, /Laboratorium Komputer — Sekolah Anda/);
+    assert.match(html, /<h2[^>]*>Selamat Datang di Sistem Informasi Manajemen <br\/>Laboratorium Komputer\s*<\/h2>/);
 });

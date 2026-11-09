@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { get, putWithFile } from "../../utils/api";
 import ModalContainer from "../DetailModal/ModalContainer"; 
-import LoadingSpinner from "../DetailModal/LoadingSpinner"; 
+import LoadingSpinner from "../DetailModal/LoadingSpinner";
+import { resolveAnnouncementFileUrl, getAnnouncementFileName } from '../../utils/announcementFile';
 
 const EditPengumuman = ({ id, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
@@ -17,8 +18,7 @@ const EditPengumuman = ({ id, onClose, onUpdate }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const ASSET_BASE_URL = import.meta.env.VITE_ASSET_BASE_URL || 'http://localhost:5500'; // Sesuaikan port jika backend di 5000
-  const PENGUMUMAN_ASSET_SUBFOLDER = '/uploads/pengumuman/'; // Pastikan konsisten dengan backend static serving
+  const currentFileUrl = resolveAnnouncementFileUrl(currentFilePath);
 
   useEffect(() => {
     const fetchDetailPengumuman = async () => {
@@ -140,7 +140,7 @@ const EditPengumuman = ({ id, onClose, onUpdate }) => {
     <button
       onClick={handleSubmit}
       disabled={saving}
-      className="w-full px-5 py-2 text-sm font-semibold text-center rounded-md bg-red-600 hover:bg-red-700 text-white active:scale-95 focus:outline-none"
+      className="w-full min-h-11 px-5 py-2 text-sm font-semibold text-center rounded-md bg-maroon hover:bg-maroon/90 text-white active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon focus-visible:ring-offset-2 disabled:opacity-60"
     >
       {saving ? "Menyimpan..." : "Simpan Perubahan"}
     </button>
@@ -178,7 +178,7 @@ const EditPengumuman = ({ id, onClose, onUpdate }) => {
             name="judul"
             value={formData.judul}
             onChange={handleChange}
-            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5"
             placeholder="Masukan Judul Pengumuman"
             required
           />
@@ -192,7 +192,7 @@ const EditPengumuman = ({ id, onClose, onUpdate }) => {
             rows="4"
             value={formData.content}
             onChange={handleChange}
-            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5"
             placeholder="Masukan Isi Pengumuman"
             required
           ></textarea>
@@ -202,7 +202,7 @@ const EditPengumuman = ({ id, onClose, onUpdate }) => {
           <label htmlFor="file" className="block mb-1.5 font-medium text-sm">File Pendukung (Opsional)</label>
           {currentFilePath && !selectedFile && (
             <div className="mb-2 text-xs text-gray-600">
-              File saat ini: <a href={`${ASSET_BASE_URL}${PENGUMUMAN_ASSET_SUBFOLDER}${currentFilePath}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{currentFilePath.split('/').pop() || currentFilePath}</a>
+              File saat ini: {currentFileUrl ? <a href={currentFileUrl} target="_blank" rel="noopener noreferrer" className="text-maroon hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon">{getAnnouncementFileName(currentFilePath)}</a> : 'Lampiran tidak tersedia'}
             </div>
           )}
           {selectedFile && (
@@ -213,7 +213,7 @@ const EditPengumuman = ({ id, onClose, onUpdate }) => {
             id="file"
             // name="file_pengumuman_input" // Atribut name HTML tidak terlalu krusial jika FormData di-append manual
             onChange={handleFileChange}
-            className="block w-full text-sm text-gray-900 border border-gray-300 rounded-md cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            className="block w-full text-sm text-gray-900 border border-gray-300 rounded-md cursor-pointer bg-gray-50 focus:outline-none focus:ring-2 focus:ring-maroon file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-semibold file:bg-maroon/10 file:text-maroon hover:file:bg-maroon/20"
           />
           <p className="mt-1 text-xs text-gray-500">
             Kosongkan jika tidak ingin mengubah file. File baru akan menggantikan file lama.
@@ -227,7 +227,7 @@ const EditPengumuman = ({ id, onClose, onUpdate }) => {
               name="is_active"
               checked={formData.is_active}
               onChange={handleChange}
-              className="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              className="mr-2 h-4 w-4 text-maroon border-gray-300 rounded focus:ring-maroon"
             />
             <span className="text-sm font-medium">Jadikan Pengumuman Aktif</span>
           </label>

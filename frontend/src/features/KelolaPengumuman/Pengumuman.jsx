@@ -12,6 +12,9 @@ import DetailPenguman from '../../Components/Pengumuman/DetailPenguman';
 import EditPegumuman from '../../Components/Pengumuman/EditPengumuman';
 import truncateText from '../../utils/truncateText';
 import formatDate from '../../utils/formatDateView';
+import { resolveAnnouncementFileUrl } from '../../utils/announcementFile';
+
+const actionClass = 'inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-maroon transition-colors hover:bg-maroon/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon focus-visible:ring-offset-2 active:scale-95';
 
 
 
@@ -66,7 +69,7 @@ const Pengumuman = () => {
     const headTable = [
         {judul: "Judul"},
         {judul: "Konten"},
-        {judul: "file_path"},
+        {judul: "Lampiran"},
         {judul: "Dibuat Pada"},
         {judul: "Dibuat Oleh"},
         {judul: "Aktif"},
@@ -97,21 +100,21 @@ const Pengumuman = () => {
     }, []);
 
    const renderPengumumanRow = (item, index) => {
-  const ASSET_BASE_URL = import.meta.env.VITE_ASSET_BASE_URL || 'http://localhost:5500/Uploads/Pengumuman/';
+  const fileUrl = resolveAnnouncementFileUrl(item.file_path);
 
   return (
     <tr className="bg-white border-b" key={item.id || index}>
       <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{item.judul}</th>
       <td className="px-6 py-4 text-gray-900">{truncateText(item.content, 50)}</td>
       <td className="px-6 py-4 text-gray-900">
-        {item.file_path ? (
+        {fileUrl ? (
           <a 
-          href={`${ASSET_BASE_URL}${item.file_path}`}
+          href={fileUrl}
           target="_blank" 
           rel="noopener noreferrer" 
-          className="text-red-900 hover:text-red-700 cursor-pointer">Lihat File</a>
+          className="text-maroon underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon">Lihat File</a>
         ) : (
-          'Tidak ada file'
+          item.file_path ? 'Lampiran tidak tersedia' : 'Tidak ada file'
         )}
       </td>
       <td className="px-6 py-4 text-gray-900">{formatDate(item.created_at)}</td>
@@ -122,12 +125,12 @@ const Pengumuman = () => {
         </span>
       </td>
       <td className='flex justify-center items-center py-6 px-5'>
-        <div className='flex items-center justify-between gap-x-5'>
-          <button onClick={() => handleOpenModal(item.id)} className="text-red-700 hover:text-red-500 cursor-pointer"><FaEye size={18} /></button>
+        <div className='flex items-center justify-between gap-1'>
+          <button type="button" aria-label={`Lihat pengumuman: ${item.judul}`} title="Lihat pengumuman" onClick={() => handleOpenModal(item.id)} className={actionClass}><FaEye size={18} aria-hidden="true" /></button>
           {isAuth && (
             <>
-              <button onClick={() => handleOpenEditModal(item.id)} className="text-red-700 hover:text-red-500 cursor-pointer"><FaFilePen size={18} /></button>
-              <button onClick={() => handleDelete(item.id)} className="text-red-700 hover:text-red-500 cursor-pointer"><FaTrash size={18}/></button>
+              <button type="button" aria-label={`Edit pengumuman: ${item.judul}`} title="Edit pengumuman" onClick={() => handleOpenEditModal(item.id)} className={actionClass}><FaFilePen size={18} aria-hidden="true" /></button>
+              <button type="button" aria-label={`Hapus pengumuman: ${item.judul}`} title="Hapus pengumuman" onClick={() => handleDelete(item.id)} className={actionClass}><FaTrash size={18} aria-hidden="true" /></button>
             </>
           )}
         </div>

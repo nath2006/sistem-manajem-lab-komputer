@@ -98,7 +98,7 @@ const AddPengumuman = () => {
             name="judul"
             value={formData.judul}
             onChange={handleChange}
-            className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 h-12"
+            className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12"
             placeholder="Masukan Judul Pengumuman"
             required
           />
@@ -113,7 +113,7 @@ const AddPengumuman = () => {
             rows="5" // Tambah tinggi textarea
             value={formData.content}
             onChange={handleChange}
-            className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5"
             placeholder="Masukan Isi Konten Pengumuman"
             required
           />
@@ -127,7 +127,7 @@ const AddPengumuman = () => {
             id="file_pengumuman_input"
             name="file_pengumuman_input" // Nama atribut HTML, tidak harus sama dengan key FormData
             onChange={handleFileChange}
-            className="block w-full text-sm text-gray-900 border border-gray-300 rounded-md cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            className="block w-full text-sm text-gray-900 border border-gray-300 rounded-md cursor-pointer bg-gray-50 focus:outline-none focus:ring-2 focus:ring-maroon file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-semibold file:bg-maroon/10 file:text-maroon hover:file:bg-maroon/20"
           />
            {selectedFile && (
              <div className="mt-2 text-xs text-gray-500">File dipilih: {selectedFile.name} ({Math.round(selectedFile.size / 1024)} KB)</div>
@@ -142,7 +142,7 @@ const AddPengumuman = () => {
               name="is_active"
               checked={formData.is_active}
               onChange={handleChange}
-              className="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              className="mr-2 h-4 w-4 text-maroon border-gray-300 rounded focus:ring-maroon"
             />
             <span className="text-md font-medium">Aktifkan Pengumuman</span>
           </label>

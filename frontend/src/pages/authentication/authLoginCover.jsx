@@ -187,7 +187,8 @@ const LoginPage = () => {
                     <img src={logoSrc || settings.logo_url || "/assets/images/login/DUMMY-LOGO.png"} alt={`Logo ${settings.school_name}`} className="object-contain h-full w-full"/>
                     </div>
                     <h2 className="mt-4 text-lg md:text-2xl font-bold text-maroon">
-                    Selamat Datang di Sistem Informasi Manajemen <br/>Laboratorium Komputer — {settings.school_name}
+                    {/* Selamat Datang di Sistem Informasi Manajemen <br/>Laboratorium Komputer — {settings.school_name} */}
+                    Selamat Datang di Sistem Informasi Manajemen <br/>Laboratorium Komputer
                     </h2>
                 </div>
                 {/* Bagian teks Login di bawah header */}
@@ -333,16 +334,18 @@ const LoginPage = () => {
                     <button
                       onClick={prevSlide}
                       aria-label="Pengumuman Sebelumnya"
-                      className="p-2 bg-white rounded-full shadow-md hover:bg-gray-200 transition-colors"
+                      type="button"
+                      className="inline-flex min-h-11 min-w-11 items-center justify-center p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon focus-visible:ring-offset-2"
                     >
-                      <ChevronLeft className="h-5 w-5 md:h-6 md:w-6 text-red-900" />
+                      <ChevronLeft className="h-5 w-5 md:h-6 md:w-6 text-maroon" />
                     </button>
                     <button
                       onClick={nextSlide}
                       aria-label="Pengumuman Berikutnya"
-                      className="p-2 bg-white rounded-full shadow-md hover:bg-gray-200 transition-colors"
+                      type="button"
+                      className="inline-flex min-h-11 min-w-11 items-center justify-center p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon focus-visible:ring-offset-2"
                     >
-                      <ChevronRight className="h-5 w-5 md:h-6 md:w-6 text-red-900" />
+                      <ChevronRight className="h-5 w-5 md:h-6 md:w-6 text-maroon" />
                     </button>
                   </div>
                   <div className="absolute bottom-10 md:bottom-12 left-0 right-0 flex justify-center gap-2 z-30">

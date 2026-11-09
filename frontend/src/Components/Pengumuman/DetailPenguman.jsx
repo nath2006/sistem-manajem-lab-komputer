@@ -5,7 +5,8 @@ import InfoSection from "../DetailModal/InfoSection";
 import ModalContainer from "../DetailModal/ModalContainer"; 
 import LoadingSpinner from "../DetailModal/LoadingSpinner"; 
 
-import formatDate from '../../utils/formatDateView'; 
+import formatDate from '../../utils/formatDateView';
+import AnnouncementAttachment from './AnnouncementAttachment';
 
 const DetailPenguman = ({ id, onClose }) => {
   const [pengumumanData, setPengumumanData] = useState(null);
@@ -13,8 +14,6 @@ const DetailPenguman = ({ id, onClose }) => {
   const [error, setError] = useState("");
 
  
-  const ASSET_BASE_URL = import.meta.env.VITE_ASSET_BASE_URL || 'http://localhost:5500/Uploads/Pengumuman/';
-
   useEffect(() => {
     const fetchPengumumanData = async () => {
       try {
@@ -60,23 +59,6 @@ const DetailPenguman = ({ id, onClose }) => {
                   {pengumumanData.content || '-'}
                 </div>
               } />
-              <InfoItem 
-                label="File Pendukung" 
-                value={
-                  pengumumanData.file_path ? (
-                    <a
-                      href={`${ASSET_BASE_URL}${pengumumanData.file_path}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 hover:underline"
-                    >
-                      {pengumumanData.file_path.split('/').pop() || 'Lihat File'} 
-                    </a>
-                  ) : (
-                    'Tidak ada file'
-                  )
-                }
-              />
               <InfoItem
                 label="Status"
                 value={
@@ -105,7 +87,7 @@ const DetailPenguman = ({ id, onClose }) => {
               />
             </InfoSection>
 
-            {/* Section "Informasi Tambahan" (additional_info) dihilangkan karena tidak ada di skema pengumuman */}
+            <AnnouncementAttachment key={pengumumanData.file_path || 'no-file'} file={pengumumanData.file_path} />
           </div>
         )
       )}
