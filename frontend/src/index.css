@@ -57,62 +57,26 @@
   }
 }
 
+/* All widths keep native table/header/row/cell layout. */
+.mobile-cell-label { display: none; }
+.table-scroll-shell { width: 100%; min-width: 0; max-width: 100%; }
+.table-scroll-hint { padding: .75rem 1rem; font-size: .75rem; line-height: 1.5; color: var(--color-gray-600); }
+.table-scroll-region {
+  width: 100%; min-width: 0; max-width: 100%; overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-maroon) var(--color-gray-100);
+}
+.table-scroll-region:focus-visible { outline: 2px solid var(--color-maroon); outline-offset: -2px; }
+.table-scroll-region table { width: 100%; min-width: 40rem; border-collapse: collapse; }
+.table-scroll-region td { vertical-align: top; overflow-wrap: anywhere; }
+.table-scroll-region td:not([colspan]) { min-width: 7rem; max-width: 24rem; white-space: normal; }
+.table-scroll-region td img { max-width: 100%; }
+.table-scroll-region :is(button, a) { min-height: 44px; min-width: 44px; }
+.table-scroll-region a { display: inline-flex; align-items: center; justify-content: center; }
+.table-scroll-region :is(button, a):focus-visible { outline: 2px solid var(--color-maroon); outline-offset: 2px; }
 @media (max-width: 639px) {
-  .mobile-data-table,
-  .mobile-data-table tbody,
-  .mobile-data-table tbody tr {
-    display: block;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .mobile-data-table thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  .mobile-data-table tbody {
-    padding: 12px;
-  }
-
-  .mobile-data-table tbody tr {
-    margin-bottom: 12px;
-    border: 1px solid var(--color-gray-200);
-    border-radius: 8px;
-    overflow-wrap: anywhere;
-  }
-
-  .mobile-data-table tbody tr:last-child {
-    margin-bottom: 0;
-  }
-
-  .mobile-data-table td[data-label] {
-    display: grid;
-    grid-template-columns: minmax(4.5rem, 0.35fr) minmax(0, 1fr);
-    align-items: start;
-    gap: 12px;
-    padding: 12px;
-    white-space: normal;
-  }
-
-  .mobile-data-table td[data-label] > div {
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-
-  .mobile-data-table td[data-label] .flex {
-    flex-wrap: wrap;
-  }
-
-  .mobile-data-table td img {
-    max-width: 100%;
-  }
-
-  .mobile-data-table td[colspan] {
-    display: block;
-  }
+  .table-scroll-region :is(th, td) { padding: .75rem; }
+  .table-scroll-region td .flex { flex-wrap: wrap; gap: .5rem; }
 }

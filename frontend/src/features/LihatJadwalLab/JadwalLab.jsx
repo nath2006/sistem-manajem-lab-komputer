@@ -512,7 +512,7 @@ const handleCetakJadwal = async () => {
         {isLabValidForDisplay && jadwalData.length > 0 && (
           <div>
           <p className="text-xs text-gray-600 mb-2 sm:hidden">Geser tabel ke samping untuk melihat semua hari.</p>
-          <div tabIndex={0} role="region" aria-label="Jadwal mingguan, geser untuk melihat semua hari" className="overflow-x-auto bg-white rounded-lg shadow">
+          <div tabIndex={0} role="region" aria-label="Jadwal mingguan, geser untuk melihat semua hari" className="table-scroll-region bg-white rounded-lg shadow">
             <table className="min-w-full w-full border-collapse border border-gray-300">
               <thead>
                 <tr className="bg-gray-100">

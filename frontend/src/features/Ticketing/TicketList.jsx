@@ -1,8 +1,9 @@
 import { button, labels } from './ticketingUi';
+import TableScrollRegion from '../../Components/TableScrollRegion';
 
 export default function TicketList({ tickets, onDetail }) {
   return (
-<div className="mt-4 overflow-x-auto">
+<TableScrollRegion label="Tiket layanan" className="mt-4">
               <table role="table" aria-label="Tiket layanan" className="mobile-data-table w-full text-left text-sm">
                 <thead role="rowgroup" className="bg-maroon text-white">
                   <tr role="row">
@@ -55,6 +56,6 @@ export default function TicketList({ tickets, onDetail }) {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </TableScrollRegion>
   );
 }

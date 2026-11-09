@@ -3,6 +3,7 @@ import { useContext, useEffect, useState } from 'react';
 import Dashboard from '../../Layouts/Dashboard';
 import { AuthContext } from '../../Context/AuthContext';
 import api from '../../utils/api';
+import TableScrollRegion from '../../Components/TableScrollRegion';
 
 export default function LogAktivitas() {
   const { state } = useContext(AuthContext);
@@ -28,7 +29,7 @@ export default function LogAktivitas() {
       <p className="mb-4 text-sm text-gray-600">Riwayat akses API dan perubahan data. Isi formulir, password, dan token tidak disimpan.</p>
       {error && <p role="alert" className="mb-4 text-red-700">{error}</p>}
       {loading && result.data.length === 0 ? <LoadingSkeleton variant="table" label="Memuat log..." /> : !error && <>
-        <div className="overflow-x-auto"><table className="w-full text-left text-sm text-gray-900">
+        <TableScrollRegion label="Log aktivitas"><table className="w-full text-left text-sm text-gray-900">
           <thead className="bg-gray-100"><tr>{['Waktu', 'User', 'Role', 'Aktivitas', 'Metode', 'Endpoint', 'Status', 'Durasi'].map(label => <th key={label} className="px-3 py-3">{label}</th>)}</tr></thead>
           <tbody>{result.data.length ? result.data.map(row => <tr key={row.id} className="border-b">
             <td className="whitespace-nowrap px-3 py-3">{new Date(row.created_at).toLocaleString('id-ID')}</td>
@@ -37,7 +38,7 @@ export default function LogAktivitas() {
             <td className="px-3 py-3">{row.method}</td><td className="max-w-sm break-all px-3 py-3">{row.path}</td>
             <td className="px-3 py-3">{row.status_code}</td><td className="whitespace-nowrap px-3 py-3">{row.duration_ms} ms</td>
           </tr>) : <tr><td colSpan={8} className="p-6 text-center">Belum ada aktivitas.</td></tr>}</tbody>
-        </table></div>
+        </table></TableScrollRegion>
         <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
           <p role="status">Halaman {page} / {Math.max(1, result.pagination.total_pages)} · {result.pagination.total} aktivitas</p>
           <div className="flex gap-3"><button type="button" className="rounded border px-3 py-2 disabled:opacity-50" disabled={page <= 1} onClick={() => setPage(value => value - 1)}>Sebelumnya</button><button type="button" className="rounded border px-3 py-2 disabled:opacity-50" disabled={page >= result.pagination.total_pages} onClick={() => setPage(value => value + 1)}>Berikutnya</button></div>

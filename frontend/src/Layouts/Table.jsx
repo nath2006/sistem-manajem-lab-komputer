@@ -5,6 +5,7 @@ import { FaAngleRight, FaAngleLeft } from 'react-icons/fa6';
 import { filterTableData, getPaginationItems } from '../utils/tableData';
 import { SkeletonRows } from '../Components/Loading/Skeleton';
 import { deletionContext, deletionRelation } from '../utils/deletionContext';
+import TableScrollRegion from '../Components/TableScrollRegion';
 
 const pageButton =
   'min-h-11 min-w-11 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-maroon/10 focus-visible:ring-2 focus-visible:ring-maroon disabled:opacity-50 disabled:pointer-events-none';
@@ -151,7 +152,7 @@ const Tabel = ({
           )}
         </div>
       </header>
-      <div className="min-w-0 overflow-x-auto custom-scrollbar">
+      <TableScrollRegion label={title}>
         <table
           role="table"
           aria-label={title}
@@ -176,7 +177,7 @@ const Tabel = ({
           </thead>
           <tbody role="rowgroup">{renderChildren()}</tbody>
         </table>
-      </div>
+      </TableScrollRegion>
       {totalItems > 0 && (
         <footer className="flex flex-col gap-3 border-t border-gray-200 p-4 lg:flex-row lg:items-center lg:justify-between">
           <label className="flex min-h-11 items-center gap-2 text-sm text-gray-700">
