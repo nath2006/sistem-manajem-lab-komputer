@@ -130,7 +130,7 @@ const AddPengumuman = () => {
             className="block w-full text-sm text-gray-900 border border-gray-300 rounded-md cursor-pointer bg-gray-50 focus:outline-none focus:ring-2 focus:ring-maroon file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-semibold file:bg-maroon/10 file:text-maroon hover:file:bg-maroon/20"
           />
            {selectedFile && (
-             <div className="mt-2 text-xs text-gray-500">File dipilih: {selectedFile.name} ({Math.round(selectedFile.size / 1024)} KB)</div>
+             <div className="mt-2 text-xs text-gray-500 hover:cursor-pointer">File dipilih: {selectedFile.name} ({Math.round(selectedFile.size / 1024)} KB)</div>
           )}
         </div>
 

@@ -10,6 +10,7 @@ import { AuthContext } from '../../Context/AuthContext';
 import useDeletionDialog from '../../Components/Deletion/useDeletionDialog';
 import DetailUser from '../../Components/User/DetailUser';
 import EditUser from '../../Components/User/EditUser';
+import RowActionButton from '../../Components/RowActionButton';
 
 const User = () => {
     useTitle('Kelola Data User');
@@ -63,8 +64,8 @@ const User = () => {
       {judul: "Nama Lengkap"},
       {judul: "Username"},
         {judul: "Email"},
-        {judul: "Status"},
         {judul: "Role"},
+        {judul: "Status"},
         {judul: "Aksi"}
     ];
 
@@ -100,7 +101,7 @@ const User = () => {
           <td className="px-6 py-4 text-gray-900">{item.email}</td>
           <td className="px-6 py-4 text-gray-900">
             <span
-              className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${ // Tambahkan whitespace-nowrap
+              className={`inline-flex max-w-full items-center justify-center rounded-full px-2 py-1 text-center text-[11px] font-medium leading-4 whitespace-normal break-words ${
                 item.role === 'Admin' 
                   ? 'bg-maroon/10 text-maroon' 
                   : item.role === 'Guru'
@@ -118,32 +119,26 @@ const User = () => {
             </span>
           </td>
           <td className="px-6 py-4 text-gray-900">
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+            <span className={`inline-flex max-w-full items-center rounded-full px-2 py-1 text-[11px] font-medium leading-4 ${
                 item.is_online ? 'bg-green-100 text-green-800' : 'bg-gray-300 text-gray-800'
             }`}>
                 {item.is_online ? 'Online' : 'Offline'}
             </span>
           </td>
-          <td className='flex justify-center items-center py-6'>
-            <div className='flex items-center justify-between gap-x-5'>
-              <button type="button" aria-label={`Lihat detail user ${item.nama_lengkap}`}
-              onClick={() => handleOpenModal(item.user_id)} className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-maroon p-2 rounded-full hover:bg-maroon/10 hover:shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon transition-all duration-150 cursor-pointer">
-                <FaEye size={18} />
-              </button>
+          <td className="px-3 py-4">
+            <div className="flex items-center justify-center gap-1">
+              <RowActionButton variant="view" label={`Lihat detail user ${item.nama_lengkap}`} tooltip="Lihat detail user" onClick={() => handleOpenModal(item.user_id)}>
+                <FaEye size={18} aria-hidden="true" />
+              </RowActionButton>
               {isAdmin && (
                 <>
-                  <button type="button" aria-label={`Edit user ${item.nama_lengkap}`}
-              onClick={() => handleOpenEditModal(item.user_id)} className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-maroon p-2 rounded-full hover:bg-maroon/10 hover:shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon transition-all duration-150 cursor-pointer">
-                    <FaFilePen size={18} />
-                  </button>
+                  <RowActionButton variant="edit" label={`Edit user ${item.nama_lengkap}`} tooltip="Edit user" onClick={() => handleOpenEditModal(item.user_id)}>
+                    <FaFilePen size={18} aria-hidden="true" />
+                  </RowActionButton>
     
-                  <button
-                    type="button" aria-label={`Hapus user ${item.nama_lengkap}`}
-              onClick={() => handleDelete(item.user_id)}
-                    className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-maroon p-2 rounded-full hover:bg-maroon/10 hover:shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon transition-all duration-150 cursor-pointer"
-                  >
-                    <FaTrash size={18}/>
-                  </button>
+                  <RowActionButton variant="delete" label={`Hapus user ${item.nama_lengkap}`} tooltip="Hapus user" onClick={() => handleDelete(item.user_id)}>
+                    <FaTrash size={18} aria-hidden="true" />
+                  </RowActionButton>
                 </>
               )}
             </div>

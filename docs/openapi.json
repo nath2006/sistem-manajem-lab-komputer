@@ -490,7 +490,7 @@
           "activity-logs"
         ],
         "summary": "createActivityLogController(database)",
-        "description": "Sumber: backend/router/activityLogRoutes.js → backend/controllers/activityLogController.js#createActivityLogController(database). Akses: Admin. Admin saja. page string integer positif sampai 7 digit, default 1; limit 1–100, default 20. Urut id DESC. Data: id,user_id,username,role,method,path,action,status_code,duration_ms,created_at; pagination: page,limit,total,total_pages.",
+        "description": "Sumber: backend/router/activityLogRoutes.js → backend/controllers/activityLogController.js#createActivityLogController(database). Akses: Admin. page string integer positif sampai 7 digit, default 1; limit 1–100, default 20. Urut id DESC. Filter actor/category/date diterapkan pada hitungan dan baris sebelum pagination; date menggunakan hari WIB. Kategori menunjukkan jenis permintaan, bukan jaminan perubahan berhasil. facets=1 menambahkan facets.actors [{user_id,username}] dari snapshot historis, bukan direktori pengguna aktif. Tanpa facets, envelope lama tetap {data,pagination}. Semua parameter bernilai tunggal; filter tidak valid ditolak dengan 400 sebelum query.",
         "security": [
           {
             "bearerAuth": []
@@ -632,6 +632,10 @@
             "expression": "{ message: 'page harus positif; limit 1–100.' }"
           },
           {
+            "status": "400",
+            "expression": "{ message: 'Filter tidak valid. Tanggal harus YYYY-MM-DD (WIB).' }"
+          },
+          {
             "status": "200",
             "expression": "{ data, pagination: { page, limit, total: Number(count.total), total_pages: Math.ceil(Number(count.total) / limit) } }"
           }
@@ -656,6 +660,35 @@
             },
             "example": "1",
             "description": "Default 1; integer string positif sampai 7 digit."
+          },
+          {
+            "name": "actor",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "pattern": "^[1-9]\\d{0,14}$" },
+            "description": "ID pengguna historis positif maksimal 15 digit; tidak termasuk identitas anonim. Omit untuk semua orang."
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["create", "update", "delete", "read", "login", "logout", "refresh-token", "other"] },
+            "description": "Jenis operasi permintaan; HTTP status tetap menentukan berhasil/gagal."
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+            "example": "2026-11-11",
+            "description": "Hari kalender valid dalam WIB/Asia Jakarta: awal hari inklusif sampai awal hari berikutnya eksklusif."
+          },
+          {
+            "name": "facets",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["1"] },
+            "description": "Menambahkan facets.actors [{user_id,username}] dari seluruh snapshot aktivitas; tanpa parameter ini tidak ada field facets."
           }
         ]
       }

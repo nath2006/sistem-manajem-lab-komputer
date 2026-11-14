@@ -275,7 +275,12 @@ Sumber: backend/router/activityLogRoutes.js → backend/controllers/activityLogC
 
 - Akses: **Admin**.
 - Status yang didokumentasikan: `200`, `400`, `401`, `403`, `500`.
-- Parameter: `limit` (query, opsional); `page` (query, opsional).
+- Parameter query opsional: `limit`, `page`, `actor`, `category`, `date`, dan `facets`.
+- `actor`: ID pengguna historis berupa string desimal positif, maksimal 15 digit; tidak membaca direktori pengguna aktif.
+- `category`: `create`, `update`, `delete`, `read`, `login`, `logout`, `refresh-token`, atau `other`. Kategori menunjukkan jenis permintaan, bukan jaminan perubahan berhasil; status HTTP tetap disediakan.
+- `date`: tanggal kalender valid `YYYY-MM-DD` dalam WIB/Asia Jakarta. Rentang inklusif awal hari, eksklusif awal hari berikutnya; filter baris dan hitungan diterapkan sebelum pagination.
+- `facets=1`: menambahkan `facets.actors` berisi `{user_id, username}` dari snapshot riwayat. Tanpa parameter ini, envelope lama tidak berubah. Seluruh filter harus berupa nilai tunggal; nilai tidak valid ditolak dengan `400` sebelum query.
+- Detail UI dan batas verifikasi: `docs/ACTIVITY_LOG_UI.md`.
 
 Contoh respons 200 (ilustratif, dapat parsial):
 ```json
@@ -294,8 +299,12 @@ Ekspresi respons aktual dari source (variabel/SQL bukan JSON literal):
 ```js
 // HTTP 400
 { message: 'page harus positif; limit 1–100.' }
+// HTTP 400: filter yang diberikan tidak valid
+{ message: 'Filter tidak valid. Tanggal harus YYYY-MM-DD (WIB).' }
 // HTTP 200
 { data, pagination: { page, limit, total: Number(count.total), total_pages: Math.ceil(Number(count.total) / limit) } }
+// Hanya jika facets=1, ditambahkan ke hasil di atas:
+result.facets = { actors } // actors: [{ user_id, username }]
 ```
 
 Proyeksi SQL yang menentukan field hasil controller (varian list/detail bisa berbeda):

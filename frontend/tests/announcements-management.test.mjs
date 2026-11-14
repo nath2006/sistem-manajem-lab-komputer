@@ -23,17 +23,18 @@ test('announcement forms and modal attachment use dynamic branding', async () =>
   assert.doesNotMatch(file, /text-blue-/);
 });
 
-test('announcement management actions follow dynamic theme, have accessible names and preserve role restrictions', async () => {
+test('announcement management actions use distinct semantic colors, accessible names and preserve role restrictions', async () => {
   for (const role of ['Admin', 'Koordinator Lab', 'Guru']) {
     const html = await renderManagement(role);
     for (const action of ['Lihat', 'Edit', 'Hapus']) {
       const tag = html.match(new RegExp('<button(?=[^>]*aria-label="'+action+' pengumuman: Pengumuman uji")[^>]*>'))?.[0];
       if (role === 'Guru' && action !== 'Lihat') { assert.equal(tag, undefined); continue; }
       assert.ok(tag, role+' needs an accessible '+action+' control');
-      assert.match(tag, /text-maroon/);
-      assert.match(tag, /hover:bg-maroon\/10/);
-      assert.match(tag, /focus-visible:ring-maroon/);
-      assert.doesNotMatch(tag, /(?:text|bg|border|ring)-(?:red|blue)-\d/);
+      const color = { Lihat: 'blue', Edit: 'amber', Hapus: 'red' }[action];
+      assert.match(tag, new RegExp('text-' + color + '-600'));
+      assert.match(tag, new RegExp('hover:bg-' + color + '-50'));
+      assert.match(tag, new RegExp('focus-visible:ring-' + color + '-500'));
+      assert.doesNotMatch(tag, /text-maroon/);
       assert.match(tag, /type="button"/);
     }
   }
