@@ -14,7 +14,9 @@ export function dashboardTokens(value) {
   const primary = /^#[0-9a-f]{6}$/i.test(value) ? value : PALETTE.primary;
   const accent = safeAccent(primary);
   const colors = { primary, accent, surface: PALETTE.surface, canvas: PALETTE.canvas, text: PALETTE.text, muted: PALETTE.muted, border: PALETTE.border, track: PALETTE.track,
-    info: PALETTE.info, success: PALETTE.success, warning: PALETTE.warning, danger: PALETTE.danger,
+    // A restrained brand contribution keeps status families recognizable;
+    // explicit labels/icons carry meaning independently of hue.
+    info: safeAccent(mix(PALETTE.info, primary, 0.15)), success: safeAccent(mix(PALETTE.success, primary, 0.15)), warning: safeAccent(mix(PALETTE.warning, primary, 0.15)), danger: safeAccent(mix(PALETTE.danger, primary, 0.15)),
     'series-0': accent, 'series-1': safeAccent(mix(primary, PALETTE.info, 0.75)), 'series-2': safeAccent(mix(primary, PALETTE.success, 0.75)), 'series-3': safeAccent(mix(primary, PALETTE.warning, 0.75)),
   };
   const tokens = Object.fromEntries(Object.entries(colors).map(([key, color]) => [`--dashboard-${key}`, color]));

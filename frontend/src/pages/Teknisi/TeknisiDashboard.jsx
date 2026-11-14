@@ -72,10 +72,10 @@ const TeknisiDashboard = () => {
     return () => { clearInterval(interval); window.removeEventListener('focus', refresh); };
   }, []);
 
-  const StatCard = ({ title, value, icon, bgColor = "bg-gray-500", isLoading }) => (
-    <div className={`col-span-12 md:col-span-6 p-6 rounded-xl shadow-lg text-white ${bgColor}`}>
-      <div className="flex items-center justify-between">
-        <div>
+  const StatCard = ({ title, value, icon, tone = 'info', isLoading }) => (
+    <div className="col-span-12 min-w-0 md:col-span-6 p-6 rounded-xl shadow-lg" data-tone={tone} style={{ background: 'var(--dashboard-tone)', color: 'var(--dashboard-on-tone)' }}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 break-words">
           <p className="text-sm font-medium uppercase tracking-wider">{title}</p>
           {isLoading ? (
             <LoadingSkeleton variant="text" rows={1} label="Memuat statistik..." className="mt-1" />
@@ -137,14 +137,14 @@ const TeknisiDashboard = () => {
               title="Total Pengecekan Aktif"
               value={stats.totalPengecekanAktif}
               icon={<FaTools />}
-              bgColor="bg-blue-500" 
+              tone="info"
               isLoading={isLoadingStats}
             />
             <StatCard 
               title="Total Riwayat Perbaikan"
               value={stats.totalRiwayatPerbaikan}
               icon={<FaHistory />}
-              bgColor="bg-green-500" 
+              tone="success"
               isLoading={isLoadingStats}
             />
           </div>

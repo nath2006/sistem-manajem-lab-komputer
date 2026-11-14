@@ -66,3 +66,11 @@ Evidence lokal: `C:/Users/LOQ/AppData/Local/hermes/cache/scratch/letris-dashboar
 - Test-first assertion failures telah dijalankan sebelum implementasi service, legacy fallback, router HTTP, shared chart, wiring lima halaman, shared card opt-in dan utility kontras. Pengujian ulang penuh menangkap import CSS JSX yang tidak kompatibel dengan harness SSR; dipindahkan ke stylesheet entry sebelum suite hijau.
 
 Commit dashboard/base dapat mencakup semua file dashboard baru, lima halaman role, `CardStatAdmin`, import CSS `index.css`, dua baris mount/import `backend/index.js`, docs ini serta tests/fixtures dashboard. Jangan memasukkan perubahan ticketing/onboarding milik worker lain. Tidak ada commit/push otomatis dari worker ini.
+
+## Verifikasi final langkah 7
+
+Hasil base di atas adalah bukti historis, bukan hasil akhir. Hardening Footer dan kartu Teknisi serta semantic tones yang mengikuti primary sudah selesai dengan RED → GREEN; lihat [DASHBOARD_ACCESSIBILITY.md](DASHBOARD_ACCESSIBILITY.md) untuk perubahan, reproduksi dan batas cakupan.
+
+Matriks final terdeduplikasi: **105/105 kasus** (5 role × 3 ukuran × 7 warna), **0 kegagalan teks/grafik/bounds/overflow**; minimum teks **4.554:1**, grafik **4.529:1**. Tambahan **70 kasus** coarse 320/360 dan **98 hover nyata** juga lulus. Native table dipertahankan. Live blue/green mengubah warna kartu kelima role. Source database dan protected original fingerprint tidak berubah pada review clone baru `simlab_review_20261114220238`; server fixture berhenti, server biasa tidak disentuh.
+
+Suite live-tree final: backend **133/133**, frontend **215/215**, build scratch lulus; lint **0 error / 7 warning yang sudah ada**. Evidence `final-step7-*` terpisah dari baseline `stable-*`, dengan manifest dan hashes `step7-files.json` / `step7-verification.json`. Tidak mengklaim dark mode: aplikasi belum memiliki state/toggle tersebut dan surface dashboard tetap terang.
