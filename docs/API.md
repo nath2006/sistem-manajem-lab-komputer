@@ -1,5 +1,11 @@
 # Dokumentasi API — Sistem Informasi Manajemen Lab Komputer
 
+## Dashboard: agregasi grafik sesuai role
+
+`GET /api/dashboard/insights` membutuhkan token akses dan mengembalikan `{message,data:{tickets,assets}}`. `tickets` berisi `available`, `rows:[{label,count}]`, dan alasan bila skema tiket belum tersedia. `assets` berisi `categories` dan `conditions` dengan baris `{label,count}`, atau `null` untuk Guru. Guru hanya memperoleh tiket miliknya; Kepala Lab memakai scope tiket sendiri/lab yang ditugaskan; role lain mengikuti policy ticket service existing. Metadata kategori/kondisi yang belum tersedia memakai hitungan nyata berlabel `Lainnya`, bukan data contoh. Skema tiket yang belum tersedia ditandai eksplisit, bukan dianggap jumlah nol.
+
+Token hilang/actor atau role invalid: 403; token invalid/kedaluwarsa: 401; kegagalan query: 500 terkontrol. Endpoint statistik lama tetap tersedia. Sumber: `backend/index.js`, `router/dashboardInsightsRoutes.js`, `controllers/dashboardInsightsController.js`, dan `services/dashboardInsightsService.js`. Kontrak importable ada pada OpenAPI; pengujian HTTP/MySQL dan batas tema/role dijelaskan di `DASHBOARDS.md`.
+
 ## FITUR 2: QR aset dan verifikasi
 
 - `GET /api/asset-qr/:publicId` **publik dan selalu aman**: hanya identitas/spesifikasi; include flags dan Authorization tidak membuka pengadaan. UUIDv4 kanonis, invalid 400, unknown 404; tidak ada write/audit pada GET publik.

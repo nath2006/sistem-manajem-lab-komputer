@@ -12,6 +12,23 @@
     }
   ],
   "paths": {
+    "/api/dashboard/insights": {
+      "get": {
+        "operationId": "getDashboardInsights",
+        "tags": ["Dashboard"],
+        "summary": "Role-scoped dashboard chart aggregates",
+        "description": "Reuses existing ticket scope and joins. Guru sees own tickets and assets=null; Kepala Lab sees own/owned-lab tickets. Missing asset metadata preserves real counts under Lainnya. Missing ticket schema returns available=false, never an invented zero. Existing dashboard endpoints remain unchanged.",
+        "security": [{"bearerAuth": []}],
+        "x-mounted": true,
+        "x-source": ["backend/index.js", "backend/router/dashboardInsightsRoutes.js", "backend/controllers/dashboardInsightsController.js", "backend/services/dashboardInsightsService.js"],
+        "responses": {
+          "200": {"description": "Role-scoped aggregates", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DashboardInsightsEnvelope"}}}},
+          "401": {"description": "Invalid or expired token"},
+          "403": {"description": "Missing token, unsupported role or invalid actor"},
+          "500": {"description": "Query failure, not represented as empty successful data"}
+        }
+      }
+    },
     "/api/asset-qr/{publicId}": {
       "get": {
         "operationId": "get_asset_qr_AssetQrPublic",
@@ -14916,6 +14933,26 @@
       }
     },
     "schemas": {
+      "DashboardCount": {
+        "type": "object",
+        "required": ["label", "count"],
+        "properties": {"label": {"type": "string"}, "count": {"type": "integer", "minimum": 0}}
+      },
+      "DashboardInsightsEnvelope": {
+        "type": "object",
+        "required": ["message", "data"],
+        "properties": {
+          "message": {"type": "string"},
+          "data": {
+            "type": "object",
+            "required": ["tickets", "assets"],
+            "properties": {
+              "tickets": {"type": "object", "required": ["available", "rows"], "properties": {"available": {"type": "boolean"}, "reason": {"type": "string"}, "rows": {"type": "array", "items": {"$ref": "#/components/schemas/DashboardCount"}}}},
+              "assets": {"type": "object", "nullable": true, "required": ["categories", "conditions"], "properties": {"categories": {"type": "array", "items": {"$ref": "#/components/schemas/DashboardCount"}}, "conditions": {"type": "array", "items": {"$ref": "#/components/schemas/DashboardCount"}}}}
+            }
+          }
+        }
+      },
       "AssetQrPublic": {
         "type": "object",
         "additionalProperties": false,
