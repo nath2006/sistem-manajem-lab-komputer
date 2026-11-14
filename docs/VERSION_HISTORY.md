@@ -8,7 +8,17 @@
 - Ini adalah snapshot terakhir yang benar-benar tercatat di Git, bukan rekonstruksi pasti seluruh isi folder sebelum pekerjaan AI pertama. Perubahan lama yang belum pernah di-commit tidak dapat dipisahkan secara kronologis hanya dari Git.
 - File tracked yang tidak berubah tetap diwariskan dari baseline. File baru/berubah dikelompokkan berdasarkan tanggung jawab aplikasi, bukan tanggal dugaan.
 
-## Branch v2
+## Tag rollback `v1.0.0` tersanitasi
+
+- Asal source: `92633b3f1780857afe79c9a341f2a2a979cc8536` — `feat(ui): improve UX`.
+- Target tag baru, setelah persetujuan hash tersanitasi: `6cbd6d170f2d9e2cc9af9425d680cf4c14e125c3` — `release: sanitized v1.0.0 source snapshot from 92633b3`.
+- Annotated tag object: `f05e6920886079a933dbcb54e31542c67de4961f`. Tag dan target commit sudah dibaca balik dari remote GitHub.
+- Ini snapshot parentless baru, bukan pemindahan tag lama atau rewrite history. Sebanyak 123 file source asli dipertahankan sebagai blob Git identik. `.env` dan dua dump berisi data pengguna dikecualikan; ditambahkan ignore rules, contoh environment placeholder, dan `RELEASE_SOURCE.md` yang menjelaskan asal/batas snapshot.
+- Branch kerja terbaru tidak di-checkout ke kode lama. Snapshot ini untuk rollback source dengan database kompatibel yang disimpan terpisah, bukan backup database atau paket bootstrap database baru.
+- `gh` tidak tersedia; dipakai fallback tag-only yang diizinkan. Halaman GitHub Release belum dibuat oleh pekerjaan ini.
+- Riwayat lama dan branch arsip tetap berisi snapshot asli. Sanitasi tag tidak menghapus paparan historis tersebut. Lihat `SECURITY_REMEDIATION.md`.
+
+## Branch v2 (publikasi terdahulu)
 
 | Urutan merge | Branch | Isi |
 |---|---|---|
