@@ -1,3 +1,5 @@
+import DashboardInsights from '../../Components/DashboardInsights';
+import DashboardTheme from '../../Components/DashboardTheme';
 import LoadingSkeleton from '../../Components/Loading/Skeleton';
 // src/pages/KepalaLab/KepalaLabPage.js
 import React, { useContext, useState, useEffect } from "react";
@@ -132,6 +134,8 @@ export default function KepalaLabPage() {
   return (
     <>
       <Dashboard title={`Dashboard Kepala Lab`}>
+      <DashboardTheme>
+        <DashboardInsights />
         {authState?.isLoading ? <LoadingSkeleton label="Memuat sesi Kepala Lab..." /> :
         <div className="min-h-[calc(100vh-80px)] flex flex-col px-4 py-6 md:px-6 lg:px-8 bg-white text-gray-800">
           <div className="flex-grow">
@@ -164,7 +168,8 @@ export default function KepalaLabPage() {
           <Footer />
         </div>
         }
-      </Dashboard>
+      </DashboardTheme>
+    </Dashboard>
     </>
   );
 }

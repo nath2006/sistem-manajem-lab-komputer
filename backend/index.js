@@ -22,6 +22,7 @@ import laporanPerangkat from './router/laporanPerangkat.js';
 import perbaikanRoutes from './router/perbaikanRoutes.js';
 // Perhatikan potensi typo: 'pengajunLab' mungkin seharusnya 'pengajuanLabRoutes'
 import pengajunLab from './router/pengajuanLabRoutes.js'; 
+import { createDashboardInsightsRouter } from './router/dashboardInsightsRoutes.js';
 import dashboardAdminRoutes from './router/dashboardAdminRoutes.js';
 import dashboardTeknisiRoutes from './router/dashboardTeknisiRoutes.js';
 import { getJadwalLabMingguan } from './controllers/jadwalLabController.js';
@@ -80,6 +81,7 @@ app.use("/api/pengecekan", pengecekanRouter);
 app.use("/api/laporan/perangkat", laporanPerangkat);
 app.use("/api/perbaikan", perbaikanRoutes);
 app.use("/api/pengajuan", pengajunLab); 
+app.use('/api/dashboard', createDashboardInsightsRouter(db));
 app.use("/api/dashboard", dashboardAdminRoutes); 
 app.use("/api/dashboard", dashboardTeknisiRoutes); 
 app.get("/api/jadwal-lab", verifyToken, getJadwalLabMingguan);

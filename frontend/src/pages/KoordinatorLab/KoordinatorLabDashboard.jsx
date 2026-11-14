@@ -1,3 +1,5 @@
+import DashboardInsights from '../../Components/DashboardInsights';
+import DashboardTheme from '../../Components/DashboardTheme';
 import { SkeletonRows } from '../../Components/Loading/Skeleton';
 // MainDashboard.js (atau nama file yang Anda inginkan untuk dashboard utama ini)
 import React, { useContext, useState, useEffect } from 'react';
@@ -51,6 +53,8 @@ const MainDashboard = () => {
 
   return (
     <Dashboard title={`Dashboard ${authState?.role || ''}`}>
+      <DashboardTheme>
+        <DashboardInsights />
       <div className="min-h-[calc(100vh-80px)] flex flex-col px-4 py-6 md:px-6 lg:px-8 bg-white text-gray-800">
         <div className="flex-grow">
           <div className="mb-6">
@@ -111,6 +115,7 @@ const MainDashboard = () => {
         </div>
         <Footer />
       </div>
+    </DashboardTheme>
     </Dashboard>
   );
 }

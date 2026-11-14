@@ -1,3 +1,5 @@
+import DashboardInsights from '../../Components/DashboardInsights';
+import DashboardTheme from '../../Components/DashboardTheme';
 import LoadingSkeleton from '../../Components/Loading/Skeleton';
 import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -91,6 +93,8 @@ const TeknisiDashboard = () => {
 
   return (
     <Dashboard title="Dashboard Teknisi">
+      <DashboardTheme>
+        <DashboardInsights />
       <div className="min-h-[calc(100vh-80px)] flex flex-col px-4 py-6 md:px-6 lg:px-8 text-gray-800"> {/* bg-white dihapus agar bg dari Dashboard Layout dipakai */}
         <div className="flex-grow">
           {/* Salam Pembuka */}
@@ -177,6 +181,7 @@ const TeknisiDashboard = () => {
         {detailRepair && <DetailPerbaikan id={detailRepair} onClose={() => setDetailRepair(null)} />}
         <Footer />
       </div>
+    </DashboardTheme>
     </Dashboard>
   );
 }

@@ -1,3 +1,5 @@
+import DashboardInsights from '../../Components/DashboardInsights';
+import DashboardTheme from '../../Components/DashboardTheme';
 import LoadingSkeleton, { SkeletonRows } from '../../Components/Loading/Skeleton';
 import React, { useState, useEffect} from "react";
 import { 
@@ -61,6 +63,8 @@ const DasboardAdmin = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Dashboard title="Dasboard">
+      <DashboardTheme>
+        <DashboardInsights />
         <div className="flex flex-col mx-auto max-w-7xl xl:flex-row lg:w-full flex-1">
           <div className="w-full h-full xl:w-full xl:px-5 grid grid-cols-12 gap-4 flex-1">
             {/* Card Total Online User */}
@@ -204,7 +208,8 @@ const DasboardAdmin = () => {
         <div className="mt-8">
           <Footer />
         </div>
-      </Dashboard>
+      </DashboardTheme>
+    </Dashboard>
     </div>
   );
 };

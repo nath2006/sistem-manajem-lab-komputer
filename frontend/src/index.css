@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./Components/dashboardTheme.css";
 @import "driver.js/dist/driver.css";
 @import "./Components/Onboarding/onboarding.css";
 @plugin "flowbite-react/plugin/tailwindcss";

@@ -2,7 +2,7 @@ import React from 'react'
 
 function CardStatAdmin({ icon: Icon, count, label }) {
   return (
-    <div className="flex min-w-0 max-w-full flex-wrap items-center gap-y-2">
+    <div className="dashboard-stat-card flex min-w-0 max-w-full flex-wrap items-center gap-y-2">
     <div className='bg-maroon w-16 h-16 shrink-0 rounded-full shadow-lg flex items-center justify-center'>
       <Icon className='text-white' />
     </div>
