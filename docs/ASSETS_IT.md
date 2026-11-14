@@ -1,5 +1,8 @@
 # Aset IT Sekolah — FITUR 1
 
+> FITUR 2 kini ditambahkan terpisah: lihat `QR_ASSETS.md` untuk UUID QR, verifikasi publik/private dan cetak PDF. Batas dan bukti FITUR 1 di bawah adalah catatan historis; fitur aset tetap bekerja tanpa skema QR. Endpoint aset kini juga mengirim `Cache-Control: no-store`. Tidak ada perubahan fitur 3–5.
+
+
 ## Batas implementasi
 
 Menu **Aset IT Sekolah** (`/aset-it`) menambah inventaris Pembelajaran dan Operasional. Ini hanya FITUR 1: tidak menambah QR/barcode, halaman verifikasi publik, referensi/login GLPI, perubahan fitur bantuan, atau dashboard Admin baru.

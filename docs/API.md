@@ -1,5 +1,15 @@
 # Dokumentasi API — Sistem Informasi Manajemen Lab Komputer
 
+## FITUR 2: QR aset dan verifikasi
+
+- `GET /api/asset-qr/:publicId` **publik dan selalu aman**: hanya identitas/spesifikasi; include flags dan Authorization tidak membuka pengadaan. UUIDv4 kanonis, invalid 400, unknown 404; tidak ada write/audit pada GET publik.
+- `GET /api/asset-qr/:publicId/private`: semua role login; proyeksi hanya tahun pengadaan, sumber dana, harga string desimal/null.
+- `GET /api/asset-qr/identity/:id`: semua role login, baca UUID yang ada/null tanpa menerbitkan.
+- `POST /api/asset-qr/issue/:id`: Admin / Kepala Lab pada Pembelajaran lab sendiri; transaksi row-lock, UUID kriptografis persisten dan unique, reissue stabil.
+- Envelope sukses `{data:...}`. Semua respons QR dan `/api/assets` menggunakan `Cache-Control: no-store`. QR schema absent/incompatible → 503 `QR_SCHEMA_REQUIRED`, tanpa memblokir FITUR 1. Missing/invalid auth mengikuti middleware existing (403/401). Internal error 500 tidak membocorkan DB.
+- Migrasi **review-only additive/idempotent** `20261115_asset_qr.sql`, tidak auto-run. Panduan cetak PDF aktual, LAN/localhost trap, izin, prosedur clone dan batas bukti: `docs/QR_ASSETS.md`. Kontrak importable di `docs/openapi.json`; tidak menambah hosted Swagger UI.
+
+
 ## Ruang lingkup dan sumber
 
 Dokumen ini diturunkan dari `backend/index.js`, semua file `backend/router/*.js`, controller yang dirujuk, `middleware/authMiddleware.js`, `utils/multer.js`, `services/UserService.js`, `repositories/UserRepository.js`, `services/settingsService.js`, dan `shared/schedule.mjs`. Sumber spesifik dicantumkan pada setiap operasi; literal route dari kode mengungguli komentar route. Contoh memakai data ilustratif, bukan keluaran server yang direkam. Endpoint legacy di dokumen awal ditelaah secara statis; validasi JSON/OpenAPI/coverage bukan pengujian runtime legacy. Bukti pengujian HTTP/MySQL nyata khusus ticketing pada database terisolasi tersedia di `docs/ticketing-review-result.json` (nama database, waktu, daftar checks, `source_unchanged`, `server_stopped`); bukti itu bukan bukti semua endpoint legacy. Contoh dokumen tetap ilustratif, bukan rekaman respons.

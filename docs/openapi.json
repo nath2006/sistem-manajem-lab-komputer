@@ -12,6 +12,322 @@
     }
   ],
   "paths": {
+    "/api/asset-qr/{publicId}": {
+      "get": {
+        "operationId": "get_asset_qr_AssetQrPublic",
+        "tags": [
+          "asset-qr"
+        ],
+        "summary": "Public identity and specifications only",
+        "description": "No financial, actor, creator, email, authentication or photo data on public route regardless of include/private flags or Authorization header. Public GET never authenticates or writes audits. Private reads and issuer retain authenticated audit policy. UUIDv4 persisted independently of JWT keys. Issuer permission checked under asset/lab row locks. Review-only migration; never startup DDL. See docs/QR_ASSETS.md.",
+        "security": [],
+        "x-mounted": true,
+        "x-source": [
+          "backend/index.js",
+          "backend/router/assetQrRoutes.js",
+          "backend/services/assetQrService.js"
+        ],
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; no-store",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                },
+                "description": "No browser/shared cache."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AssetQrPublic"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid UUIDv4 or asset ID."
+          },
+          "404": {
+            "description": "Asset/issued identity not found."
+          },
+          "500": {
+            "description": "Controlled database/internal failure; no SQL details."
+          },
+          "503": {
+            "description": "QR_SCHEMA_REQUIRED; missing or incompatible QR column or single-column unique index. Feature1 is independent."
+          }
+        }
+      }
+    },
+    "/api/asset-qr/{publicId}/private": {
+      "get": {
+        "operationId": "get_asset_qr_AssetQrPrivate",
+        "tags": [
+          "asset-qr"
+        ],
+        "summary": "Private procurement for every authenticated role",
+        "description": "No financial, actor, creator, email, authentication or photo data on public route regardless of include/private flags or Authorization header. Public GET never authenticates or writes audits. Private reads and issuer retain authenticated audit policy. UUIDv4 persisted independently of JWT keys. Issuer permission checked under asset/lab row locks. Review-only migration; never startup DDL. See docs/QR_ASSETS.md.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-mounted": true,
+        "x-source": [
+          "backend/index.js",
+          "backend/router/assetQrRoutes.js",
+          "backend/services/assetQrService.js"
+        ],
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; no-store",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                },
+                "description": "No browser/shared cache."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AssetQrPrivate"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid UUIDv4 or asset ID."
+          },
+          "404": {
+            "description": "Asset/issued identity not found."
+          },
+          "500": {
+            "description": "Controlled database/internal failure; no SQL details."
+          },
+          "503": {
+            "description": "QR_SCHEMA_REQUIRED; missing or incompatible QR column or single-column unique index. Feature1 is independent."
+          },
+          "401": {
+            "description": "Invalid/expired bearer token."
+          },
+          "403": {
+            "description": "Missing token; issuer also requires Admin or assigned Kepala Lab for Pembelajaran."
+          }
+        }
+      }
+    },
+    "/api/asset-qr/identity/{id}": {
+      "get": {
+        "operationId": "get_asset_qr_AssetQrIdentity",
+        "tags": [
+          "asset-qr"
+        ],
+        "summary": "Read current QR identity without issuing",
+        "description": "No financial, actor, creator, email, authentication or photo data on public route regardless of include/private flags or Authorization header. Public GET never authenticates or writes audits. Private reads and issuer retain authenticated audit policy. UUIDv4 persisted independently of JWT keys. Issuer permission checked under asset/lab row locks. Review-only migration; never startup DDL. See docs/QR_ASSETS.md.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-mounted": true,
+        "x-source": [
+          "backend/index.js",
+          "backend/router/assetQrRoutes.js",
+          "backend/services/assetQrService.js"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; no-store",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                },
+                "description": "No browser/shared cache."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AssetQrIdentity"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid UUIDv4 or asset ID."
+          },
+          "404": {
+            "description": "Asset/issued identity not found."
+          },
+          "500": {
+            "description": "Controlled database/internal failure; no SQL details."
+          },
+          "503": {
+            "description": "QR_SCHEMA_REQUIRED; missing or incompatible QR column or single-column unique index. Feature1 is independent."
+          },
+          "401": {
+            "description": "Invalid/expired bearer token."
+          },
+          "403": {
+            "description": "Missing token; issuer also requires Admin or assigned Kepala Lab for Pembelajaran."
+          }
+        }
+      }
+    },
+    "/api/asset-qr/issue/{id}": {
+      "post": {
+        "operationId": "post_asset_qr_AssetQrIdentity",
+        "tags": [
+          "asset-qr"
+        ],
+        "summary": "Issue or reuse stable QR identity under row lock",
+        "description": "No financial, actor, creator, email, authentication or photo data on public route regardless of include/private flags or Authorization header. Public GET never authenticates or writes audits. Private reads and issuer retain authenticated audit policy. UUIDv4 persisted independently of JWT keys. Issuer permission checked under asset/lab row locks. Review-only migration; never startup DDL. See docs/QR_ASSETS.md.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-mounted": true,
+        "x-source": [
+          "backend/index.js",
+          "backend/router/assetQrRoutes.js",
+          "backend/services/assetQrService.js"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; no-store",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                },
+                "description": "No browser/shared cache."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AssetQrIdentity"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid UUIDv4 or asset ID."
+          },
+          "404": {
+            "description": "Asset/issued identity not found."
+          },
+          "500": {
+            "description": "Controlled database/internal failure; no SQL details."
+          },
+          "503": {
+            "description": "QR_SCHEMA_REQUIRED; missing or incompatible QR column or single-column unique index. Feature1 is independent."
+          },
+          "401": {
+            "description": "Invalid/expired bearer token."
+          },
+          "403": {
+            "description": "Missing token; issuer also requires Admin or assigned Kepala Lab for Pembelajaran."
+          }
+        }
+      }
+    },
     "/api/assets": {
       "get": {
         "operationId": "get_school_assets",
@@ -14600,6 +14916,97 @@
       }
     },
     "schemas": {
+      "AssetQrPublic": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "perangkat_id",
+          "nama_perangkat",
+          "spesifikasi",
+          "nomor_inventaris",
+          "status",
+          "penggunaan",
+          "kategori",
+          "lokasi",
+          "nama_lab"
+        ],
+        "properties": {
+          "perangkat_id": {
+            "type": "integer"
+          },
+          "nama_perangkat": {
+            "type": "string"
+          },
+          "spesifikasi": {
+            "type": "string",
+            "nullable": true
+          },
+          "nomor_inventaris": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string"
+          },
+          "penggunaan": {
+            "type": "string"
+          },
+          "kategori": {
+            "type": "string"
+          },
+          "lokasi": {
+            "type": "string",
+            "nullable": true
+          },
+          "nama_lab": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "AssetQrPrivate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tahun_pengadaan",
+          "sumber_dana",
+          "harga_beli"
+        ],
+        "properties": {
+          "tahun_pengadaan": {
+            "type": "integer",
+            "nullable": true
+          },
+          "sumber_dana": {
+            "type": "string",
+            "nullable": true
+          },
+          "harga_beli": {
+            "type": "string",
+            "nullable": true,
+            "description": "Exact DECIMAL string; null unknown, 0.00 valid."
+          }
+        }
+      },
+      "AssetQrIdentity": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "perangkat_id",
+          "public_id"
+        ],
+        "properties": {
+          "perangkat_id": {
+            "type": "integer"
+          },
+          "public_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "Null until explicit authorized POST issues persisted UUIDv4."
+          }
+        }
+      },
       "TicketIdentifier": {
         "oneOf": [
           {

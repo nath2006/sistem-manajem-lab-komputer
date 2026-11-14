@@ -3,6 +3,7 @@ import { requireAssetSchema } from "../services/assetSchemaService.js";
 import { createAssetController } from "../controllers/assetController.js";
 export function createAssetRouter(db, authenticate) {
   const router = express.Router();
+  router.use((req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
   router.use(authenticate);
   router.use(async (req, res, next) => {
     try {

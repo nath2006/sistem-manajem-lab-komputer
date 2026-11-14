@@ -44,17 +44,19 @@ const Pengaturan = lazy(() => import("./features/Pengaturan/Pengaturan"));
 const LogAktivitas = lazy(() => import("./features/LogAktivitas/LogAktivitas"));
 const Ticketing = lazy(() => import("./features/Ticketing/Ticketing"));
 const AsetIT = lazy(() => import("./features/AsetIT/AsetIT"));
+const AssetVerification = lazy(() => import("./features/AsetIT/AssetVerification"));
 
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env?.BASE_URL || "/"}>
         <Routes>
           <Route element={<RouteBoundary />}>
           {/* Public */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
 
+          <Route path="/verifikasi-aset/:publicId" element={<AssetVerification />} />
           <Route path="/pengumuman/:id" element={<PengumumanDetailPage />} />
           </Route>
           {/* Protected Routes */}

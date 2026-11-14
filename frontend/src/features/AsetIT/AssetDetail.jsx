@@ -1,3 +1,4 @@
+import AssetQrLabel from './AssetQrLabel';
 import ModalContainer from "../../Components/DetailModal/ModalContainer";
 import { displayPrice, displayValue } from "./assetView";
 export default function AssetDetail({ asset, onClose }) {
@@ -29,6 +30,7 @@ export default function AssetDetail({ asset, onClose }) {
           </div>
         ))}
       </dl>
+      <AssetQrLabel key={asset.perangkat_id} asset={asset} />
     </ModalContainer>
   );
 }

@@ -148,6 +148,8 @@ model perangkat {
   harga_beli       Decimal? @db.Decimal(15, 2)
   foto_perangkat   String?          @db.VarChar(255)
   nomor_inventaris String?          @unique(map: "nomor_inventaris") @db.VarChar(50)
+  /// SQL migration sets ascii_bin; UUID assigned only by explicit authorized issuer.
+  qr_public_id     String?          @unique(map: "uq_perangkat_qr_public_id") @db.Char(36)
   pemeriksaan      pemeriksaan[]
   pengecekan       pengecekan[]
   laboratorium     laboratorium?    @relation(fields: [lab_id], references: [lab_id], onDelete: Restrict, onUpdate: Cascade, map: "fk_perangkat_lab")

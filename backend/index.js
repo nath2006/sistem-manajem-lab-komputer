@@ -33,6 +33,7 @@ import { createTicketRouter } from './router/ticketRoutes.js';
 import { verifyToken } from './middleware/authMiddleware.js';
 import deletionRoutes from './router/deletionRoutes.js';
 import { createAssetRouter } from './router/assetRoutes.js';
+import { createAssetQrRouter } from './router/assetQrRoutes.js';
 
 dotenv.config();
 
@@ -65,6 +66,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api', activityLog);
 app.use('/api/deletion', deletionRoutes);
 app.use('/api/assets', createAssetRouter(db, verifyToken));
+app.use('/api/asset-qr', createAssetQrRouter(db, verifyToken));
 app.use('/api/tickets', createTicketRouter(db, verifyToken));
 app.use('/api/settings', settingsRoutes);
 app.use('/api/activity-logs', activityLogRoutes);
