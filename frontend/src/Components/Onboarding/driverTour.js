@@ -1,5 +1,5 @@
 import { driver } from 'driver.js';
-import { ROLE_STEPS } from './onboardingData.js';
+import { getTourColors, getTourSteps } from './onboardingData.js';
 import { completeOnboarding } from '../../utils/onboarding.js';
 import { acquireBodyScrollLock } from '../../utils/scrollLock.js';
 
@@ -39,7 +39,7 @@ export function startTour({ identity, role, schoolName }) {
   };
   activeStop = stop;
   const finish = action => { completeOnboarding(identity, action); stop(); };
-  const definitions = ROLE_STEPS[role] || [];
+  let definitions = [];
   prepare(false);
   // Wait for React to commit drawer state before querying or measuring targets.
   const defer = callback => {
@@ -58,6 +58,7 @@ export function startTour({ identity, role, schoolName }) {
     });
   };
   defer(() => {
+    definitions = getTourSteps(role, selector => visibleTarget(document.querySelector(selector)));
     const first = document.querySelector(definitions[0]?.element);
     if (!visibleTarget(first)) return stop();
     releaseScroll = acquireBodyScrollLock();
@@ -77,6 +78,8 @@ export function startTour({ identity, role, schoolName }) {
       onDestroyed: stop,
       onPopoverRender: (popover, { index }) => {
         const step = definitions[index];
+        const colors = getTourColors(getComputedStyle(document.documentElement).getPropertyValue('--color-maroon').trim());
+        for (const [name, value] of Object.entries(colors)) popover.wrapper.style.setProperty(`--tour-${name}`, value);
         // Driver strings are HTML. All school/role text enters via textContent only.
         popover.title.textContent = index === 0 ? `Selamat datang · ${schoolName || 'Sekolah'}` : step.title;
         popover.description.textContent = step.description;
