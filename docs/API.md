@@ -34,6 +34,26 @@ curl -X POST http://localhost:5000/api/lab/create \
   -F "foto_lab=@<PATH_FILE_GAMBAR>"
 ```
 
+## Aset IT Sekolah — kontrak FITUR 1
+
+Sumber: `backend/router/assetRoutes.js`, `controllers/assetController.js`, `services/assetService.js`, `utils/assetPolicy.js`. Rincian implementasi, migrasi review-only dan bukti: [ASSETS_IT.md](ASSETS_IT.md).
+
+| Method | Path | Akses |
+|---|---|---|
+| GET | `/api/assets` | Semua role dengan token; `{data: [...], message}` |
+| GET | `/api/assets/:id` | Semua role dengan token; `{data: {...}, message}` |
+| POST | `/api/assets` | Admin / Kepala Lab untuk Pembelajaran pada lab miliknya; **201** |
+| PUT | `/api/assets/:id` | Admin / Kepala Lab pada lab asal dan lab tujuan miliknya; **200** |
+| DELETE | `/api/assets/:id` | Guard penghapusan perangkat yang sama, tanpa cascade riwayat; **200** |
+
+- Identitas tetap `perangkat_id`, bukan tabel aset baru. Field tulis: `nama_perangkat` (100), `nomor_inventaris` (50, unik/null), `spesifikasi` (16000), `penggunaan`, `kategori`, `lab_id`, `lokasi` (150), `tahun_pengadaan`, `sumber_dana` (150), `harga_beli`.
+- Penggunaan: `Pembelajaran` memerlukan lab valid; `Operasional` tanpa lab (null/kosong), lab yang bertentangan ditolak. Kategori: Komputer, Laptop, Monitor, Printer, Perangkat Jaringan, Proyektor, Lainnya. Tahun: bilangan bulat 1900–tahun server saat ini, tanpa notasi eksponen.
+- Tiga field pengadaan opsional: null, string kosong dan whitespace menjadi SQL NULL. PUT yang tidak mengirim field mempertahankan nilai; explicit null/kosong menghapus nilai. Harga wajib **string desimal** non-negatif, maksimum `9999999999999.99`, maksimal dua angka desimal; contoh `"0"` valid dan respons `"0.00"`. UI menampilkan `-` untuk tidak diketahui, bukan untuk nol.
+- Status kondisi tidak dapat ditulis pada API aset; aset baru Baik, status/foto lama dipertahankan. Gunakan pemeriksaan/perbaikan. Kepala Lab tidak dapat membuat/mengubah/menghapus aset Operasional atau lintas lab. Koordinator, Teknisi dan Guru hanya baca.
+- **400** validasi/field tidak dikenal/status manual; **401** token invalid; **403** tanpa token/izin; **404** aset tidak ada; **409** nomor inventaris duplikat, data masih terkait atau konflik lock; **503** `{code:"ASSET_SCHEMA_REQUIRED",message}` bila skema belum siap. API baru tidak menjalankan migrasi startup.
+- Preview hapus tetap `GET /api/deletion/perangkat/:id`. DELETE memeriksa ulang dependensi dalam transaksi; riwayat pemeriksaan, temuan, perbaikan dan tiket tetap dilindungi.
+- **Pembaruan kontrak legacy di bagian snapshot berikut:** create/update `/api/perangkat` (dan alias prefix laporan yang berbagi router) kini memakai proyeksi eksplisit tanpa pengadaan. Kepala Lab diperiksa terhadap lab asal/tujuan. Status create hanya Baik; update hanya boleh mengirim status yang sama (perubahan **409**). Edit Operasional mempertahankan null lab; konversi penggunaan lewat API aset. Contoh historis wildcard bukan lagi kontrak respons. Operasional tetap terlihat pada pemeriksaan, temuan dan antrean teknisi melalui LEFT JOIN.
+
 ## Inventaris operasi
 
 | Method | Path | Akses aktual / kontrak | Handler |
@@ -1034,7 +1054,7 @@ Ekspresi respons aktual dari source (variabel/SQL bukan JSON literal):
 
 Proyeksi SQL yang menentukan field hasil controller (varian list/detail bisa berbeda):
 ```sql
-p.*, l.nama_lab
+p.perangkat_id, p.nama_perangkat, p.spesifikasi, p.status, p.lab_id, p.foto_perangkat, p.nomor_inventaris, l.nama_lab
 ```
 
 Handler tertutup `createLaporanPerangkat` — sumber `backend/controllers/laporanPerangkatController.js`; **bukan respons operasi aktif di atas**.
@@ -1129,7 +1149,7 @@ Proyeksi SQL yang menentukan field hasil controller (varian list/detail bisa ber
 ```sql
 foto_perangkat, lab_id
 
-p.*, l.nama_lab
+p.perangkat_id, p.nama_perangkat, p.spesifikasi, p.status, p.lab_id, p.foto_perangkat, p.nomor_inventaris, l.nama_lab
 ```
 
 ### DELETE `/api/perangkat/delete/:id`
@@ -2123,7 +2143,7 @@ Ekspresi respons aktual dari source (variabel/SQL bukan JSON literal):
 
 Proyeksi SQL yang menentukan field hasil controller (varian list/detail bisa berbeda):
 ```sql
-p.*, l.nama_lab
+p.perangkat_id, p.nama_perangkat, p.spesifikasi, p.status, p.lab_id, p.foto_perangkat, p.nomor_inventaris, l.nama_lab
 ```
 
 Handler tertutup `createLaporanPerangkat` — sumber `backend/controllers/laporanPerangkatController.js`; **bukan respons operasi aktif di atas**.
@@ -2218,7 +2238,7 @@ Proyeksi SQL yang menentukan field hasil controller (varian list/detail bisa ber
 ```sql
 foto_perangkat, lab_id
 
-p.*, l.nama_lab
+p.perangkat_id, p.nama_perangkat, p.spesifikasi, p.status, p.lab_id, p.foto_perangkat, p.nomor_inventaris, l.nama_lab
 ```
 
 ### DELETE `/api/laporan/perangkat/delete/:id`

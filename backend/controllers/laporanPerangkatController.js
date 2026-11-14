@@ -93,7 +93,7 @@ export const getDetailLaporanPerangkat = async (req, res) => {
 
       FROM pemeriksaan p
       JOIN perangkat d ON p.perangkat_id = d.perangkat_id
-      JOIN laboratorium l ON d.lab_id = l.lab_id
+      LEFT JOIN laboratorium l ON d.lab_id = l.lab_id
       JOIN user u_p ON p.user_id = u_p.user_id
 
       LEFT JOIN pengecekan c ON c.perangkat_id = d.perangkat_id

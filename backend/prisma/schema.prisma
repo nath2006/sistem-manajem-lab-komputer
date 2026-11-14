@@ -139,12 +139,18 @@ model perangkat {
   nama_perangkat   String           @db.VarChar(100)
   spesifikasi      String?          @db.Text
   status           perangkat_status @default(Baik)
-  lab_id           Int
+  lab_id           Int?
+  penggunaan       perangkat_penggunaan @default(Pembelajaran)
+  kategori         perangkat_kategori @default(Lainnya)
+  lokasi           String? @db.VarChar(150)
+  tahun_pengadaan  Int? @db.SmallInt
+  sumber_dana      String? @db.VarChar(150)
+  harga_beli       Decimal? @db.Decimal(15, 2)
   foto_perangkat   String?          @db.VarChar(255)
   nomor_inventaris String?          @unique(map: "nomor_inventaris") @db.VarChar(50)
   pemeriksaan      pemeriksaan[]
   pengecekan       pengecekan[]
-  laboratorium     laboratorium     @relation(fields: [lab_id], references: [lab_id], map: "fk_perangkat_lab")
+  laboratorium     laboratorium?    @relation(fields: [lab_id], references: [lab_id], onDelete: Restrict, onUpdate: Cascade, map: "fk_perangkat_lab")
   perbaikan        perbaikan[]
 
   @@index([lab_id], map: "fk_perangkat_lab")
@@ -194,6 +200,21 @@ enum laporan_jenis_laporan {
   Perbaikan
   Penggunaan_Lab       @map("Penggunaan Lab")
   Inventaris_Perangkat @map("Inventaris Perangkat")
+}
+
+enum perangkat_penggunaan {
+  Pembelajaran
+  Operasional
+}
+
+enum perangkat_kategori {
+  Komputer
+  Laptop
+  Monitor
+  Printer
+  Perangkat_Jaringan @map("Perangkat Jaringan")
+  Proyektor
+  Lainnya
 }
 
 enum perangkat_status {

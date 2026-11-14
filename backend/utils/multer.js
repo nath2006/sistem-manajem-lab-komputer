@@ -2,6 +2,7 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { randomUUID } from 'node:crypto';
 
 const basePath = "uploads"; // Folder root untuk semua upload
 const subFolders = { // Mendefinisikan subfolder berdasarkan fieldname
@@ -48,7 +49,10 @@ const storage = multer.diskStorage({
       .replace(/[^\w\s-]/g, "") // Hapus karakter non-alphanumeric kecuali spasi dan strip
       .replace(/\s+/g, "-");   // Ganti spasi dengan strip
 
-    const finalFileName = `${sanitizedNamePart}-${date}${ext}`;
+    // Device writes can fail authorization/validation after multipart parsing.
+    // A unique owned file prevents that cleanup from removing an existing photo.
+    const suffix = file.fieldname === 'foto_perangkat' ? `-${randomUUID()}` : '';
+    const finalFileName = `${sanitizedNamePart}-${date}${suffix}${ext}`;
     cb(null, finalFileName);
   }
 });

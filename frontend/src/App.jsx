@@ -43,6 +43,7 @@ const PengumumanDetailPage = lazy(() => import("./pages/Pengumuman/PengumumanDet
 const Pengaturan = lazy(() => import("./features/Pengaturan/Pengaturan"));
 const LogAktivitas = lazy(() => import("./features/LogAktivitas/LogAktivitas"));
 const Ticketing = lazy(() => import("./features/Ticketing/Ticketing"));
+const AsetIT = lazy(() => import("./features/AsetIT/AsetIT"));
 
 function App() {
   return (
@@ -61,6 +62,7 @@ function App() {
           <Route element={<DashboardLayout />}>
             {/* Akses Umum yang login disini*/}
             <Route path="/ticketing" element={<Ticketing />} />
+            <Route path="/aset-it" element={<AsetIT />} />
 
             {/* Admin Only */}
             <Route element={<RoleRoute allowedRoles={["Admin"]} />}>

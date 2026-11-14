@@ -16,6 +16,7 @@ import AddPemeriksaan from '../../Components/Pemeriksaan/AddPemeriksaan';
 import truncateText from '../../utils/truncateText';
 
 import { loadPdfTools } from '../../utils/loadPdfTools';
+import { filterLabDevices } from '../AsetIT/assetView';
 
 const Perangkat = () => {
   const printLock = useRef(false);
@@ -108,7 +109,7 @@ const Perangkat = () => {
                                 : '';
         const labIdToFilter = isAdmin ? currentSelectedLabId : userSpecificLabId;
         if (labIdToFilter) { 
-          perangkatToDisplay = response.data.filter(p => p.lab_id.toString() === labIdToFilter);
+          perangkatToDisplay = filterLabDevices(response.data, labIdToFilter);
         } else if (isAdmin && !currentSelectedLabId) {
           perangkatToDisplay = response.data;
         } else if (!isAdmin && !userSpecificLabId) {

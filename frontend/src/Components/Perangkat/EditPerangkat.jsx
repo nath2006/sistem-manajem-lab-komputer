@@ -23,6 +23,7 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
   });
   
   const [selectedFile, setSelectedFile] = useState(null);
+
   const [currentImageUrl, setCurrentImageUrl] = useState(null);
   const previewUrl = useObjectUrl(selectedFile);
   const [allLabsForAdminDropdown, setAllLabsForAdminDropdown] = useState([]);
@@ -30,6 +31,7 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
   const [isFetchingLabs, setIsFetchingLabs] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [isOperational, setIsOperational] = useState(false);
 
   const { state: authState } = useContext(AuthContext); 
   const userRole = authState?.role;
@@ -50,12 +52,13 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
       .then(response => {
         const perangkat = response.data;
         if (perangkat) {
+          setIsOperational(perangkat.lab_id === null);
           setFormData(prev => ({
             ...prev,
             nama_perangkat: perangkat.nama_perangkat || "",
             spesifikasi: perangkat.spesifikasi || "",
             status: perangkat.status || "Baik",
-            lab_id: perangkat.lab_id?.toString() || (currentLabIdContext || ""),
+            lab_id: perangkat.lab_id === null ? "" : perangkat.lab_id?.toString() || (currentLabIdContext || ""),
             nomor_inventaris: perangkat.nomor_inventaris || "",
           }));
           if (perangkat.foto_perangkat) {
@@ -107,8 +110,8 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
     setIsSubmitting(true);
     setError("");
 
-    if (!formData.nama_perangkat.trim() || !formData.status || !formData.lab_id || !formData.nomor_inventaris.trim()) {
-      setError("Nama Perangkat, Status, Lab, dan Nomor Inventaris wajib diisi.");
+    if (!formData.nama_perangkat.trim() || !formData.status || (!isOperational && !formData.lab_id)) {
+      setError("Nama Perangkat, Status, dan Lab wajib diisi.");
       setIsSubmitting(false);
       return;
     }
@@ -207,10 +210,10 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
 
         {/* Nomor Inventaris */}
         <div className="mb-4">
-          <label htmlFor="nomor_inventaris" className="block mb-2 font-medium text-md">Nomor Inventaris <span className="text-red-500">*</span></label>
+          <label htmlFor="nomor_inventaris" className="block mb-2 font-medium text-md">Nomor Inventaris (Opsional)</label>
           <input type="text" id="nomor_inventaris" name="nomor_inventaris" value={formData.nomor_inventaris} onChange={handleChange}
             className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12"
-            placeholder="Masukkan Nomor Inventaris Unik" required />
+            placeholder="Masukkan Nomor Inventaris Unik" />
         </div>
 
         {/* Laboratorium */}
@@ -219,10 +222,10 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
           {isFetchingLabs && allLabsForAdminDropdown.length === 0 && !isLabIdFieldDisabled ? <LoadingSkeleton variant="text" rows={1} label="Memuat laboratorium..." /> : <select
             id="lab_id" name="lab_id" value={formData.lab_id} onChange={handleChange}
             className={`shadow-sm border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12 ${isLabIdFieldDisabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
-            required
-            disabled={isLabIdFieldDisabled || (isAdmin && !isLabIdFieldDisabled && (isFetchingLabs || allLabsForAdminDropdown.length === 0))}
+            required={!isOperational}
+            disabled={isOperational || isLabIdFieldDisabled || (isAdmin && !isLabIdFieldDisabled && (isFetchingLabs || allLabsForAdminDropdown.length === 0))}
           >
-            {isLabIdFieldDisabled ? (
+            {isOperational ? <option value="">Operasional — tanpa laboratorium (kelola melalui Aset IT)</option> : isLabIdFieldDisabled ? (
               <option value={formData.lab_id}>
                 Lab ID: {formData.lab_id} (Tidak dapat diubah)
               </option>
@@ -245,12 +248,13 @@ const EditPerangkat = ({ id, labIdUntukEdit, onClose, onUpdate }) => {
         {/* Status Perangkat */}
         <div className="mb-4">
           <label htmlFor="status" className="block mb-2 font-medium text-md">Status Perangkat <span className="text-red-500">*</span></label>
-          <select id="status" name="status" value={formData.status} onChange={handleChange}
+          <select id="status" name="status" value={formData.status} disabled aria-describedby="maintenance-status-help"
             className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5 h-12" required >
             {statusPerangkatOptions.map(option => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
+          <p id="maintenance-status-help" className="mt-1 text-xs text-gray-500">Status kondisi dikelola melalui pemeriksaan dan perbaikan.</p>
         </div>
 
         {/* Spesifikasi */}

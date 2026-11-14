@@ -32,6 +32,7 @@ import db from './config/db.js';
 import { createTicketRouter } from './router/ticketRoutes.js';
 import { verifyToken } from './middleware/authMiddleware.js';
 import deletionRoutes from './router/deletionRoutes.js';
+import { createAssetRouter } from './router/assetRoutes.js';
 
 dotenv.config();
 
@@ -63,6 +64,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Definisi Rute API Anda
 app.use('/api', activityLog);
 app.use('/api/deletion', deletionRoutes);
+app.use('/api/assets', createAssetRouter(db, verifyToken));
 app.use('/api/tickets', createTicketRouter(db, verifyToken));
 app.use('/api/settings', settingsRoutes);
 app.use('/api/activity-logs', activityLogRoutes);

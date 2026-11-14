@@ -39,7 +39,7 @@ export const getAllPengecekan = async (req, res) => {
        FROM pengecekan p
        JOIN user u ON p.user_id = u.user_id
        JOIN perangkat d ON p.perangkat_id = d.perangkat_id
-       JOIN laboratorium l ON d.lab_id = l.lab_id -- JOIN baru ke tabel laboratorium
+       LEFT JOIN laboratorium l ON d.lab_id = l.lab_id -- JOIN baru ke tabel laboratorium
        ORDER BY p.tanggal_pengecekan DESC`
     );
 
@@ -77,7 +77,7 @@ export const getPengecekanById = async (req, res) => {
        FROM pengecekan p
        JOIN user u ON p.user_id = u.user_id
        JOIN perangkat d ON p.perangkat_id = d.perangkat_id
-       JOIN laboratorium l ON d.lab_id = l.lab_id
+       LEFT JOIN laboratorium l ON d.lab_id = l.lab_id
        WHERE p.pengecekan_id = ?`,
       [id]
     );

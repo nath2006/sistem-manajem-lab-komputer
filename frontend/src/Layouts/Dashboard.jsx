@@ -18,6 +18,7 @@ import {
   FaLaptopFile,
 
   FaComputer,
+  FaBoxesStacked,
   FaChevronDown,
 } from 'react-icons/fa6';
 import Tooltip from '../Components/Tooltip';
@@ -181,6 +182,10 @@ export const DashboardShell = ({ title, children, onReplayOnboarding }) => {
     data = menuKoordinatorLab;
   } else if (userRole === 'Teknisi') {
     data = menuTeknisi;
+  }
+
+  if (['Admin','Kepala Lab','Koordinator Lab','Teknisi','Guru'].includes(userRole)) {
+    data = [...data, {name:'Aset IT Sekolah',ic:<FaBoxesStacked />,to:'/aset-it'}];
   }
 
   if (!data.some((item) => item.to === '/ticketing')) {
