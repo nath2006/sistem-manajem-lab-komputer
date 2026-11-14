@@ -1,0 +1,30 @@
+@import "tailwindcss";
+@plugin "flowbite-react/plugin/tailwindcss";
+@source "../.flowbite-react/class-list.json";
+
+@theme {
+  --color-maroon: #800000;
+  --color-emas: #D4AF37;
+}
+
+
+
+.select-option:hover option:hover{
+    background-color: #f87171; /* Tailwind class: bg-red-500 */
+    color: #fff; 
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-bg{
+    animation: spinScale infinite 20s linear;
+  }
+}
+
+@keyframes spinScale {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
