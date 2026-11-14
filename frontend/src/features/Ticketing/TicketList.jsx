@@ -1,5 +1,6 @@
 import { button, labels } from './ticketingUi';
 import TableScrollRegion from '../../Components/TableScrollRegion';
+import TicketAssetLink from './TicketAssetLink';
 
 export default function TicketList({ tickets, onDetail }) {
   return (
@@ -26,6 +27,7 @@ export default function TicketList({ tickets, onDetail }) {
                       <td role="cell" data-label="Tiket" className="p-3 break-words"><span aria-hidden="true" className="mobile-cell-label sm:hidden">Tiket</span><div className="min-w-0 sm:contents">
                         <strong>{t.ticket_number}</strong>
                         <p>{t.title}</p>
+                        <TicketAssetLink ticket={t} />
                         <small>
                           {t.type} · {t.nama_lab || 'Tanpa lab'}
                         </small>

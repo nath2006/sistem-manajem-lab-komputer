@@ -6,7 +6,7 @@ const require = createRequire(import.meta.url);
 async function harness(entry, api) {
   let cursor = 0;
   const states = [], effects = [];
-  const hooks = { ...require('react'), useContext: () => ({state:{role:'Admin'}}), useCallback: fn => fn,
+  const hooks = { ...require('react'), useContext: () => ({state:{role:'Admin'}}), useCallback: fn => fn, useMemo: fn => fn(),
     useState(initial) { const i=cursor++; if (!(i in states)) states[i]=initial; return [states[i], next=>{states[i]=typeof next==='function'?next(states[i]):next;}]; },
     useEffect(fn) { if (effects.length < 2) effects.push(fn); } };
   globalThis.__assetRecoveryApi = api;
@@ -14,8 +14,11 @@ async function harness(entry, api) {
     b.onResolve({filter:/Context\/AuthContext$/},()=>({path:'auth',namespace:'test'}));
     b.onResolve({filter:/utils\/api$/},()=>({path:'api',namespace:'test'}));
     b.onResolve({filter:/useDeletionDialog$/},()=>({path:'deletion',namespace:'test'}));
+    // This hook-only recovery harness has no mounted router. Navigation is
+    // covered with the real App route tree in ticket-asset-navigation.test.mjs.
+    b.onResolve({filter:/^react-router-dom$/},()=>({path:'router',namespace:'test'}));
     b.onResolve({filter:/(Layouts\/Dashboard|ModalContainer|LoadingSpinner|Loading\/Skeleton|useObjectUrl|useTitle|AssetTable|AssetForm|AssetDetail)$/},()=>({path:'stub',namespace:'test'}));
-    b.onLoad({filter:/.*/,namespace:'test'},({path})=>({contents:path==='api'?'export const {get,putWithFile,post,put,deleteData}=globalThis.__assetRecoveryApi;':path==='auth'?'export const AuthContext={};':path==='deletion'?'export default ()=>({requestDeletion(){},dialog:null});':'export default function Stub(){return null;}'}));
+    b.onLoad({filter:/.*/,namespace:'test'},({path})=>({contents:path==='router'?'export const useSearchParams=()=>[new URLSearchParams(),()=>{}];':path==='api'?'export const {get,putWithFile,post,put,deleteData}=globalThis.__assetRecoveryApi;':path==='auth'?'export const AuthContext={};':path==='deletion'?'export default ()=>({requestDeletion(){},dialog:null});':'export default function Stub(){return null;}'}));
   }}]});
   const module={exports:{}};
   new Function('require','module','exports',result.outputFiles[0].text)(name=>name==='react'?hooks:require(name),module,module.exports);

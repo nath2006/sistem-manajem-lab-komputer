@@ -3277,7 +3277,9 @@ Error controller `{message}`: 400 input invalid (termasuk rentang tanggal SLA), 
 
 All authenticated users; technicians list only for managers/Teknisi, otherwise []. Devices and policies available to all.
 
-Sukses 200 `{data:{technicians:[{user_id,nama_lengkap}], devices:[{perangkat_id,nama_perangkat,nama_lab}], policies:[{priority,response_minutes,resolution_minutes}], types, categories}}`.
+Sukses 200 `{data:{technicians:[{user_id,nama_lengkap}], devices:[{perangkat_id,nama_perangkat,kategori,penggunaan,lokasi,nomor_inventaris,nama_lab}], policies:[{priority,response_minutes,resolution_minutes}], types, categories}}`.
+
+`devices` memakai identitas aset bersama pada tabel `perangkat`, mencakup Pembelajaran dan Operasional (termasuk Printer/Perangkat Jaringan), bukan tabel tiket/aset baru. `nama_lab`, `lokasi`, dan `nomor_inventaris` nullable; aset operasional dapat tanpa lab. Proyeksi opsi tidak memuat harga/sumber dana. Form Bantuan menampilkan klasifikasi/lokasi dan baris tiket menaut ke `/aset-it/{perangkat_id}`; akses detail aset tetap diverifikasi oleh endpoint aset. Nama menu **Bantuan** tetap memakai deep-link `/ticketing` dan target onboarding yang sama; tidak ada `/bantuan` atau endpoint tiket duplikat. Ringkasan adaptasi GLPI: `docs/TICKETING_SCHOOL.md`.
 
 #### PUT `/api/tickets/policies`
 

@@ -43,7 +43,7 @@ export function createTicketController(db, clock = () => new Date()) {
           : [];
       const devices = await query(
         db,
-        'SELECT d.perangkat_id,d.nama_perangkat,l.nama_lab FROM perangkat d LEFT JOIN laboratorium l ON l.lab_id=d.lab_id ORDER BY d.nama_perangkat'
+        'SELECT d.perangkat_id,d.nama_perangkat,d.kategori,d.penggunaan,d.lokasi,d.nomor_inventaris,l.nama_lab FROM perangkat d LEFT JOIN laboratorium l ON l.lab_id=d.lab_id ORDER BY d.nama_perangkat'
       );
       res.json({
         data: {

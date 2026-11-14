@@ -1,4 +1,5 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import Dashboard from "../../Layouts/Dashboard";
 import { AuthContext } from "../../Context/AuthContext";
 import { get, post, put, deleteData } from "../../utils/api";
@@ -14,6 +15,36 @@ const filterControl =
 export default function AsetIT() {
   useTitle("Aset IT Sekolah");
   const { state: user } = useContext(AuthContext);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const assetId = searchParams.get("asset");
+  const validAssetId = searchParams.getAll("asset").length === 1 &&
+    /^[1-9]\d*$/.test(assetId || "") && Number.isSafeInteger(Number(assetId));
+  const [selection, setSelection] = useState(null);
+  const [detailAttempt, setDetailAttempt] = useState(0);
+  // The auth reducer replaces state for each session, including same-user login.
+  // Keep ownership opaque and hide obsolete details during render, before effects.
+  const detailOwner = useMemo(() => ({ assetId, auth: user, attempt: detailAttempt }), [assetId, user, detailAttempt]);
+  const currentSelection = selection?.owner === detailOwner ? selection : null;
+  const closeDetail = () => {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.delete("asset");
+      return next;
+    });
+  };
+  useEffect(() => {
+    setSelection(null);
+    if (!validAssetId) return;
+    let active = true;
+    get(`/assets/${encodeURIComponent(assetId)}`)
+      .then((response) => {
+        if (active) setSelection({ owner: detailOwner, asset: response.data });
+      })
+      .catch((e) => {
+        if (active) setSelection({ owner: detailOwner, error: e.message || "Gagal memuat detail aset." });
+      });
+    return () => { active = false; };
+  }, [assetId, validAssetId, detailOwner]);
   const [data, setData] = useState([]),
     [labs, setLabs] = useState([]),
     [loading, setLoading] = useState(true),
@@ -156,12 +187,33 @@ export default function AsetIT() {
           data={visible}
           user={user}
           isLoading={loading}
-          onDetail={(asset) => setModal({ mode: "detail", asset })}
+          onDetail={(asset) => setSearchParams((previous) => {
+            const next = new URLSearchParams(previous);
+            next.set("asset", asset.perangkat_id);
+            return next;
+          })}
           onEdit={(asset) => setModal({ mode: "form", asset })}
           onDelete={requestDeletion}
         />
-        {modal?.mode === "detail" && (
-          <AssetDetail asset={modal.asset} onClose={() => setModal(null)} />
+        {assetId !== null && (
+          validAssetId && currentSelection?.asset ? (
+            <AssetDetail asset={currentSelection.asset} onClose={closeDetail} />
+          ) : (
+            <ModalContainer title="Detail Aset IT" onClose={closeDetail}>
+              {!validAssetId || currentSelection?.error ? (
+                <div role="alert" className="space-y-3 text-sm text-red-800">
+                  <p>{!validAssetId ? "Identitas aset tidak valid." : currentSelection.error}</p>
+                  {validAssetId && (
+                    <button type="button" className="min-h-11 rounded-lg border px-4" onClick={() => setDetailAttempt((previous) => previous + 1)}>
+                      Muat ulang detail
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <p role="status">Memuat detail aset...</p>
+              )}
+            </ModalContainer>
+          )
         )}
         {modal?.mode === "form" && (
           <ModalContainer

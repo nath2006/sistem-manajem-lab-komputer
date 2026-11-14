@@ -150,10 +150,10 @@ export default function Ticketing() {
     setFilters((previous) => ({ ...previous, [key]: value, page: 1 }));
   const actions = detail ? availableActions(detail, state || {}) : [];
   return (
-    <Dashboard title="Tiket Layanan">
+    <Dashboard title="Bantuan · Tiket Layanan">
       <div className="space-y-5">
         <header>
-          <h1 className="text-2xl font-bold text-maroon">Tiket Layanan</h1>
+          <h1 className="text-2xl font-bold text-maroon">Bantuan · Tiket Layanan</h1>
           <p className="text-gray-600">
             Manajemen incident dan service request sekolah; bukan sertifikasi
             ISO.

@@ -191,7 +191,7 @@ export const DashboardShell = ({ title, children, onReplayOnboarding }) => {
   if (!data.some((item) => item.to === '/ticketing')) {
     data = [
       ...data,
-      { name: 'Tiket Layanan', ic: <FaTicket />, to: '/ticketing' },
+      { name: 'Bantuan', ic: <FaTicket />, to: '/ticketing' },
     ];
   }
 

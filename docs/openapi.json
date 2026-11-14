@@ -15678,6 +15678,7 @@
               },
               "devices": {
                 "type": "array",
+                "description": "Shared perangkat assets: learning and operational assets including printers/network equipment. No financial fields.",
                 "items": {
                   "type": "object",
                   "properties": {
@@ -15687,6 +15688,21 @@
                     "nama_perangkat": {
                       "type": "string"
                     },
+                    "kategori": {
+                      "type": "string"
+                    },
+                    "penggunaan": {
+                      "type": "string",
+                      "enum": ["Pembelajaran", "Operasional"]
+                    },
+                    "lokasi": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "nomor_inventaris": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "nama_lab": {
                       "type": "string",
                       "nullable": true
@@ -15695,6 +15711,10 @@
                   "required": [
                     "perangkat_id",
                     "nama_perangkat",
+                    "kategori",
+                    "penggunaan",
+                    "lokasi",
+                    "nomor_inventaris",
                     "nama_lab"
                   ]
                 }
