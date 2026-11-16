@@ -92,8 +92,23 @@ export default function AssetQrLabel({ asset }) {
     }
   }
   async function printLabel() {
+    if (busy) return;
     setError("");
     setNotice("");
+    // Configuration needs an actionable explanation, not a permanently disabled
+    // control. The PDF builder independently enforces the same URL safety rules.
+    if (baseError) {
+      setError(`Perbaiki Alamat publik sekolah: ${baseError}`);
+      return;
+    }
+    if (loopback && !preview) {
+      setError("Untuk mencetak, isi Alamat publik sekolah dengan alamat LAN/domain yang dapat dibuka ponsel, atau centang ‘Izinkan pratinjau localhost saja’ untuk PDF uji lokal (bukan label inventaris).");
+      return;
+    }
+    if (!Number.isInteger(copies) || copies < 1 || copies > 24) {
+      setError("Isi Jumlah label dengan bilangan bulat 1–24.");
+      return;
+    }
     setBusy(true);
     try {
       if (
@@ -213,15 +228,22 @@ export default function AssetQrLabel({ asset }) {
               className="ml-3 min-h-11 w-20 rounded-lg border border-gray-300 p-2"
             />
           </label>
+          {(!Number.isInteger(copies) || copies < 1 || copies > 24) && (
+            <p role="status" className="text-sm text-red-700">
+              Isi Jumlah label dengan bilangan bulat 1–24 agar cetak aktif.
+            </p>
+          )}
+          {loopback && !preview && (
+            <p className="text-sm text-amber-900">
+              Cetak memerlukan alamat LAN/domain sekolah atau persetujuan pratinjau localhost di atas.
+            </p>
+          )}
           <button
             type="button"
             className={button}
             onClick={printLabel}
             disabled={
               busy ||
-              !!baseError ||
-              (loopback && !preview) ||
-              !image ||
               !Number.isInteger(copies) ||
               copies < 1 ||
               copies > 24

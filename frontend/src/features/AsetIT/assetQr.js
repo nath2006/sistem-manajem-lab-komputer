@@ -94,8 +94,21 @@ function showPdf(pdf, popup) {
     URL.revokeObjectURL(url);
     throw e;
   }
-  // Keep the printable PDF available after the dialog; bound the object URL lifetime.
-  setTimeout(() => URL.revokeObjectURL(url), 300000);
+  // A PDF belongs to its viewer, not to the mounted asset detail or a time limit.
+  // Keep older jobs printable while newer viewers open; release only this URL
+  // when its viewer closes. Document teardown also releases owned Blob URLs.
+  const releaseWhenClosed = () => {
+    let closed = false;
+    try {
+      // WindowProxy.closed can throw after browser isolation/navigation changes.
+      closed = popup.closed;
+    } catch {
+      // An unreadable handle is not evidence that the viewer has closed.
+    }
+    if (closed) URL.revokeObjectURL(url);
+    else setTimeout(releaseWhenClosed, 1000);
+  };
+  releaseWhenClosed();
 }
 export function createLabelPrintJob({
   open = () => window.open("about:blank", "_blank"),
