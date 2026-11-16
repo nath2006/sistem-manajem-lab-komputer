@@ -15,6 +15,7 @@ import { AuthContext } from '../../Context/AuthContext';
 import api from '../../utils/api';
 import {
   availableActions,
+  slaReadinessMessage,
   isManager,
   isTerminal,
 } from './ticketingHelpers.js';
@@ -149,6 +150,7 @@ export default function Ticketing() {
   const changeFilter = (key, value) =>
     setFilters((previous) => ({ ...previous, [key]: value, page: 1 }));
   const actions = detail ? availableActions(detail, state || {}) : [];
+  const slaMessage = options ? slaReadinessMessage(options.policies) : '';
   return (
     <Dashboard title="Bantuan · Tiket Layanan">
       <div className="space-y-5">
@@ -195,10 +197,18 @@ export default function Ticketing() {
             </div>
           ))}
         </div>
+        {slaMessage && (
+          <p role="alert" className="rounded bg-amber-100 p-3 text-amber-900">
+            {slaMessage}{' '}
+            <button className="min-h-11 underline" onClick={() => setOptionsRefresh(v => v + 1)}>
+              Muat ulang SLA
+            </button>
+          </p>
+        )}
         <div className="flex flex-wrap gap-3">
           <button
             className={button}
-            disabled={!options || saving}
+            disabled={!options || Boolean(slaMessage) || saving}
             onClick={() => {
               setError('');
               setModal('create');
