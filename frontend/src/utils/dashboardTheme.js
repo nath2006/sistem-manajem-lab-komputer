@@ -10,7 +10,16 @@ function safeAccent(color) {
   for (let step = 0; step <= 100; step++) { const candidate = mix(color, PALETTE.black, step / 100); if (contrastRatio(candidate, PALETTE.surface) >= 6) return candidate; }
   return PALETTE.black;
 }
-export function conditionTone(label) { return /rusak|perbaikan/i.test(label) ? 'warning' : /\bbaik\b|layak/i.test(label) ? 'success' : 'info'; }
+// Exact Chart.js 4.4.9 src/plugins/plugin.colors.ts BORDER_COLORS (installed source map).
+// Explicit assignment preserves semantic labels when server rows reorder/filter.
+export const DEFAULT_CHART_COLORS = Object.freeze(['rgb(54, 162, 235)', 'rgb(255, 99, 132)', 'rgb(255, 159, 64)', 'rgb(255, 205, 86)', 'rgb(75, 192, 192)', 'rgb(153, 102, 255)', 'rgb(201, 203, 207)']);
+export function conditionTone(label) {
+  const value = String(label || '').trim().replace(/\s+/g, ' ');
+  if (/rusak/i.test(value)) return 'danger';
+  if (/dalam perbaikan/i.test(value)) return 'info';
+  if (/perlu perbaikan|perbaikan/i.test(value)) return 'warning';
+  return /\bbaik\b|layak/i.test(value) ? 'success' : 'info';
+}
 export function dashboardTokens(value) {
   const primary = /^#[0-9a-f]{6}$/i.test(value) ? value : PALETTE.primary;
   const accent = safeAccent(primary);
@@ -18,7 +27,7 @@ export function dashboardTokens(value) {
     'card-medium': mix(primary, PALETTE.white, 0.7), 'card-strong': mix(primary, PALETTE.white, 0.65), 'card-light': mix(primary, PALETTE.white, 0.8),
     'chart-fill': mix(primary, PALETTE.white, 0.3),
     surface: PALETTE.surface, canvas: PALETTE.canvas, text: PALETTE.text, muted: PALETTE.muted, border: PALETTE.border, track: PALETTE.track,
-    // Coordinated action/status families include the live brand; never use Chart.js default colors.
+    // Readable semantic text/card tokens retain the live brand (not chart pigments).
     info: safeAccent(mix(PALETTE.info, primary, 0.3)), success: safeAccent(mix(PALETTE.success, primary, 0.3)), warning: safeAccent(mix(PALETTE.warning, primary, 0.3)), danger: safeAccent(mix(PALETTE.danger, primary, 0.3)),
     'card-info': mix(mix(PALETTE.info, primary, 0.3), PALETTE.white, 0.7),
     'card-success': mix(mix(PALETTE.success, primary, 0.3), PALETTE.white, 0.7),
@@ -26,9 +35,9 @@ export function dashboardTokens(value) {
     'series-0': accent, 'series-1': safeAccent(mix(PALETTE.info, primary, 0.3)), 'series-2': safeAccent(mix(PALETTE.success, primary, 0.3)), 'series-3': safeAccent(mix(PALETTE.warning, primary, 0.3)),
     'chart-0': primary,
   };
-  // Solid chart fills share the contrast-safe semantic tokens, not white blends.
-  for (const tone of ['info', 'success', 'warning', 'danger']) colors[`fill-${tone}`] = colors[tone];
-  for (const [index, tone] of ['info', 'success', 'warning'].entries()) colors[`chart-${index + 1}`] = colors[tone];
+  // Only chart pigments are fixed; metric cards/text retain live branding.
+  DEFAULT_CHART_COLORS.forEach((color, index) => { colors[`chart-${index}`] = color; });
+  for (const [tone, index] of Object.entries({ info: 0, success: 4, warning: 3, danger: 1 })) colors[`fill-${tone}`] = DEFAULT_CHART_COLORS[index];
   const tokens = Object.fromEntries(Object.entries(colors).map(([key, color]) => [`--dashboard-${key}`, color]));
   for (const key of ['card-info','card-success','card-warning','card-medium','card-strong','card-light','primary','info','success','warning','danger','series-0','series-1','series-2','series-3']) tokens[`--dashboard-on-${key}`] = foreground(colors[key]);
   return tokens;

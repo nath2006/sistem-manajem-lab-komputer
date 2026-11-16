@@ -2,6 +2,13 @@ import Tabel from "../../Layouts/Table";
 import RowActionButton from "../../Components/RowActionButton";
 import { FaEye, FaFilePen, FaTrash } from "react-icons/fa6";
 import { canWriteAsset, displayPrice, displayValue } from "./assetView";
+import { conditionTone } from "../../utils/dashboardTheme";
+const conditionClasses = {
+  success: "bg-emerald-50 text-emerald-700",
+  info: "bg-blue-50 text-blue-700",
+  warning: "bg-amber-50 text-amber-700",
+  danger: "bg-red-50 text-red-700",
+};
 const headers = [
   "Nama aset",
   "No. inventaris",
@@ -49,7 +56,11 @@ export default function AssetTable({
             displayPrice(asset.harga_beli),
           ].map((value, i) => (
             <td className="px-6 py-4" key={i}>
-              {displayValue(value)}
+              {i === 4 ? (
+                <span className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${conditionClasses[conditionTone(value)]}`}>
+                  {displayValue(value)}
+                </span>
+              ) : displayValue(value)}
             </td>
           ))}
           <td className="px-6 py-4">

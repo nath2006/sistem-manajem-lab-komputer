@@ -7,7 +7,8 @@ const conditionTone = label => theme.conditionTone?.(label);
 test('condition labels cannot mistake perbaikan for baik', () => {
  assert.equal(conditionTone('Perlu perbaikan'),'warning');
  assert.equal(conditionTone('Baik'),'success');
- assert.equal(conditionTone('Rusak berat'),'warning');
+ assert.equal(conditionTone('Rusak berat'),'danger');
+ assert.equal(conditionTone('Dalam Perbaikan'),'info');
  assert.equal(conditionTone('Tidak diketahui'),'info');
 });
 test('confident brand surfaces and coordinated series are derived from the configured theme', () => {
@@ -32,20 +33,10 @@ test('soft surfaces follow primary but readable outlines do not rely on pastel c
   assert.ok(contrastRatio(t['--dashboard-accent'], t['--dashboard-soft']) >= 4.5);
  }
 });
-test('chart fills use solid semantic tokens and update with the selected primary', () => {
- const primaries = ['#2563eb', '#15803d', '#ff0000', '#ffff00', '#f8fafc', '#000000', '#07152e'];
- for (const primary of primaries) {
+test('chart fills stay at official defaults while selected primary updates metric tokens', () => {
+ for (const primary of ['#2563eb','#15803d','#ff0000','#ffff00','#f8fafc','#000000','#07152e']) {
   const tokens = dashboardTokens(primary);
-  for (const tone of ['info', 'success', 'warning', 'danger']) {
-   assert.equal(tokens[`--dashboard-fill-${tone}`], tokens[`--dashboard-${tone}`]);
-   assert.ok(contrastRatio(tokens[`--dashboard-fill-${tone}`], tokens['--dashboard-surface']) >= 3);
-  }
-  assert.equal(tokens['--dashboard-chart-0'], primary);
-  for (const [index, tone] of ['info', 'success', 'warning'].entries()) {
-   assert.equal(tokens[`--dashboard-chart-${index + 1}`], tokens[`--dashboard-${tone}`]);
-  }
- }
- for (const tone of ['info', 'success', 'warning', 'danger']) {
-  assert.notEqual(dashboardTokens(primaries[0])[`--dashboard-fill-${tone}`], dashboardTokens(primaries[1])[`--dashboard-fill-${tone}`]);
+  assert.equal(tokens['--dashboard-primary'],primary);
+  for (const [tone,index] of Object.entries({info:0,success:4,warning:3,danger:1})) assert.equal(tokens[`--dashboard-fill-${tone}`],theme.DEFAULT_CHART_COLORS[index]);
  }
 });

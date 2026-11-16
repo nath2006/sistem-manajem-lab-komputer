@@ -3,6 +3,13 @@ import { Link, useParams } from "react-router-dom";
 import { AuthContext } from "../../Context/AuthContext";
 import { get } from "../../utils/api";
 import { displayPrice, displayValue } from "./assetView";
+import { conditionTone } from "../../utils/dashboardTheme";
+const conditionClasses = {
+  success: "bg-emerald-50 text-emerald-700",
+  info: "bg-blue-50 text-blue-700",
+  warning: "bg-amber-50 text-amber-700",
+  danger: "bg-red-50 text-red-700",
+};
 const button =
   "min-h-11 rounded-lg bg-maroon px-4 py-2 text-sm font-semibold text-white hover:bg-maroon/90 focus-visible:ring-2 focus-visible:ring-maroon disabled:opacity-50";
 export function VerificationView({ asset, privateData }) {
@@ -31,7 +38,11 @@ export function VerificationView({ asset, privateData }) {
           <div className="min-w-0 rounded-lg bg-gray-50 p-4" key={name}>
             <dt className="text-sm font-medium text-gray-500">{name}</dt>
             <dd className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-900">
-              {displayValue(value)}
+              {name === "Kondisi" ? (
+                <span className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${conditionClasses[conditionTone(value)]}`}>
+                  {displayValue(value)}
+                </span>
+              ) : displayValue(value)}
             </dd>
           </div>
         ))}

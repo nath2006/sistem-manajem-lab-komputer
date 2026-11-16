@@ -62,10 +62,8 @@ export default function DashboardChart({
     const token = (key) => tokens[`--dashboard-${key}`];
     const tone = (row) =>
       row.tone || (doughnut ? conditionTone(row.label) : null);
-    const outlines = rows.map((row, i) =>
-      token(
-        tone(row) === "primary" ? "accent" : tone(row) || `series-${i % 4}`,
-      ),
+    const fills = rows.map((row, i) =>
+      token(tone(row) === "primary" ? "chart-0" : tone(row) ? `fill-${tone(row)}` : `chart-${i % 7}`),
     );
     chart.data = {
       labels: rows.map((row) => row.label),
@@ -73,20 +71,12 @@ export default function DashboardChart({
         {
           label: "Jumlah",
           data: rows.map((row) => row.count),
-          backgroundColor: rows.map((row, i) =>
-            token(
-              tone(row) === "primary"
-                ? "primary"
-                : tone(row)
-                  ? `fill-${tone(row)}`
-                  : `chart-${i % 4}`,
-            ),
-          ),
-          borderColor: outlines,
+          backgroundColor: doughnut ? fills : fills.map(color => color.replace('rgb(', 'rgba(').replace(')', ', 0.5)')),
+          borderColor: fills,
           borderWidth: 2,
           borderRadius: doughnut ? 0 : 3,
           maxBarThickness: 28,
-          hoverBackgroundColor: outlines,
+          hoverBackgroundColor: fills,
         },
       ],
     };
