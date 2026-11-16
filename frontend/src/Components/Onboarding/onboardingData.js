@@ -1,109 +1,122 @@
 const task = (label, to, description) => ({ label, to, description });
+const dashboard = to => task('Buka dashboard', to, 'Lihat ringkasan kegiatan dan informasi terbaru yang tersedia untuk Anda');
+const schedule = task('Lihat jadwal lab', '/jadwal-lab', 'Periksa jadwal lab sebelum menentukan waktu penggunaan');
+const requests = task('Tinjau pengajuan jadwal', '/kelola-jadwal-lab', 'Tinjau pengajuan penggunaan lab dan perbarui keputusan sesuai tanggung jawab Anda');
+const inspections = task('Tinjau pemeriksaan perangkat', '/kelola-pemeriksaan-perangkat', 'Periksa hasil pengecekan perangkat untuk menentukan tindak lanjut');
+const labs = task('Kelola data lab', '/kelola/data-lab', 'Perbarui informasi laboratorium dan penanggung jawabnya');
+const announcements = task('Kelola pengumuman', '/kelola-pengumuman', 'Tulis dan perbarui pengumuman untuk pengguna sekolah');
+const repairs = task('Catat perbaikan perangkat', '/kelola-perbaikan', 'Catat pekerjaan perbaikan dan perbarui hasil penanganan perangkat');
+const checks = task('Catat pengecekan perangkat', '/kelola-pengecekan', 'Periksa perangkat lalu catat kondisi dan hasil pengecekannya');
 const roleTasks = {
   Admin: [
-    task('Kelola User', '/user', 'Kelola akun dan peran pengguna.'),
+    dashboard('/dashboard'),
+    inspections,
+    task('Kelola perangkat lab', '/kelola-perangkat', 'Kelola perangkat Pembelajaran di laboratorium sekolah'),
+    requests,
+    schedule,
+    labs,
+    announcements,
+    repairs,
+    checks,
+    task('Kelola akun pengguna', '/user', 'Tambah dan perbarui akun pengguna sesuai tugasnya'),
     task(
       'Pengaturan Sistem',
       '/pengaturan',
-      'Sesuaikan identitas dan tampilan sekolah.'
+      'Sesuaikan identitas dan tampilan sekolah'
     ),
-    task('Log Aktivitas', '/log-aktivitas', 'Tinjau catatan aktivitas sistem.'),
+    task('Lihat catatan aktivitas', '/log-aktivitas', 'Telusuri aktivitas pengguna saat Anda perlu memeriksa perubahan data'),
   ],
   Guru: [
+    dashboard('/dashboard-guru'),
     task(
       'Jadwal Lab',
       '/jadwal-lab',
-      'Periksa jadwal penggunaan laboratorium.'
+      'Periksa jadwal penggunaan laboratorium sebelum mengajukan waktu'
     ),
     task(
       'Pengajuan Jadwal Lab',
       '/pengajuan-jadwal-lab',
-      'Ajukan jadwal penggunaan laboratorium.'
+      'Ajukan waktu penggunaan laboratorium untuk kegiatan mengajar Anda'
     ),
     task(
       'Cek Status Pengajuan Jadwal',
       '/pengajuan-jadwal-lab/status',
-      'Pantau status pengajuan Anda.'
+      'Pantau keputusan pengajuan jadwal Anda sebelum menggunakan lab'
     ),
   ],
   'Kepala Lab': [
+    dashboard('/dashboard-kepala-lab'),
+    schedule,
     task(
       'Pengajuan Jadwal Lab',
       '/kelola-jadwal-lab',
-      'Tinjau dan kelola pengajuan jadwal.'
+      'Tinjau pengajuan jadwal penggunaan lab yang Anda pimpin'
     ),
     task(
       'Pemeriksaan Perangkat',
       '/kelola-pemeriksaan-perangkat',
-      'Tinjau hasil pemeriksaan perangkat.'
+      'Tinjau hasil pemeriksaan perangkat di lab yang Anda pimpin'
     ),
     task(
       'Kelola Data Perangkat',
       '/kelola-perangkat',
-      'Kelola inventaris perangkat laboratorium.'
+      'Kelola perangkat Pembelajaran di lab yang Anda pimpin'
     ),
   ],
   'Koordinator Lab': [
+    dashboard('/dashboard-koordinator-lab'),
     task(
       'Kelola Data Lab',
       '/kelola/data-lab',
-      'Kelola informasi laboratorium.'
+      'Perbarui informasi laboratorium dan penanggung jawabnya'
     ),
     task(
       'Kelola Pengumuman',
       '/kelola-pengumuman',
-      'Kelola pengumuman untuk pengguna.'
+      'Tulis dan perbarui pengumuman untuk pengguna sekolah'
     ),
   ],
   Teknisi: [
+    dashboard('/dashboard-teknisi'),
     task(
       'Pengecekan Perangkat',
       '/kelola-pengecekan',
-      'Catat dan perbarui hasil pengecekan perangkat.'
+      'Periksa perangkat lalu catat kondisi dan hasil pengecekannya'
     ),
     task(
       'Perbaikan Perangkat',
       '/kelola-perbaikan',
-      'Catat dan pantau pekerjaan perbaikan.'
+      'Catat pekerjaan perbaikan dan perbarui hasil penanganan perangkat'
     ),
   ],
 };
 const assetDescription = role => {
-  const overview = 'Lihat aset Pembelajaran dan Operasional, termasuk printer dan perangkat jaringan.';
-  if (role === 'Admin') return `${overview} Anda dapat kelola seluruh aset sekolah.`;
-  if (role === 'Kepala Lab') return `${overview} Kelola hanya aset Pembelajaran di lab yang Anda pimpin.`;
-  return `${overview} Akses Anda baca saja.`;
-};
-const qrDescription = role => {
-  const privacy = 'Pindai untuk verifikasi publik; data pengadaan tetap privat sesuai akses akun.';
-  if (role === 'Admin') return `Terbitkan QR untuk seluruh aset, lalu cetak label. ${privacy}`;
-  if (role === 'Kepala Lab') return `Terbitkan QR hanya untuk aset Pembelajaran di lab yang Anda pimpin. Lihat QR lain dan cetak label yang tersedia. ${privacy}`;
-  return `Lihat QR yang sudah ada dan cetak label. ${privacy}`;
+  if (role === 'Admin') return 'Kelola aset Operasional seperti printer dan perangkat jaringan lalu terbitkan QR sekali untuk verifikasi publik dan cetak ulang label saat diperlukan';
+  return 'Lihat aset Operasional seperti printer dan perangkat jaringan dengan akses baca saja serta QR yang dibuat sekali untuk verifikasi publik dan cetak ulang label yang tersedia';
 };
 const ticketDescription = {
-  Admin: 'Kelola kategori, prioritas, status dan penanggung jawab tiket; kaitkan aset serta tinjau komentar dan riwayat layanan sekolah.',
-  'Koordinator Lab': 'Koordinasikan penanggung jawab, kategori, prioritas dan status tiket; pantau aset terkait, komentar dan riwayat tindak lanjut.',
-  Teknisi: 'Tangani tiket yang ditugaskan kepada Anda; periksa kategori, prioritas dan aset, lalu perbarui status, komentar serta riwayat pekerjaan.',
-  Guru: 'Buat dan pantau tiket Anda: pilih kategori, jelaskan kebutuhan dan aset terkait; lihat prioritas, status, komentar serta riwayat bantuan.',
-  'Kepala Lab': 'Laporkan kebutuhan lab melalui tiket Anda; pilih kategori dan aset terkait, lalu pantau prioritas, status, komentar serta riwayat penanganan.',
+  Admin: 'Kelola tiket sekolah dan penanggung jawab lalu atur kategori prioritas status serta aset terkait dan tinjau komentar maupun riwayat penanganan',
+  'Koordinator Lab': 'Pantau tiket sekolah dan tentukan penanggung jawab lalu periksa kategori prioritas status aset terkait komentar serta riwayat tindak lanjut',
+  Teknisi: 'Lihat semua tiket dan tangani yang ditugaskan kepada Anda lalu periksa kategori prioritas aset serta perbarui status komentar dan riwayat pekerjaan',
+  Guru: 'Buat dan pantau tiket Anda dengan memilih kategori serta aset terkait lalu ikuti prioritas status komentar dan riwayat bantuan',
+  'Kepala Lab': 'Pantau tiket Anda dan tiket terkait aset di lab yang Anda pimpin lalu periksa kategori prioritas status aset komentar dan riwayat penanganan',
 };
 const chartDescription = {
-  Admin: 'Baca grafik kategori dan kondisi aset IT serta status tiket untuk memantau layanan sekolah.',
-  'Kepala Lab': 'Baca grafik kategori dan kondisi aset sekolah; status tiket mencakup laporan Anda dan aset di lab yang Anda pimpin.',
-  'Koordinator Lab': 'Gunakan grafik kategori dan kondisi aset serta status tiket untuk mengoordinasikan layanan sekolah.',
-  Teknisi: 'Baca grafik kategori dan kondisi aset serta status tiket sesuai akses Bantuan untuk memantau kebutuhan penanganan.',
-  Guru: 'Pantau grafik status tiket yang Anda laporkan untuk melihat perkembangan bantuan Anda.',
+  Admin: 'Baca grafik kategori dan kondisi aset IT serta status tiket untuk memantau layanan sekolah',
+  'Kepala Lab': 'Baca grafik kategori dan kondisi aset sekolah serta status tiket dari laporan Anda dan aset di lab yang Anda pimpin',
+  'Koordinator Lab': 'Gunakan grafik kategori dan kondisi aset serta status tiket untuk mengoordinasikan layanan sekolah',
+  Teknisi: 'Baca grafik kategori dan kondisi aset serta status tiket untuk memantau kebutuhan penanganan',
+  Guru: 'Pantau grafik status tiket yang Anda laporkan untuk melihat perkembangan bantuan Anda',
 };
 // Stable selectors point to the persistent shell; a tour never navigates.
 export const ROLE_STEPS = Object.fromEntries(
   Object.entries(roleTasks).map(([role, tasks]) => [role, [
-    { element: '[data-tour="content"]', title: 'Selamat datang', description: `Ruang kerja untuk peran ${role}. Panduan tidak mengubah data atau membuka halaman lain.` },
-    { element: '[data-tour-path="/aset-it"]', title: 'Aset IT Sekolah', description: assetDescription(role) },
-    { element: '[data-tour-path="/aset-it"]', title: 'QR dan verifikasi aset', description: qrDescription(role) },
+    { element: '[data-tour="content"]', title: 'Kenali ruang kerja Anda', description: 'Ikuti panduan otomatis yang tampil sekali untuk akun Anda tanpa mengubah data dan ingat bahwa data pengadaan tetap privat sesuai akses akun' },
     ...tasks.map(({label, to, description}) => ({element: `[data-tour-path="${to}"]`, title: label, description})),
-    { element: '[data-tour-path="/ticketing"]', title: 'Bantuan (Ticketing)', description: ticketDescription[role] },
+    { element: '[data-tour-path="/aset-it"]', title: 'Aset IT Sekolah', description: assetDescription(role) },
+    { element: '[data-tour-path="/ticketing"]', title: 'Bantuan', description: ticketDescription[role] },
     { element: '[data-tour="dashboard-charts"]', title: 'Grafik dashboard', description: chartDescription[role], optional: true },
-    { element: '[data-tour="profile"]', title: 'Panduan dan akun', description: 'Buka menu profil → Panduan awal untuk mengulang. Lewati atau Selesai menyimpan pilihan di browser ini; Escape hanya menutup.' },
+    { element: '[data-tour="profile"]', title: 'Ulangi panduan saat perlu', description: 'Pilih Panduan awal dari menu profil untuk mengulang kapan pun Anda membutuhkan bantuan' },
   ]])
 );
 

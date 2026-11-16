@@ -64,7 +64,7 @@ export function mountedInventory() {
   }
   for (const match of index.matchAll(/app\.(get|post|put|patch|delete|head|options)\(\s*['"]([^'"]+)['"]/g)) result.push({ method: match[1], path: match[2], source: 'backend/index.js', mount: 'app' });
   assert.ok(result.length > 80, 'Mount discovery unexpectedly incomplete');
-  assert.equal(imports.size, 20, 'New router import: review mount inventory adapter');
+  assert.equal(imports.size, 21, 'New router import: review mount inventory adapter');
   return result;
 }
 

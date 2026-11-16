@@ -12,6 +12,161 @@
     }
   ],
   "paths": {
+  "/api/onboarding": {
+    "get": {
+      "operationId": "getOnboarding",
+      "tags": [
+        "Onboarding"
+      ],
+      "summary": "Read account-wide onboarding state without consuming it",
+      "description": "Read account-wide onboarding state without consuming it. Requires the additive user.onboarding_seen_at migration; unavailable schema returns 503, never fake unseen. Cache-Control: private, no-store. All authenticated roles.",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "x-mounted": true,
+      "x-source": [
+        "backend/router/onboardingRoutes.js",
+        "backend/controllers/onboardingController.js",
+        "backend/services/onboardingService.js"
+      ],
+      "responses": {
+        "200": {
+          "description": "Account onboarding state",
+          "headers": {
+            "Cache-Control": {
+              "schema": {
+                "type": "string",
+                "example": "private, no-store"
+              }
+            }
+          },
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "data"
+                ],
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "required": [
+                      "seen",
+                      "seen_at"
+                    ],
+                    "properties": {
+                      "seen": {
+                        "type": "boolean"
+                      },
+                      "seen_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Invalid/expired token or invalid verified actor"
+        },
+        "403": {
+          "description": "Missing token (verifyToken)"
+        },
+        "404": {
+          "description": "Account not found"
+        },
+        "503": {
+          "description": "Onboarding schema unavailable; code ONBOARDING_SCHEMA_REQUIRED"
+        },
+        "500": {
+          "description": "Safe generic failure; no SQL details"
+        }
+      }
+    }
+  },
+  "/api/onboarding/claim": {
+    "post": {
+      "operationId": "claimOnboarding",
+      "tags": [
+        "Onboarding"
+      ],
+      "summary": "Atomically consume the first automatic display attempt",
+      "description": "Atomically consume the first automatic display attempt. Exactly one concurrent caller wins. Claim before display, not on completion: dismiss, Escape, skip and done do not reset state. Manual replay is client-side and must not reset or claim again. Role/version changes do not reset state. Body/query identifiers are ignored; identity is verified req.user.id only. Requires the additive user.onboarding_seen_at migration; unavailable schema returns 503, never fake unseen. Cache-Control: private, no-store. All authenticated roles.",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "x-mounted": true,
+      "x-source": [
+        "backend/router/onboardingRoutes.js",
+        "backend/controllers/onboardingController.js",
+        "backend/services/onboardingService.js"
+      ],
+      "responses": {
+        "200": {
+          "description": "Account onboarding state",
+          "headers": {
+            "Cache-Control": {
+              "schema": {
+                "type": "string",
+                "example": "private, no-store"
+              }
+            }
+          },
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "data"
+                ],
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "required": [
+                      "should_show",
+                      "seen_at"
+                    ],
+                    "properties": {
+                      "should_show": {
+                        "type": "boolean"
+                      },
+                      "seen_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Invalid/expired token or invalid verified actor"
+        },
+        "403": {
+          "description": "Missing token (verifyToken)"
+        },
+        "404": {
+          "description": "Account not found"
+        },
+        "503": {
+          "description": "Onboarding schema unavailable; code ONBOARDING_SCHEMA_REQUIRED"
+        },
+        "500": {
+          "description": "Safe generic failure; no SQL details"
+        }
+      }
+    }
+  },
     "/api/dashboard/insights": {
       "get": {
         "operationId": "getDashboardInsights",

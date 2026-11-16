@@ -185,6 +185,7 @@ model user {
   email                                            String          @unique(map: "email") @db.VarChar(100)
   role                                             user_role
   is_online                                        Boolean         @default(false)
+  onboarding_seen_at                               DateTime?       @db.DateTime(0)
   jadwal_lab                                       jadwal_lab[]
   laboratorium                                     laboratorium[]
   laporan                                          laporan[]

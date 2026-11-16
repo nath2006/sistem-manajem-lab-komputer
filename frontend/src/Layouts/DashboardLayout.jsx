@@ -14,7 +14,7 @@ export default function DashboardLayout() {
   const context = useMemo(() => ({ setTitle }), []);
   return (
     <DashboardShell title={title} onReplayOnboarding={identity ? () => onboardingRef.current?.replay() : undefined}>
-      {identity && <Onboarding key={identity} ref={onboardingRef} identity={identity} role={state.role} />}
+      {identity && <Onboarding key={identity} ref={onboardingRef} identity={identity} role={state.role} token={state.token} />}
       <DashboardContext.Provider value={context}>
         <RouteBoundary />
       </DashboardContext.Provider>

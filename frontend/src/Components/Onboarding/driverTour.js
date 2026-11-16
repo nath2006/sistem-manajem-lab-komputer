@@ -10,7 +10,7 @@ export function visibleTarget(element) {
   return element.getClientRects().length > 0 && style.visibility !== 'hidden' && style.display !== 'none';
 }
 
-export function startTour({ identity, role, schoolName }) {
+export function startTour({ identity, role, schoolName, authorize, isCurrent = () => true }) {
   activeStop?.();
   const focus = document.activeElement;
   const scroll = [window.scrollX, window.scrollY];
@@ -24,23 +24,23 @@ export function startTour({ identity, role, schoolName }) {
     request.sidebar = sidebar;
     document.dispatchEvent(new CustomEvent('lab:tour-shell', { detail: request }));
   };
-  const stop = () => {
+  const stop = (restore = !authorize || Boolean(instance)) => {
     if (stopped) return;
     stopped = true;
     cancelAnimationFrame(frame);
     instance?.destroy();
     document.dispatchEvent(new CustomEvent('lab:tour-shell', { detail: null }));
     releaseScroll?.();
-    for (const [el, top] of scrollers) if (el.isConnected) el.scrollTop = top;
-    window.scrollTo(...scroll);
+    for (const [el, top] of scrollers) if (restore && el.isConnected) el.scrollTop = top;
+    if (restore) window.scrollTo(...scroll);
     const returnFocus = focus?.isConnected && focus.tagName !== 'BODY' ? focus : document.querySelector('[data-tour="profile"]');
-    if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
+    if (restore && returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
     if (activeStop === stop) activeStop = undefined;
   };
   activeStop = stop;
-  const finish = action => { completeOnboarding(identity, action); stop(); };
+  const finish = action => { if (!stopped && isCurrent()) completeOnboarding(identity, action); stop(); };
   let definitions = [];
-  prepare(false);
+  prepare(true);
   // Wait for React to commit drawer state before querying or measuring targets.
   const defer = callback => {
     cancelAnimationFrame(frame);
@@ -57,19 +57,32 @@ export function startTour({ identity, role, schoolName }) {
       instance.moveTo(index);
     });
   };
-  defer(() => {
+  let readinessAttempts = 0;
+  const begin = async () => {
     definitions = getTourSteps(role, selector => visibleTarget(document.querySelector(selector)));
-    const first = document.querySelector(definitions[0]?.element);
-    if (!visibleTarget(first)) return stop();
+    if (!isCurrent() || stopped) return stop(false);
+    const ready = definitions.length && definitions.every(step => visibleTarget(document.querySelector(step.element)));
+    if (!ready) {
+      if (++readinessAttempts < 120) return defer(begin);
+      return stop(false);
+    }
+    try {
+      if (authorize && !await authorize()) return stop(false);
+    } catch { return stop(false); }
+    if (stopped || !isCurrent()) return;
+    prepare(false);
+    defer(() => {
+    if (!isCurrent() || stopped) return stop(false);
+    if (!visibleTarget(document.querySelector(definitions[0]?.element))) return stop(false);
     releaseScroll = acquireBodyScrollLock();
     instance = driver({
       animate: false, smoothScroll: false, allowClose: true,
       overlayClickBehavior: 'none', disableActiveInteraction: true,
       allowKeyboardControl: false, stagePadding: 5, stageRadius: 12,
       popoverClass: 'lab-tour', showProgress: true,
-      progressText: '{{current}} / {{total}}',
-      nextBtnText: 'Berikutnya', prevBtnText: 'Kembali', doneBtnText: 'Selesai',
-      closeBtnLabel: 'Tutup panduan (Escape)',
+      progressText: '{{current}} dari {{total}}',
+      nextBtnText: 'Lanjut', prevBtnText: 'Kembali', doneBtnText: 'Selesai',
+      closeBtnLabel: 'Tutup panduan dengan Escape',
       steps: definitions.map(step => ({ element: step.element, popover: { title: 'Panduan awal', description: 'Panduan', side: 'bottom', align: 'start' } })),
       onNextClick: () => move(instance.getActiveIndex() + 1),
       onPrevClick: () => move(instance.getActiveIndex() - 1),
@@ -81,7 +94,7 @@ export function startTour({ identity, role, schoolName }) {
         const colors = getTourColors(getComputedStyle(document.documentElement).getPropertyValue('--color-maroon').trim());
         for (const [name, value] of Object.entries(colors)) popover.wrapper.style.setProperty(`--tour-${name}`, value);
         // Driver strings are HTML. All school/role text enters via textContent only.
-        popover.title.textContent = index === 0 ? `Selamat datang · ${schoolName || 'Sekolah'}` : step.title;
+        popover.title.textContent = index === 0 ? `Selamat datang di ${schoolName || 'Sekolah'}` : step.title;
         popover.description.textContent = step.description;
         popover.wrapper.setAttribute('aria-label', 'Panduan awal');
         const skip = document.createElement('button');
@@ -102,6 +115,8 @@ export function startTour({ identity, role, schoolName }) {
       },
     });
     instance.drive();
-  });
+    });
+  };
+  defer(begin);
   return stop;
 }

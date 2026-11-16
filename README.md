@@ -1,32 +1,50 @@
-# Sistem Informasi Manajemen Lab Komputer
+# Letris
 
-Aplikasi sekolah berbasis **React 19/Vite, Express 5, MySQL (mysql2 dan Prisma)** untuk laboratorium, inventaris, jadwal, maintenance dan bantuan layanan. Dokumentasi proyek disatukan di README ini. **[openapi.json](openapi.json) di root adalah satu-satunya referensi kontrak API**: operasi, autentikasi, parameter, payload, respons dan error. Impor ke klien OpenAPI; tidak ada Swagger UI baru.
+Letris membantu sekolah mengelola laboratorium komputer, aset IT, jadwal pemakaian, dan laporan kerusakan. Guru dapat mengajukan jadwal, pengelola memantau inventaris, dan teknisi mencatat perbaikan dalam satu aplikasi.
+
+Dibangun dengan React 19, Vite, Express 5, dan MySQL.
+
+[Fitur](#fitur-dan-lima-peran) · [Mulai menggunakan](#mulai-menggunakan-letris) · [Dokumentasi API](openapi.json) · [Diagram](#use-case-diagram) · [Pengembangan](#struktur-dan-pengujian)
 
 ## Fitur dan lima peran
 
-- Dashboard sesuai peran dengan ringkasan, grafik, antrean dan tautan ke data terkait.
-- Laboratorium, penanggung jawab, perangkat Pembelajaran, pemeriksaan, temuan, troubleshoot dan riwayat perbaikan.
-- **Aset IT Sekolah** untuk inventaris Operasional, termasuk komputer, laptop, monitor, printer, perangkat jaringan dan proyektor. Identitas tetap `perangkat_id`, bukan tabel aset duplikat. Pembelajaran wajib mempunyai lab; Operasional tidak mempunyai lab. Lokasi/pengadaan opsional; harga memakai string desimal, bukan float.
-- QR stabil, verifikasi publik dan label PDF berulang. Detail aset dari tiket memakai `/aset-it?asset=<id>`, termasuk aset Pembelajaran yang tidak muncul pada daftar Operasional.
-- **Bantuan · Tiket Layanan** (`/ticketing`): insiden/permintaan layanan, klasifikasi dampak–urgensi, prioritas P1–P4, penugasan, komentar, riwayat dan SLA.
-- Pengajuan/persetujuan jadwal, pengumuman/lampiran, nama/logo/warna sekolah dan konfigurasi jam pelajaran.
-- Navigasi persisten, tabel native dengan scroll lokal, skeleton, error/retry, serta onboarding Driver.js yang dapat diulang dari profil. Penyelesaian panduan disimpan per akun/peran/versi di browser, bukan lintas perangkat.
+- Lihat ringkasan aset, kondisi perangkat, dan perkembangan tiket dari dashboard.
+- Kelola data lab dan perangkat yang digunakan untuk pembelajaran.
+- Catat aset Operasional sekolah, termasuk printer, proyektor, dan perangkat jaringan.
+- Terbitkan QR aset, buka halaman verifikasinya, dan cetak ulang label saat diperlukan.
+- Laporkan masalah melalui Bantuan lalu ikuti penanganannya lewat status dan komentar.
+- Catat pemeriksaan dan perbaikan tanpa kehilangan riwayat pekerjaan sebelumnya.
+- Ajukan jadwal lab dan periksa hasil persetujuannya.
+- Bagikan pengumuman beserta lampiran kepada pengguna.
+- Sesuaikan nama, logo, warna sekolah, dan jam pelajaran.
+
+Panduan awal menjelaskan menu yang tersedia bagi setiap pengguna. Panduan otomatis muncul sekali per akun dan statusnya disimpan di database. Untuk mengulangnya, pilih **Panduan awal** dari menu profil.
 
 | Peran | Tanggung jawab dan batas |
 | --- | --- |
-| **Admin** | Akun, pengaturan, log aktivitas, lab/pengumuman, semua aset, maintenance/jadwal, triase dan penugasan tiket, kebijakan SLA. |
-| **Koordinator Lab** | Lab/pengumuman; seluruh tiket, klasifikasi dan penugasan. Aset hanya baca; tidak mengubah kebijakan SLA. |
-| **Kepala Lab** | Perangkat Pembelajaran dan penerbitan QR hanya pada lab tanggung jawabnya; pemeriksaan dan pengelolaan pengajuan jadwal. Melihat tiket sendiri atau terkait aset labnya; hak pelapor hanya untuk tiket yang dilaporkannya sendiri. |
-| **Teknisi** | Temuan, troubleshoot/perbaikan dan seluruh antrean tiket; mengambil tiket belum ditugaskan dan mengerjakan tiket miliknya, bukan mengambil alih teknisi lain. Aset hanya baca. |
-| **Guru** | Ajukan/lihat status jadwal, lihat jadwal, laporkan dan ikuti tiket sendiri. Aset hanya baca. |
+| **Admin** | Mengelola akun, lab, aset, pengumuman, jadwal, pengaturan, log aktivitas, penugasan tiket, dan kebijakan SLA. |
+| **Koordinator Lab** | Mengelola lab dan pengumuman serta mengatur penanggung jawab tiket sekolah. Dapat melihat aset tetapi tidak mengubahnya. |
+| **Kepala Lab** | Mengelola perangkat Pembelajaran dan QR pada lab yang dipimpin serta meninjau pengajuan jadwal. Dapat melihat tiket sendiri dan tiket terkait aset labnya. |
+| **Teknisi** | Memeriksa perangkat, mencatat perbaikan, dan melihat antrean tiket. Dapat mengambil tiket yang belum ditugaskan dan mengerjakan tiket miliknya. |
+| **Guru** | Melihat jadwal, mengajukan pemakaian lab, memeriksa hasil pengajuan, serta membuat dan mengikuti tiket sendiri. |
 
-Semua peran login dapat membaca inventaris termasuk pengadaan dan mencetak QR yang sudah terbit. Otorisasi backend tetap menentukan izin, bukan sekadar menu tersembunyi. Pengunjung tanpa login hanya memperoleh proyeksi QR/pengumuman publik, bukan dashboard atau pengadaan.
+Semua pengguna yang sudah login dapat melihat inventaris dan data pengadaan serta mencetak label QR yang sudah diterbitkan. Koordinator, Teknisi, dan Guru tidak dapat mengubah aset. Pengunjung tanpa login hanya dapat membaca informasi QR dan pengumuman publik.
 
-## Setup: tetap gunakan database dan konfigurasi saat ini
+## Cara kerja
 
-Prasyarat: **Node.js >=24**, npm, serta MySQL **yang sudah tersedia dan skemanya kompatibel**. Gunakan konfigurasi lokal yang sudah ada; jangan mengganti target database untuk mengikuti README ini.
+Perangkat untuk pembelajaran dikelola melalui **Kelola Data Perangkat** dan terhubung dengan labnya. Menu **Aset IT Sekolah** digunakan untuk perangkat Operasional. Tahun pengadaan, sumber dana, dan harga beli boleh dikosongkan jika belum diketahui.
 
-Dari root:
+Saat perangkat bermasalah, pengelola dapat mencatat temuan dan teknisi menambahkan hasil perbaikan. Tiket di menu Bantuan membantu pengguna mengikuti penanganan masalah. Aset boleh dikaitkan ke tiket, tetapi tidak wajib.
+
+Untuk pemakaian lab, Guru mengajukan waktu yang diinginkan. Admin atau Kepala Lab meninjau pengajuan dan sistem memeriksa bentrok jadwal sebelum menyetujuinya.
+
+## Mulai menggunakan Letris
+
+Siapkan **Node.js 24 atau lebih baru**, npm, dan MySQL dengan skema yang sesuai. Jika melanjutkan instalasi yang sudah berjalan, tetap gunakan database dan konfigurasi lokal yang sama.
+
+### Pasang dependensi
+
+Jalankan dari folder utama proyek:
 
 ```sh
 npm ci
@@ -34,7 +52,9 @@ npm --prefix frontend ci
 npm --prefix backend ci
 ```
 
-Jalankan pada dua terminal dari root, hanya jika instance aplikasi belum aktif:
+### Jalankan aplikasi
+
+Buka dua terminal dari folder utama. Jika server sudah berjalan, tidak perlu menjalankannya lagi.
 
 ```sh
 # Terminal backend
@@ -48,13 +68,23 @@ cd frontend
 npm run dev
 ```
 
-Backend memakai `PORT` yang dikonfigurasi (fallback 5000); Vite dikonfigurasi pada 5174. Gunakan alamat aktual pada output startup. Ctrl+C hanya untuk server yang Anda jalankan sendiri.
+Frontend menggunakan port `5174`. Backend mengikuti nilai `PORT` pada konfigurasi dan menggunakan `5000` jika nilai itu belum diatur. Buka alamat yang ditampilkan saat server berhasil berjalan.
 
-- mysql2 memakai `DB_*`, Prisma memakai `DATABASE_URL`; keduanya harus menunjuk **database yang sama**. Jangan mencetak nilai koneksi, token atau sandi.
-- Development memakai proxy Vite same-origin `/api` dan `/uploads`; tujuan mengikuti `VITE_BASE_URL`, `VITE_ASSET_BASE_URL` dan bila diperlukan `VITE_DEV_PROXY_TARGET`. Dari HP satu jaringan, buka IP komputer pada port frontend, bukan localhost HP; akses firewall/jaringan harus diizinkan.
-- Production memakai konfigurasi saat build. Siapkan HTTPS, reverse proxy dan SPA fallback agar deep link bekerja. Proxy development bukan konfigurasi deployment.
-- Startup tidak otomatis menerapkan migrasi. Bila skema belum siap, minta operator meninjau kompatibilitas/backup **pada database yang sama** sebelum tindakan terpisah; migrasi bertanda review-only bukan bootstrap produksi.
-- **Tidak ada create/clone/switch/reset database, seed akun atau penerapan SQL otomatis dalam setup ini.** Jangan menjalankan runner review historis pembuat database baru untuk setup biasa. Tidak ada akun/sandi demo dipublikasikan.
+Konfigurasi `DB_*` digunakan oleh mysql2, sedangkan `DATABASE_URL` digunakan oleh Prisma. Keduanya harus mengarah ke **database yang sama**. Jangan masukkan sandi, token, atau nilai koneksi ke repository.
+
+Perintah di atas hanya memasang dependensi dan menjalankan aplikasi. Perintah tersebut tidak membuat, menyalin, mengganti, atau mereset database dan tidak membuat akun demo. Migrasi juga tidak dijalankan otomatis. Jika skema belum sesuai, minta pengelola meninjau migrasi dan backup pada database yang sama sebelum menerapkannya. Skrip review bukan langkah instalasi biasa.
+
+### Akses dari perangkat lain
+
+Untuk membuka aplikasi dari HP pada jaringan yang sama, gunakan alamat IP komputer dan port frontend. Jangan gunakan `localhost` di HP karena alamat itu menunjuk ke HP tersebut. Pastikan jaringan dan firewall mengizinkan akses.
+
+Saat pengembangan, Vite meneruskan `/api` dan `/uploads` ke backend. Tujuannya mengikuti `VITE_BASE_URL`, `VITE_ASSET_BASE_URL`, dan bila diperlukan `VITE_DEV_PROXY_TARGET`. Untuk penggunaan di server, siapkan HTTPS, reverse proxy, dan pengaturan agar tautan halaman React tetap bisa dibuka langsung. Konfigurasi produksi dibaca saat build.
+
+## Dokumentasi API
+
+Seluruh endpoint, aturan autentikasi, parameter, contoh data, dan respons tersedia di **[openapi.json](openapi.json)**. Impor file tersebut ke aplikasi yang mendukung OpenAPI untuk membaca atau mencoba API.
+
+Tidak ada halaman Swagger UI bawaan. Membuka file spesifikasi tidak berarti semua endpoint dapat digunakan tanpa login.
 
 ## Struktur dan pengujian
 
@@ -72,7 +102,7 @@ test/
   contracts/           Tes kontrak
 ```
 
-Setelah instalasi root dan kedua aplikasi, jalankan dari root:
+Setelah dependensi terpasang, jalankan pemeriksaan dari folder utama:
 
 ```sh
 npm test
@@ -84,11 +114,13 @@ npm run lint
 npm run build
 ```
 
-`npm test` memakai `test/run.mjs`; tes proyek terpusat di `test/{frontend,backend,shared,contracts}`, bukan tersebar dalam direktori produksi. Tes dengan boundary sintetis bukan UAT login produksi, persistensi MySQL aktual, kamera HP atau printer fisik. Jalankan suite pada working tree yang akan dirilis; angka tes/review lama bukan hasil revisi saat ini. Pengujian yang menulis database membutuhkan persetujuan terpisah dan bukan bagian setup di atas.
+`npm test` menjalankan seluruh suite melalui `test/run.mjs`. Perintah lainnya berguna saat hanya ingin memeriksa satu bagian. Semua tes, fixture, dan skrip pengujian berada di folder `test/`.
+
+Tes otomatis memeriksa perilaku kode, tetapi tidak menggantikan uji penggunaan dengan akun sebenarnya, database MySQL, kamera, atau printer fisik. Pengujian yang mengubah data membutuhkan persetujuan terpisah dan tidak termasuk langkah instalasi.
 
 ## Use Case Diagram
 
-**Flowchart Mermaid dengan aktor dan use case oval**, bukan renderer UML use-case native. Diagram merangkum interaksi; batas akses tetap mengikuti tabel peran dan backend.
+Diagram ini menunjukkan siapa yang menggunakan setiap fitur. Hak akses lebih rinci mengikuti pembagian peran di atas dan pemeriksaan pada backend.
 
 ```mermaid
 flowchart LR
@@ -156,15 +188,17 @@ flowchart TD
   L -. Pemindai membuka label .-> P[Verifikasi publik; pengadaan perlu login]
 ```
 
-- Penerbitan eksplisit idempoten: mengembalikan UUID yang sama. Edit inventaris/rotasi JWT tidak mengganti QR; penghapusan aset membuat tautan lama tidak ditemukan. Belum ada rotasi/revoke QR. QR menunjuk catatan inventaris, **bukan sertifikat keaslian fisik atau kepemilikan**.
-- Publik hanya melihat identitas, spesifikasi, inventaris, kondisi, kategori, penggunaan dan lokasi/lab; bukan foto, pengadaan atau identitas pengguna. Pengadaan diminta terpisah setelah login; pergantian sesi menyembunyikan hasil privat lama.
-- Base URL mengikuti frontend/base deployment, opsional `VITE_QR_PUBLIC_ORIGIN` atau alamat publik sekolah. Jangan tempel label localhost. Pertahankan domain/base path setelah label dipasang.
-- PDF A4 berisi 10 label 90 × 50 mm per halaman, maksimal 24 salinan per job. Cetak ulang tidak menerbitkan UUID, mengonsumsi label atau mengubah aset. Hanya klik selama job berjalan yang ditekan.
-- Setiap Blob URL mengikuti viewer masing-masing, dilepas setelah viewer ditutup, bukan timeout lima menit. Menutup detail tidak menutup viewer. Reload setelah dokumen pembuka dihancurkan tidak dijamin; dialog OS/printer fisik bergantung lingkungan pengguna.
+QR diterbitkan sekali dan tetap memakai identitas yang sama saat label dicetak ulang. Mengubah data inventaris tidak mengganti QR. Jika aset dihapus, tautan lamanya tidak lagi menemukan data. QR adalah tautan ke catatan inventaris, bukan bukti keaslian atau kepemilikan barang.
+
+Halaman publik menampilkan identitas, spesifikasi, nomor inventaris, kondisi, kategori, penggunaan, dan lokasi aset. Foto, data pengadaan, dan identitas pengguna tidak ditampilkan di halaman publik. Data pengadaan baru diminta setelah pengguna login.
+
+Gunakan alamat sekolah yang dapat dibuka ponsel sebelum mencetak label. Alamat dapat diatur melalui `VITE_QR_PUBLIC_ORIGIN` atau kolom alamat publik. Jangan tempel label yang mengarah ke localhost dan pertahankan domain serta jalur halaman setelah label dipasang.
+
+PDF memakai kertas A4 dengan label 90 × 50 mm dan 10 label per halaman. Pengguna dapat memilih 1 sampai 24 salinan dalam satu proses. PDF tetap tersedia selama penampilnya terbuka dan mencetak ulang tidak mengubah data aset. Kemampuan dialog cetak dan printer fisik perlu diperiksa pada perangkat yang digunakan.
 
 ### Tiket layanan dan pengajuan jadwal
 
-Dua alur independen; tiket tidak wajib terkait pengajuan jadwal.
+Tiket layanan dan pengajuan jadwal berjalan terpisah. Pengguna tidak perlu membuat pengajuan jadwal untuk melaporkan masalah.
 
 ```mermaid
 flowchart TD
@@ -203,24 +237,37 @@ flowchart TD
   end
 ```
 
-- Aset pada tiket opsional. Impor temuan dilakukan **eksplisit dan idempoten** oleh Admin/Koordinator/Teknisi; temuan baru tidak otomatis menjadi tiket. Resolve tiket impor ditolak sebelum sumber temuan sudah ditangani. Status perbaikan perangkat dan verifikasi tiket berbeda: menutup tiket tidak menciptakan perbaikan fiktif.
-- Pending dari assigned/in_progress, resume ke in_progress. Pelapor/pengelola dapat membatalkan selama belum closed/cancelled sesuai izin. Reopen dari resolved/closed mempertahankan riwayat. Komentar/eskalasi mengikuti scope. Pembaruan memakai `version`; konflik stale/bersamaan menghasilkan 409 dan perlu muat ulang.
-- Prioritas dihitung dari dampak dan urgensi. SLA adalah snapshot saat pembuatan, **24×7 elapsed time**: pending tidak menghentikan jam; reopen tidak mereset waktu awal. Kebijakan baru tidak diam-diam menggeser tiket lama. Default contoh respons/resolusi (menit): P1 15/240, P2 60/480, P3 240/1440, P4 480/4320; sekolah harus menyetujui target sendiri.
-- Jadwal memakai konfigurasi awal/akhir hari dan durasi pelajaran. Slot berdampingan bukan overlap; persetujuan memeriksa ulang konflik, bukan menimpa jadwal lain. Guru mengikuti hasil melalui status pengajuan.
+Temuan pemeriksaan tidak otomatis menjadi tiket. Admin, Koordinator, atau Teknisi dapat mengimpornya melalui tindakan yang tersedia tanpa menggandakan temuan yang sama. Tiket hasil impor baru dapat dinyatakan selesai setelah temuan sumbernya ditangani. Menutup tiket tidak menggantikan pencatatan hasil perbaikan.
+
+Tiket dapat ditunda dengan alasan, dilanjutkan, atau dibuka kembali sesuai izin pengguna. Riwayat tetap disimpan. Jika dua pengguna memperbarui tiket yang sama, sistem dapat meminta data dimuat ulang sebelum perubahan berikutnya disimpan.
+
+Prioritas tiket mengikuti dampak dan urgensinya. Target respons dan penyelesaian disimpan saat tiket dibuat. Perhitungan berjalan sepanjang waktu termasuk saat tiket ditunda, dan membuka ulang tiket tidak mereset waktu awal. Contoh target respons dan penyelesaian dalam menit adalah P1 15/240, P2 60/480, P3 240/1440, dan P4 480/4320. Sekolah perlu menentukan target yang sesuai dengan layanannya.
+
+Jadwal mengikuti jam sekolah dan durasi pelajaran yang diatur pengelola. Jadwal yang bersebelahan diperbolehkan. Saat menyetujui pengajuan, sistem memeriksa bentrok sekali lagi dan menolak pengajuan jika waktunya sudah terpakai. Guru dapat melihat hasilnya melalui menu status pengajuan.
 
 ## Keamanan dan batas operasional
 
-- Hapus dimulai dari preview relasi; backend memeriksa ulang izin/keterkaitan dalam transaksi. Histori pemeriksaan, temuan, perbaikan dan tiket **tidak dihapus otomatis**. Konflik menghasilkan 409; alihkan tanggung jawab/pindahkan aset melalui fitur yang tersedia, bukan menghapus histori agar lolos.
-- Kondisi aset: Baik, Rusak, Perlu Perbaikan, Dalam Perbaikan. Perubahan manual ditolak bila ada temuan aktif; selesaikan lewat troubleshoot/perbaikan. Edit metadata tidak menyelesaikan temuan otomatis.
-- Log aktivitas hanya Admin, dengan filter pelaku/aksi/tanggal WIB dan pagination. Metadata di-allowlist, bukan body/sandi/token/query mentah. Audit asynchronous best effort: outage, overflow atau crash dapat kehilangan log. Ini bukan durable compliance queue atau audit perubahan tiap field; tetapkan retensi/backup terpisah.
-- Logo raster maksimal 2 MiB, validasi tipe/ekstensi/signature, bukan antivirus; SVG/data URL tidak didukung. File upload statis bukan penyimpanan privat hanya karena UI membutuhkan login. Jangan masukkan secret/data pribadi tak perlu ke tiket, lampiran atau log.
-- Adaptasi layanan/inspirasi GLPI terbatas: **bukan implementasi penuh GLPI, sertifikasi ISO/IEC 20000-1 atau bukti kepatuhan organisasi**. SOP, pemilik layanan, SLA, kontrol database, backup, retensi dan audit organisasi tetap tanggung jawab sekolah.
+Gunakan aplikasi di jaringan yang aksesnya dikelola sekolah. Sebelum membuka akses dari internet, periksa konfigurasi HTTPS, izin pengguna, upload, dan backup database. File upload yang disajikan sebagai berkas statis tidak otomatis menjadi privat hanya karena menu aplikasinya membutuhkan login.
 
-## Provenans versi dan risiko historis
+- Sistem memeriksa data yang masih terkait sebelum menghapus. Riwayat pemeriksaan, temuan, perbaikan, dan tiket tidak ikut dihapus otomatis.
+- Kondisi aset dapat berupa Baik, Rusak, Perlu Perbaikan, atau Dalam Perbaikan. Jika masih ada temuan aktif, selesaikan penanganannya sebelum mengganti kondisi secara manual.
+- Log aktivitas hanya dapat dibuka Admin. Log membantu penelusuran, tetapi gangguan layanan dapat menyebabkan sebagian catatan tidak tersimpan. Tetapkan kebijakan penyimpanan dan backup sendiri.
+- Logo sekolah mendukung gambar raster sampai 2 MiB. Validasi gambar bukan pengganti pemeriksaan malware dan SVG tidak didukung.
+- Jangan menaruh sandi, token, konfigurasi privat, atau data pribadi yang tidak diperlukan pada tiket dan lampiran.
 
-- Baseline v1: `92633b3f1780857afe79c9a341f2a2a979cc8536` (`feat(ui): improve UX`), arsip `archive/v1-92633b3`. Ini snapshot Git, bukan rekonstruksi pasti perubahan lama yang belum di-commit.
-- Target **`v1.0.0` tersanitasi** yang disetujui: **`6cbd6d170f2d9e2cc9af9425d680cf4c14e125c3`**; annotated tag object `f05e6920886079a933dbcb54e31542c67de4961f`. Catatan terdahulu melaporkan remote tag/target sudah dibaca balik; konsolidasi ini tidak memverifikasi remote ulang.
-- Snapshot parentless mempertahankan 123 blob source asli identik. **Pengecualian sanitasi**: environment privat dan dua dump SQL berisi akun dikecualikan; ignore rules, contoh konfigurasi placeholder dan catatan provenans ditambahkan pada snapshot arsip. Bukan rewrite history, backup database, bootstrap database baru atau klaim identik tanpa pengecualian. Tag-only diterbitkan; halaman GitHub Release tidak diklaim dibuat.
-- Tree baru tidak mempublikasikan konfigurasi privat, dump akun/hash, upload pengguna, dependency/build dan bukti review lokal. **History lama, branch arsip, clone/fork/cache tetap dapat mengandung paparan historis.** Menghapus file dari tree tidak menghapus history. Sanitasi/pemeriksaan pola bukan sertifikasi bebas secret.
-- Catatan keamanan terdahulu melaporkan kedua signing key JWT diganti secara independen; pengguna perlu login ulang setelah perubahan tersebut. Ini **tindakan historis, bukan rotasi baru dalam refactor ini**; tidak ada nilai secret dicantumkan. Reset sandi akun, perubahan sandi database, visibilitas repository dan pembersihan history **tidak dinyatakan selesai** dan memerlukan otorisasi terpisah.
-- Publikasi v2 dahulu dipisahkan berurutan menjadi backend, frontend dan dokumentasi. README ini mempertahankan fitur/batas penting, bukan seluruh log review, matriks tes, nama database percobaan atau angka audit dependency historis sebagai status terkini.
+Alur Bantuan mengambil beberapa konsep dari GLPI dalam bentuk yang lebih sederhana. Penggunaan Letris tidak berarti sekolah sudah memenuhi atau memperoleh sertifikasi ISO/IEC 20000-1.
+
+## Catatan arsip dan keamanan repository
+
+Riwayat lama repository pernah memuat konfigurasi privat dan dump data. Menghapus berkas dari versi terbaru tidak menghapus salinannya dari riwayat Git, branch arsip, atau clone yang sudah ada. Jangan menganggap seluruh riwayat aman hanya karena berkas tersebut tidak lagi terlihat pada versi sekarang.
+
+<details>
+<summary>Informasi arsip v1</summary>
+
+Baseline pengembangan lama adalah commit `92633b3f1780857afe79c9a341f2a2a979cc8536` dan disimpan pada `archive/v1-92633b3`.
+
+Tag `v1.0.0` mengarah ke snapshot tersanitasi `6cbd6d170f2d9e2cc9af9425d680cf4c14e125c3`. Snapshot ini mempertahankan 123 berkas source asli tanpa konfigurasi privat dan dua dump SQL yang berisi data akun. Karena ada pengecualian tersebut, snapshot arsip bukan salinan tanpa perubahan dari commit baseline dan bukan backup database.
+
+Tag arsip tidak menghapus paparan pada riwayat sebelumnya. Catatan keamanan lama juga mencatat penggantian signing key JWT, bukan pembersihan seluruh riwayat Git. Penulisan README ini tidak melakukan rotasi kunci, reset akun, perubahan database, atau penghapusan riwayat.
+
+</details>
