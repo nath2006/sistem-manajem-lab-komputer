@@ -10,7 +10,7 @@ Aplikasi sekolah berbasis **React 19/Vite, Express 5, MySQL (mysql2 dan Prisma)*
 - QR stabil, verifikasi publik dan label PDF berulang. Detail aset dari tiket memakai `/aset-it?asset=<id>`, termasuk aset Pembelajaran yang tidak muncul pada daftar Operasional.
 - **Bantuan · Tiket Layanan** (`/ticketing`): insiden/permintaan layanan, klasifikasi dampak–urgensi, prioritas P1–P4, penugasan, komentar, riwayat dan SLA.
 - Pengajuan/persetujuan jadwal, pengumuman/lampiran, nama/logo/warna sekolah dan konfigurasi jam pelajaran.
-- Navigasi persisten, tabel native dengan scroll lokal, skeleton, error/retry, serta onboarding Driver.js yang dapat diulang dari profil. Penyelesaian panduan disimpan per akun/peran/versi di browser, bukan lintas perangkat.
+- Navigasi persisten, tabel native dengan scroll lokal, skeleton, error/retry, serta onboarding Driver.js. Panduan otomatis muncul sekali per akun dan menjelaskan semua menu sidebar sesuai peran. Statusnya disimpan di database agar tidak muncul lagi setelah pindah halaman, login ulang, atau menggunakan perangkat lain. Pengguna tetap bisa membuka Panduan awal dari menu profil kapan pun diperlukan.
 
 | Peran | Tanggung jawab dan batas |
 | --- | --- |

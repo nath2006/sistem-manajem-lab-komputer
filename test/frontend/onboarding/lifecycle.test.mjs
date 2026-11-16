@@ -38,6 +38,31 @@ test('non-focusable body falls back to profile after an automatic tour', async (
   } finally {restore();}
 });
 
+test('missing targets never authorize or move focus or scroll', async () => {
+  const startTour=await load(); const env=environment(); let claims=0;
+  try {
+    startTour({identity:'A',role:'Guru',authorize:async()=>{claims++;return true;}});
+    while(env.frames.size) {const entries=[...env.frames];env.frames.clear(); for(const [,fn] of entries) fn();}
+    assert.equal(claims,0);
+    assert.deepEqual(env.focus,[]);
+    assert.equal(env.events.some(Array.isArray),false);
+  } finally {restore();}
+});
+
+test('lost or rejected claims never open Driver or move focus and scroll', async () => {
+  for (const rejected of [false, true]) {
+    const startTour=await load(); const env=environment(); let claims=0;
+    globalThis.getComputedStyle=()=>({visibility:'visible',display:'block'});
+    globalThis.document.querySelector=()=>({closest:()=>null,getClientRects:()=>[{}]});
+    try {
+      startTour({identity:'A',role:'Guru',authorize:async()=>{claims++;if(rejected)throw new Error('offline');return false;}});
+      while(env.frames.size) {const entries=[...env.frames];env.frames.clear();for(const [,fn] of entries)fn();await Promise.resolve();}
+      await Promise.resolve();
+      assert.equal(claims,1);assert.deepEqual(env.focus,[]);assert.deepEqual(env.writes,[]);assert.equal(env.events.some(Array.isArray),false);
+    } finally {delete globalThis.getComputedStyle;restore();}
+  }
+});
+
 const restore = () => {for(const key of ['document','window','requestAnimationFrame','cancelAnimationFrame','CustomEvent','localStorage']) delete globalThis[key];};
 
 test('cleanup before delayed startup cancels every frame, restores scroll/focus and never completes', async () => {

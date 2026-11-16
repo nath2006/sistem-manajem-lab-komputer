@@ -69,15 +69,15 @@ test('Skip hover foreground contrasts with the actual CSS background blend, not 
 const assetTarget = '[data-tour-path="/aset-it"]';
 test('QR guidance distinguishes scoped issuance, existing label printing and private procurement', () => {
   for (const [role, steps] of Object.entries(ROLE_STEPS)) {
-    const qr = steps.find(step => step.title === 'QR dan verifikasi aset');
+    const qr = steps.find(step => step.element === assetTarget && /QR/.test(step.description));
     assert.ok(qr, role);
     assert.equal(qr.element, assetTarget);
     assert.match(qr.description, /verifikasi publik/);
-    assert.match(qr.description, /pengadaan.*privat/);
-    if (role === 'Admin') assert.match(qr.description, /Terbitkan QR.*seluruh aset/);
-    else if (role === 'Kepala Lab') assert.match(qr.description, /Terbitkan QR hanya.*Pembelajaran.*lab yang Anda pimpin/);
+    assert.match(steps.map(step => step.description).join(' '), /pengadaan.*privat.*akses akun/);
+    if (role === 'Admin') assert.match(qr.description, /terbitkan QR|buat QR/i);
     else {
-      assert.match(qr.description, /Lihat QR yang sudah ada dan cetak label/);
+      assert.match(qr.description, /lihat.*QR/i);
+      assert.match(qr.description, /cetak ulang label/i);
       assert.doesNotMatch(qr.description, /[Tt]erbitkan|[Bb]uat QR/);
     }
     assert.ok(qr.description.length < 300, role);
@@ -86,7 +86,7 @@ test('QR guidance distinguishes scoped issuance, existing label printing and pri
 test('Bantuan keeps the existing ticket route and explains each role workflow', () => {
   const descriptions = [];
   for (const [role, steps] of Object.entries(ROLE_STEPS)) {
-    const help = steps.find(step => step.title === 'Bantuan (Ticketing)');
+    const help = steps.find(step => step.title === 'Bantuan');
     assert.ok(help, role);
     assert.equal(help.element, '[data-tour-path="/ticketing"]');
     for (const word of ['kategori', 'prioritas', 'status', 'aset', 'komentar', 'riwayat']) {
@@ -126,17 +126,17 @@ test('dashboard chart steps are role-tailored and optional outside the dashboard
   assert.deepEqual(api.getTourSteps('Unknown', () => true), []);
 });
 
-test('all five roles learn asset categories and their actual write scope', () => {
+test('all five roles learn the operational asset route and its actual write scope', () => {
   assert.equal(Object.keys(ROLE_STEPS).length, 5);
   for (const [role, steps] of Object.entries(ROLE_STEPS)) {
     const asset = steps.find(step => step.title === 'Aset IT Sekolah');
     assert.ok(asset, role);
     assert.equal(asset.element, assetTarget);
-    for (const word of ['Pembelajaran', 'Operasional', 'printer', 'jaringan']) {
+    for (const word of ['Operasional', 'printer', 'jaringan']) {
       assert.ok(asset.description.includes(word), `${role}: ${word}`);
     }
-    if (role === 'Admin') assert.match(asset.description, /kelola seluruh aset/);
-    else if (role === 'Kepala Lab') assert.match(asset.description, /hanya.*Pembelajaran.*lab yang Anda pimpin/);
+    assert.doesNotMatch(asset.description, /Pembelajaran|seluruh aset/);
+    if (role === 'Admin') assert.match(asset.description, /kelola|tambah|ubah/i);
     else {
       assert.match(asset.description, /baca saja/);
       assert.doesNotMatch(asset.description, /tambah|ubah|kelola/);

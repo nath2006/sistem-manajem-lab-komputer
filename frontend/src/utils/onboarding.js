@@ -35,6 +35,12 @@ export function isOnboardingComplete(key, storage) {
   }
 }
 
+export function hasLegacyOnboardingCompletion(key, storage) {
+  if (isOnboardingComplete(key, storage)) return true;
+  const prefix = key?.slice(0, key.lastIndexOf(':') + 1);
+  return Boolean(prefix && ONBOARDING_ROLES.some(role => isOnboardingComplete(`${prefix}${encodeURIComponent(role)}`, storage)));
+}
+
 export function completeOnboarding(key, action, storage) {
   if (!key || !['skip', 'done'].includes(action)) return false;
   try {
