@@ -21,6 +21,7 @@ backend/uploads/
 # Local review evidence (contains machine paths and fixture state).
 docs/*-result.json
 docs/onboarding-tour/
+test/**/*-result.json
 
 # Local scratch experiment; not part of the application.
 backend/ayam.js

@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/*.test.js tests/*.test.mjs ../tests/*.test.mjs src/Components/Onboarding/*.test.mjs",
+    "test": "node ../test/run.mjs frontend",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
