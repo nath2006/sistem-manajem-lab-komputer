@@ -12,7 +12,7 @@ test('all roles render scoped data charts with readable labels, totals, and nati
  else assert.doesNotMatch(html,/Aset per kategori/);
  }
 });
-test('shared admin statistic cards opt into colorful token styling and retain readable labels',async()=>{
+test('shared admin statistic cards retain compact neutral structure and readable labels',async()=>{
  const html=await renderUI(`import React from 'react';import{renderToStaticMarkup}from'react-dom/server';import Card from './src/Components/cardDashboard/CardStatAdmin.jsx';module.exports=renderToStaticMarkup(<Card icon={()=> <svg/>} count={1234567890} label="Perangkat"/>);`);
  assert.match(html,/dashboard-stat-card/);assert.match(html,/1234567890/);assert.match(html,/Perangkat/);
 });

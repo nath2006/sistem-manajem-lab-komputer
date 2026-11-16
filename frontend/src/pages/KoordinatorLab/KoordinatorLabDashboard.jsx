@@ -52,17 +52,10 @@ const MainDashboard = () => {
 
 
   return (
-    <Dashboard title={`Dashboard ${authState?.role || ''}`}>
+    <Dashboard title={`Selamat ${getGreetingTime(moment())}, ${userName}!`}>
       <DashboardTheme>
-        <DashboardInsights />
       <div className="min-h-[calc(100vh-80px)] flex flex-col px-4 py-6 md:px-6 lg:px-8 bg-white text-gray-800">
         <div className="flex-grow">
-          <div className="mb-6">
-            <h1 className="font-semibold text-xl md:text-2xl">
-              Selamat {getGreetingTime(moment())}, {userName}!
-            </h1>
-            <p className="text-gray-600">Semoga harimu menyenangkan dan produktif.</p>
-          </div>
 
           {(authState?.role === "Admin" || authState?.role === "Koordinator Lab") && (
             <div className="mb-8 md:mb-12 group">
@@ -79,6 +72,7 @@ const MainDashboard = () => {
               </button>
             </div>
           )}
+        <DashboardInsights />
 <DashboardTablePanel className="mt-4" label="Data laboratorium">
       <table className="min-w-full">
         <thead className="bg-maroon sticky top-0 z-10">

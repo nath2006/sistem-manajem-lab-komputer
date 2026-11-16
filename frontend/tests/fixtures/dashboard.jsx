@@ -1,4 +1,6 @@
 import React, { useEffect } from 'react';
+import { Chart } from 'chart.js';
+window.dashboardChartInstances = () => Object.values(Chart.instances);
 import { createRoot } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import Cookies from 'js-cookie';
@@ -17,4 +19,10 @@ const keys={'Admin':'admin','Guru':'teacher','Kepala Lab':'head','Koordinator La
 Cookies.set('auth_token',session.tokens[role]);
 const state={role,userId:session.users[keys[role]],token:session.tokens[role],isAuthenticated:true,isLoading:false,fullName:'Synthetic '+role};
 function Review(){const {settings,updateSettings}=useSettings();useEffect(()=>{window.setDashboardTheme=color=>updateSettings({...settings,primary_color:color});},[settings,updateSettings]);const Page=pages[role];return <Page/>;}
-createRoot(document.getElementById('root')).render(<MemoryRouter><AuthContext.Provider value={{state,dispatch:()=>{}}}><SettingsProvider><Review/></SettingsProvider></AuthContext.Provider></MemoryRouter>);
+let root;
+window.mountDashboardFixture = () => {
+  root = createRoot(document.getElementById('root'));
+  root.render(<React.StrictMode><MemoryRouter><AuthContext.Provider value={{state,dispatch:()=>{}}}><SettingsProvider><Review/></SettingsProvider></AuthContext.Provider></MemoryRouter></React.StrictMode>);
+};
+window.unmountDashboardFixture = () => root.unmount();
+window.mountDashboardFixture();

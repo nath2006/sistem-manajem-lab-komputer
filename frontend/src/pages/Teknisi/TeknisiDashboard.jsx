@@ -11,7 +11,8 @@ import moment from 'moment';
 import 'moment/locale/id'; 
 import useTitle from '../../utils/useTitle';
 import { get } from '../../utils/api'; 
-import { FaTools, FaHistory, FaSearchLocation } from "react-icons/fa"; 
+import { FaSearchLocation } from "react-icons/fa";
+import { Wrench as FaTools, History as FaHistory } from 'lucide-react';
 
 import AddPengecekan from '../../Components/Pengecekan/AddPengecekan';
 import AddPerbaikan from '../../Components/Perbaikan/AddPerbaikan';
@@ -73,7 +74,7 @@ const TeknisiDashboard = () => {
   }, []);
 
   const StatCard = ({ title, value, icon, tone = 'info', isLoading }) => (
-    <div className="col-span-12 min-w-0 md:col-span-6 p-6 rounded-xl shadow-lg" data-tone={tone} style={{ background: 'var(--dashboard-tone)', color: 'var(--dashboard-on-tone)' }}>
+    <div className="col-span-12 min-w-0 md:col-span-6 p-6 rounded-xl shadow-lg" data-tone={tone} style={{ background: 'var(--dashboard-primary)', color: 'var(--dashboard-on-primary)' }}>
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 break-words">
           <p className="text-sm font-medium uppercase tracking-wider">{title}</p>
@@ -83,7 +84,7 @@ const TeknisiDashboard = () => {
             <p className="text-3xl font-semibold">{value}</p>
           )}
         </div>
-        <div className="text-4xl opacity-80">
+        <div className="[&>svg]:h-[18px] [&>svg]:w-[18px]">
           {icon}
         </div>
       </div>
@@ -92,16 +93,13 @@ const TeknisiDashboard = () => {
 
 
   return (
-    <Dashboard title="Dashboard Teknisi">
+    <Dashboard title={`Selamat ${getGreetingTime(moment())}, ${userName}!`}>
       <DashboardTheme>
         <DashboardInsights />
       <div className="min-h-[calc(100vh-80px)] flex flex-col px-4 py-6 md:px-6 lg:px-8 text-gray-800"> {/* bg-white dihapus agar bg dari Dashboard Layout dipakai */}
         <div className="flex-grow">
           {/* Salam Pembuka */}
           <div className="mb-6 p-4 bg-white rounded-lg shadow">
-            <h1 className="font-semibold text-xl md:text-2xl">
-              Selamat {getGreetingTime(moment())}, {userName}!
-            </h1>
             <p className="text-gray-600">Ini adalah ringkasan tugas dan aktivitas perbaikan Anda.</p>
           </div>
 
