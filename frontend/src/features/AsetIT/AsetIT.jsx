@@ -9,11 +9,11 @@ import useTitle from "../../utils/useTitle";
 import AssetTable from "./AssetTable";
 import AssetForm from "./AssetForm";
 import AssetDetail from "./AssetDetail";
-import { assetUses, assetCategories } from "./assetView";
+import { assetCategories } from "./assetView";
 const filterControl =
   "min-h-11 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:ring-maroon";
 export default function AsetIT() {
-  useTitle("Aset IT Sekolah");
+  useTitle("Aset IT Operasional");
   const { state: user } = useContext(AuthContext);
   const [searchParams, setSearchParams] = useSearchParams();
   const assetId = searchParams.get("asset");
@@ -46,12 +46,10 @@ export default function AsetIT() {
     return () => { active = false; };
   }, [assetId, validAssetId, detailOwner]);
   const [data, setData] = useState([]),
-    [labs, setLabs] = useState([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
-  const [use, setUse] = useState(""),
-    [category, setCategory] = useState(""),
+  const [category, setCategory] = useState(""),
     [modal, setModal] = useState(null),
     [saving, setSaving] = useState(false);
   const load = useCallback(async () => {
@@ -62,18 +60,12 @@ export default function AsetIT() {
       if (!Array.isArray(response.data))
         throw Error("Format daftar aset tidak valid.");
       setData(response.data);
-      if (["Admin", "Kepala Lab"].includes(user?.role)) {
-        const labsResponse = await get("/lab");
-        if (!Array.isArray(labsResponse.data))
-          throw Error("Format daftar laboratorium tidak valid.");
-        setLabs(labsResponse.data);
-      }
     } catch (e) {
       setError(e.message || "Gagal memuat aset.");
     } finally {
       setLoading(false);
     }
-  }, [user?.role]);
+  }, []);
   useEffect(() => {
     load();
   }, [load]);
@@ -87,9 +79,7 @@ export default function AsetIT() {
     },
     onError: (e) => setError(e.message || "Gagal menghapus aset."),
   });
-  const canAdd =
-    user?.role === "Admin" ||
-    (user?.role === "Kepala Lab" && !!user.lab_id_kepala);
+  const canAdd = user?.role === "Admin";
   const save = async (body) => {
     setSaving(true);
     try {
@@ -111,14 +101,15 @@ export default function AsetIT() {
   };
   const visible = data.filter(
     (a) =>
-      (!use || a.penggunaan === use) && (!category || a.kategori === category),
+      a.penggunaan === "Operasional" && (!category || a.kategori === category),
   );
   return (
-    <Dashboard title="Aset IT Sekolah">
+    <Dashboard title="Aset IT Operasional">
       <div className="min-w-0 space-y-4">
         <p className="text-sm text-gray-600">
-          Inventaris perangkat pembelajaran dan operasional sekolah. Data
-          pengadaan yang belum diketahui ditampilkan sebagai “-”.
+          Inventaris IT operasional sekolah (administrasi, printer, dan jaringan).
+          Perangkat pembelajaran tetap dikelola melalui Kelola Data Perangkat (Lab).
+          Data pengadaan yang belum diketahui ditampilkan sebagai “-”.
         </p>
         {error && (
           <div
@@ -144,20 +135,6 @@ export default function AsetIT() {
           </p>
         )}
         <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:flex lg:items-end">
-          <label className="min-w-0 flex-1 space-y-1 text-sm font-medium text-gray-700">
-            <span>Penggunaan aset</span>
-            <select
-              aria-label="Filter penggunaan"
-              className={filterControl}
-              value={use}
-              onChange={(e) => setUse(e.target.value)}
-            >
-              <option value="">Semua penggunaan</option>
-              {assetUses.map((v) => (
-                <option key={v}>{v}</option>
-              ))}
-            </select>
-          </label>
           <label className="min-w-0 flex-1 space-y-1 text-sm font-medium text-gray-700">
             <span>Kategori aset</span>
             <select
@@ -224,7 +201,6 @@ export default function AsetIT() {
             <AssetForm
               asset={modal.asset}
               user={user}
-              labs={labs}
               onSave={save}
               onCancel={() => setModal(null)}
             />

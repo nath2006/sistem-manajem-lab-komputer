@@ -31,7 +31,7 @@ const base = {
 };
 test("asset input rejects unsafe fields, invalid numeric bounds and precision", () => {
   for (const fields of [
-    { status: "Baik" },
+    { status: "Tidak dikenal" },
     { foto_perangkat: "x" },
     { user_id: 5 },
     { harga_beli: 0 },

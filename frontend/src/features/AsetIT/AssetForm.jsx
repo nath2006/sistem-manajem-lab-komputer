@@ -2,31 +2,30 @@ import { useRef, useState } from "react";
 import FormContainer from "../../Components/FormContainer";
 import {
   assetCategories,
-  assetUses,
+  assetConditions,
   assetFields,
   assetPayload,
 } from "./assetView";
 const control =
   "block min-h-11 w-full min-w-0 rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-900 focus:border-maroon focus:ring-maroon disabled:bg-gray-100";
-export default function AssetForm({ asset, user, labs, onSave, onCancel }) {
+export default function AssetForm({ asset, onSave, onCancel }) {
   const [form, setForm] = useState(() => ({
     ...Object.fromEntries(assetFields.map((k) => [k, asset?.[k] ?? ""])),
-    penggunaan: asset?.penggunaan || "Pembelajaran",
+    penggunaan: "Operasional",
+    status: asset ? (asset.status ?? "") : "Baik",
     kategori: asset?.kategori || "Lainnya",
-    lab_id: asset?.lab_id ?? user?.lab_id_kepala ?? "",
+    lab_id: null,
   }));
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const lock = useRef(false);
-  const head = user?.role === "Kepala Lab";
+
   const change = (e) => {
     const { name, value } = e.target;
     setForm((old) => ({
       ...old,
       [name]: value,
-      ...(name === "penggunaan"
-        ? { lab_id: value === "Operasional" ? "" : (user?.lab_id_kepala ?? "") }
-        : {}),
+
     }));
   };
   const submit = async (e) => {
@@ -63,7 +62,7 @@ export default function AssetForm({ asset, user, labs, onSave, onCancel }) {
   return (
     <FormContainer
       title={asset ? "Edit aset" : "Tambah aset"}
-      description="Tahun pengadaan, sumber dana, dan harga beli boleh dikosongkan jika tidak diketahui. Status kondisi mengikuti pemeriksaan/perbaikan."
+      description="Tahun pengadaan, sumber dana, dan harga beli boleh dikosongkan jika tidak diketahui. Kondisi dapat diedit jika tidak ada temuan aktif. Temuan aktif diselesaikan melalui Troubleshoot / Perbaikan."
       onSubmit={submit}
       onCancel={onCancel}
       error={error}
@@ -75,22 +74,6 @@ export default function AssetForm({ asset, user, labs, onSave, onCancel }) {
           maxLength: 100,
         })}
         {field("nomor_inventaris", "Nomor inventaris", { maxLength: 50 })}
-        <label className="block space-y-1 text-sm font-medium">
-          <span>Penggunaan</span>
-          <select
-            className={control}
-            name="penggunaan"
-            value={form.penggunaan}
-            onChange={change}
-            disabled={busy || head}
-          >
-            {assetUses
-              .filter((v) => !head || v === "Pembelajaran")
-              .map((v) => (
-                <option key={v}>{v}</option>
-              ))}
-          </select>
-        </label>
         <label className="block space-y-1 text-sm font-medium">
           <span>Kategori</span>
           <select
@@ -105,31 +88,18 @@ export default function AssetForm({ asset, user, labs, onSave, onCancel }) {
             ))}
           </select>
         </label>
-        {form.penggunaan === "Pembelajaran" && (
-          <label className="block space-y-1 text-sm font-medium">
-            <span>Laboratorium</span>
-            <select
-              className={control}
-              name="lab_id"
-              value={form.lab_id}
-              onChange={change}
-              required
-              disabled={busy || head}
-            >
-              <option value="">Pilih laboratorium</option>
-              {labs
-                .filter(
-                  (l) =>
-                    !head || String(l.lab_id) === String(user.lab_id_kepala),
-                )
-                .map((l) => (
-                  <option key={l.lab_id} value={l.lab_id}>
-                    {l.nama_lab}
-                  </option>
-                ))}
-            </select>
-          </label>
-        )}
+        <label className="block space-y-1 text-sm font-medium">
+          <span>Kondisi</span>
+          <select className={control} name="status" value={form.status}
+            onChange={change} disabled={busy || asset?.condition_editable === false}
+            aria-describedby="asset-condition-help">
+            {form.status === "" && <option value="">Belum tercatat (pertahankan)</option>}
+            {assetConditions.map((value) => <option key={value}>{value}</option>)}
+          </select>
+          <p id="asset-condition-help" className="text-sm font-normal text-gray-600">
+            {asset?.condition_edit_reason || "Ubah kondisi manual hanya jika tidak ada temuan pemeriksaan / troubleshoot aktif. Kondisi temuan aktif mengikuti hasil perbaikan teknisi."}
+          </p>
+        </label>
         {field("lokasi", "Lokasi / ruangan", { maxLength: 150 })}
         {field("tahun_pengadaan", "Tahun pengadaan (opsional)", {
           inputMode: "numeric",

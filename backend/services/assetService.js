@@ -5,8 +5,11 @@ import {
   assetId,
 } from "../utils/assetPolicy.js";
 import { createDeletionService } from "./deletionService.js";
+import { guardManualAssetCondition } from "./assetConditionService.js";
 const projection = `SELECT p.perangkat_id,p.nama_perangkat,p.spesifikasi,p.status,p.lab_id,p.foto_perangkat,p.nomor_inventaris,
- p.penggunaan,p.kategori,p.lokasi,p.tahun_pengadaan,p.sumber_dana,CAST(p.harga_beli AS CHAR) AS harga_beli,l.nama_lab
+ p.penggunaan,p.kategori,p.lokasi,p.tahun_pengadaan,p.sumber_dana,CAST(p.harga_beli AS CHAR) AS harga_beli,l.nama_lab,
+ (SELECT COUNT(*) FROM pengecekan pc WHERE pc.perangkat_id=p.perangkat_id
+  AND pc.status_pengecekan IN ('Baru','Menunggu Perbaikan')) AS active_condition_findings
  FROM perangkat p LEFT JOIN laboratorium l ON l.lab_id=p.lab_id`;
 export function createAssetService(db) {
   const read = async (id, c = db) => {
@@ -19,7 +22,14 @@ export function createAssetService(db) {
     );
     if (id !== undefined && !rows.length)
       throw assetError(404, "Aset tidak ditemukan.");
-    return id === undefined ? rows : rows[0];
+    const contextual = rows.map(({ active_condition_findings, ...row }) => ({
+      ...row,
+      condition_editable: !Number(active_condition_findings),
+      condition_edit_reason: Number(active_condition_findings)
+        ? `${active_condition_findings} temuan aktif mengendalikan kondisi. Selesaikan melalui Troubleshoot / Perbaikan; metadata tetap dapat diedit.`
+        : null,
+    }));
+    return id === undefined ? contextual : contextual[0];
   };
   async function authorize(c, actor, asset) {
     if (!["Admin", "Kepala Lab"].includes(actor?.role))
@@ -74,9 +84,10 @@ export function createAssetService(db) {
       const value = normalizeAsset(body);
       return transaction(async (c) => {
         await authorize(c, actor, value);
+        const fields = Object.hasOwn(value, "status") ? [...ASSET_FIELDS, "status"] : ASSET_FIELDS;
         const [saved] = await c.query(
-          `INSERT INTO perangkat (${ASSET_FIELDS.join(",")}) VALUES (${ASSET_FIELDS.map(() => "?").join(",")})`,
-          ASSET_FIELDS.map((k) => value[k]),
+          `INSERT INTO perangkat (${fields.join(",")}) VALUES (${fields.map(() => "?").join(",")})`,
+          fields.map((k) => value[k]),
         );
         return read(saved.insertId, c);
       });
@@ -92,9 +103,11 @@ export function createAssetService(db) {
         await authorize(c, actor, rows[0]);
         const value = normalizeAsset(body, rows[0]);
         await authorize(c, actor, value);
+        await guardManualAssetCondition(c, rows[0], value.status);
+        const fields = Object.hasOwn(body, "status") ? [...ASSET_FIELDS, "status"] : ASSET_FIELDS;
         await c.query(
-          `UPDATE perangkat SET ${ASSET_FIELDS.map((k) => `${k}=?`).join(",")} WHERE perangkat_id=?`,
-          [...ASSET_FIELDS.map((k) => value[k]), key],
+          `UPDATE perangkat SET ${fields.map((k) => `${k}=?`).join(",")} WHERE perangkat_id=?`,
+          [...fields.map((k) => value[k]), key],
         );
         return read(key, c);
       });

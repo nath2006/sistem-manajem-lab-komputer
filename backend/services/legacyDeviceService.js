@@ -1,4 +1,5 @@
-import { assetId, assetError } from "../utils/assetPolicy.js";
+import { assetId, assetError, validateAssetCondition } from "../utils/assetPolicy.js";
+import { guardManualAssetCondition } from "./assetConditionService.js";
 export const LEGACY_DEVICE_FIELDS =
   "p.perangkat_id,p.nama_perangkat,p.spesifikasi,p.status,p.lab_id,p.foto_perangkat,p.nomor_inventaris,l.nama_lab";
 export function createLegacyDeviceWriter(db) {
@@ -51,11 +52,9 @@ export function createLegacyDeviceWriter(db) {
         old = rows[0];
         await authorize(c, actor, old.lab_id);
       }
-      if (body.status !== undefined && body.status !== (old?.status || "Baik"))
-        throw assetError(
-          old ? 409 : 400,
-          "Status dikelola melalui pemeriksaan dan perbaikan, bukan edit perangkat.",
-        );
+      const status = Object.hasOwn(body, "status")
+        ? validateAssetCondition(body.status) : old ? old.status : "Baik";
+      await guardManualAssetCondition(c, old, status);
       const labId = Object.hasOwn(body, "lab_id")
         ? body.lab_id == null || body.lab_id === ""
           ? null
@@ -89,7 +88,7 @@ export function createLegacyDeviceWriter(db) {
       const values = [
         text("nama_perangkat", 100, true),
         text("spesifikasi", 16000),
-        old?.status || "Baik",
+        status,
         labId,
         filename || old?.foto_perangkat || null,
         text("nomor_inventaris", 50),

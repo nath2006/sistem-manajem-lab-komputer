@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { renderUI } from "./helpers/renderUI.js";
-test("asset form renders optional procurement fields and no manual maintenance status input", async () => {
+test("asset form renders optional procurement fields and manual condition input", async () => {
   const source = await readFile(
     new URL("../src/features/AsetIT/AssetForm.jsx", import.meta.url),
     "utf8",
@@ -18,7 +18,7 @@ test("asset form renders optional procurement fields and no manual maintenance s
   }
   assert.match(html, /Printer/);
   assert.match(html, /Perangkat Jaringan/);
-  assert.doesNotMatch(html, /name="status"/);
+  assert.match(html, /name="status"/);
 });
 test("asset detail renders unknown procurement as dashes and zero as an exact price", async () => {
   const source = await readFile(

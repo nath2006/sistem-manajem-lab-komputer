@@ -1,4 +1,9 @@
 export const ASSET_USES = Object.freeze(["Pembelajaran", "Operasional"]);
+export const ASSET_CONDITIONS = Object.freeze(["Baik", "Rusak", "Perlu Perbaikan", "Dalam Perbaikan"]);
+export function validateAssetCondition(value) {
+  if (!ASSET_CONDITIONS.includes(value)) throw assetError(400, "Kondisi aset tidak valid.");
+  return value;
+}
 export const ASSET_CATEGORIES = Object.freeze([
   "Komputer",
   "Laptop",
@@ -54,7 +59,7 @@ export function normalizeAsset(input, previous = {}) {
     !input ||
     typeof input !== "object" ||
     Array.isArray(input) ||
-    Object.keys(input).some((k) => !ASSET_FIELDS.includes(k))
+    Object.keys(input).some((k) => k !== "status" && !ASSET_FIELDS.includes(k))
   )
     invalid("Field aset");
   const body = {
@@ -92,6 +97,8 @@ export function normalizeAsset(input, previous = {}) {
     price = `${whole.replace(/^0+(?=\d)/, "")}.${fraction.padEnd(2, "0")}`;
   }
   return {
+    ...(Object.hasOwn(input, "status") ? { status: validateAssetCondition(input.status) }
+      : Object.hasOwn(previous, "status") ? { status: previous.status } : {}),
     nama_perangkat: text(body.nama_perangkat, "Nama perangkat", 100, true),
     spesifikasi: text(body.spesifikasi, "Spesifikasi", 16000),
     nomor_inventaris: text(body.nomor_inventaris, "Nomor inventaris", 50),

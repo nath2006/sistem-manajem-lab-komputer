@@ -1,4 +1,5 @@
 export const assetUses = ["Pembelajaran", "Operasional"];
+export const assetConditions = ["Baik", "Rusak", "Perlu Perbaikan", "Dalam Perbaikan"];
 export const assetCategories = [
   "Komputer",
   "Laptop",
@@ -26,8 +27,9 @@ export function assetPayload(form) {
   const result = Object.fromEntries(
     assetFields.map((k) => [k, nullable(form[k])]),
   );
-  result.lab_id =
-    form.penggunaan === "Operasional" ? null : nullable(form.lab_id);
+  result.penggunaan = "Operasional";
+  result.lab_id = null;
+  if (nullable(form.status) !== null) result.status = nullable(form.status);
   return result;
 }
 export function canWriteAsset(user, asset) {

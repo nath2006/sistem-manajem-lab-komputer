@@ -5,7 +5,7 @@
 
 ## Batas implementasi
 
-Menu **Aset IT Sekolah** (`/aset-it`) menambah inventaris Pembelajaran dan Operasional. Ini hanya FITUR 1: tidak menambah QR/barcode, halaman verifikasi publik, referensi/login GLPI, perubahan fitur bantuan, atau dashboard Admin baru.
+Menu **Aset IT Sekolah** (`/aset-it`) kini khusus daftar/tambah/edit inventaris **Operasional**. Perangkat Pembelajaran tetap dikelola melalui **Kelola Data Perangkat (Lab)**. Detail deep link `/aset-it?asset=<id>` tetap dapat membaca aset Pembelajaran yang ditautkan dari tiket, meskipun aset itu tidak muncul pada daftar Operasional. Ini hanya FITUR 1: tidak menambah QR/barcode, halaman verifikasi publik, referensi/login GLPI, perubahan fitur bantuan, atau dashboard Admin baru.
 
 Identitas tetap `perangkat.perangkat_id`. Tidak ada tabel aset duplikat: inspeksi, temuan, perbaikan, tiket dan deep link `/kelola-perangkat` tetap menunjuk perangkat yang sama.
 
@@ -17,7 +17,7 @@ Identitas tetap `perangkat.perangkat_id`. Tidak ada tabel aset duplikat: inspeks
 - Harga dikirim/diterima sebagai **string desimal**, tidak melalui float. `"0"` valid, disimpan/dibaca `"0.00"`, ditampilkan `Rp 0,00`. Batas DECIMAL(15,2): `9999999999999.99`, non-negatif, maksimal dua angka desimal. Notasi eksponen dan JSON number ditolak.
 - Tahun berupa integer/desimal digit integer 1900 sampai tahun server saat ini. Nama 100 karakter, inventaris 50, lokasi/sumber dana 150, spesifikasi 16000. Inventaris unik, kosong menjadi null; duplikat menghasilkan 409.
 - Semua role yang login dapat membaca aset, termasuk pengadaan. **Admin** dapat menulis semua aset. **Kepala Lab** hanya dapat menulis Pembelajaran pada lab yang ditugaskan; update memeriksa lab asal dan tujuan. Koordinator Lab, Teknisi dan Guru hanya baca.
-- Status kondisi tidak dapat diedit melalui API/form aset. Aset baru menggunakan default Baik; perubahan kondisi tetap melalui pemeriksaan/perbaikan. Foto lama tidak diubah oleh API aset. Upload foto baru bukan bagian dari menu ini.
+- Kondisi dapat dipilih manual: **Baik**, **Rusak**, **Perlu Perbaikan**, **Dalam Perbaikan**. Create tanpa status memakai default Baik. Perubahan kondisi ditolak **409** bila ada temuan aktif `Baru` / `Menunggu Perbaikan`; nilai yang sama dan edit metadata tetap diizinkan. Selesaikan temuan aktif melalui Troubleshoot / Perbaikan. GET menyediakan `condition_editable` dan `condition_edit_reason` untuk penjelasan form. Foto lama tidak diubah oleh API aset. Upload foto baru bukan bagian dari menu ini.
 
 ## API
 
@@ -29,9 +29,9 @@ Identitas tetap `perangkat.perangkat_id`. Tidak ada tabel aset duplikat: inspeks
 | PUT | `/api/assets/:id` | 200 `{data: {...}, message}` |
 | DELETE | `/api/assets/:id` | 200 `{message}` |
 
-Field tulis: `nama_perangkat`, `nomor_inventaris`, `spesifikasi`, `penggunaan`, `kategori`, `lab_id`, `lokasi`, `tahun_pengadaan`, `sumber_dana`, `harga_beli`. POST mewajibkan nama, penggunaan, kategori, serta lab untuk Pembelajaran. PUT boleh parsial. GET juga mengembalikan `perangkat_id`, `status`, `foto_perangkat`, `nama_lab`.
+Field tulis: `status` (opsional), `nama_perangkat`, `nomor_inventaris`, `spesifikasi`, `penggunaan`, `kategori`, `lab_id`, `lokasi`, `tahun_pengadaan`, `sumber_dana`, `harga_beli`. POST mewajibkan nama, penggunaan, kategori, serta lab untuk Pembelajaran. PUT boleh parsial. GET juga mengembalikan `perangkat_id`, `status`, `foto_perangkat`, `nama_lab`.
 
-400: field tidak valid/tidak dikenal (termasuk `status`, foto dan identitas actor). 401: token invalid/kedaluwarsa. 403: token tidak ada atau tidak memiliki izin. 404: aset tidak ada. 409: inventaris duplikat, konflik lock, atau masih memiliki keterkaitan. 500: error internal terkontrol tanpa detail DB. 503: `{code:"ASSET_SCHEMA_REQUIRED",message}` bila skema belum siap.
+400: field tidak valid/tidak dikenal (termasuk kondisi di luar enum, foto dan identitas actor). 401: token invalid/kedaluwarsa. 403: token tidak ada atau tidak memiliki izin. 404: aset tidak ada. 409: inventaris duplikat, konflik lock, atau masih memiliki keterkaitan. 500: error internal terkontrol tanpa detail DB. 503: `{code:"ASSET_SCHEMA_REQUIRED",message}` bila skema belum siap.
 
 Preview penghapusan memakai `GET /api/deletion/perangkat/:id`. DELETE menggunakan `createDeletionService` yang sama: pemeriksaan ulang dependensi/izin dalam transaksi dan parent-row lock, tidak menghapus otomatis pemeriksaan, temuan, perbaikan maupun referensi tiket. Cleanup foto setelah commit bersifat best effort; kegagalan filesystem tidak mengubah hasil commit.
 
@@ -40,7 +40,7 @@ Kontrak importable: `docs/openapi.json`, tervalidasi OpenAPI 3.0.3. Ringkasan: `
 ## Kompatibilitas legacy
 
 - API perangkat lama dan alias router laporan mempertahankan proyeksi identitas/spesifikasi/status/lab/foto/inventaris, **tanpa field pengadaan**. Create/update sekarang memeriksa izin Kepala Lab terhadap lab asal/tujuan; tidak cukup menyembunyikan tombol frontend.
-- API legacy menolak perubahan status manual (409 pada update; create hanya Baik). Status yang sama masih diterima agar multipart lama kompatibel. Form legacy menampilkan status read-only dengan penjelasan.
+- API legacy memakai guard kondisi manual yang sama dalam transaksi perangkat; status valid dapat ditulis jika tidak ada temuan aktif. Guard kepemilikan lab tetap berlaku. Form legacy masih menampilkan status read-only; perubahan kondisi manual di form tersedia pada inventaris Operasional.
 - Form edit perangkat mempertahankan null lab Operasional; konversi penggunaan dilakukan melalui Aset IT. Filter lab tidak lagi memanggil `toString()` pada null.
 - Pemeriksaan, daftar/detail temuan, antrean teknisi dan SQL detail laporan memakai LEFT JOIN lab agar aset Operasional tidak hilang. Aturan Kepala Lab dan lifecycle repair/tiket tetap dipertahankan.
 - Upload **foto perangkat legacy** kini mempunyai suffix acak, agar nama/tanggal sama tidak menimpa foto lama lalu terhapus ketika validasi gagal. Upload lab/pengumuman tidak diubah.
@@ -64,10 +64,19 @@ Runner membuat nama baru `^simlab_review_\d{14}$`, menyalin **skema saja**, meng
 
 Mode `--create-isolated --browser` mempertahankan child server sementara untuk browser terisolasi; session sintetis hanya ada sementara di scratch, tidak dicetak, dan dihapus setelah selesai. Browser harus menulis completion marker yang cocok dengan nama database; timeout menghentikan server. Frontend fixture: `frontend/tests/fixtures/assets-server.mjs` memakai port 5197, cache Vite unik di TMPDIR, JSX runtime aktual dan loader asset Vite, bukan cache server 5174. Matrix memakai adapter sintetis untuk state/layout; mode real memakai komponen halaman aktual terhadap API/MySQL clone, tanpa adapter respons sintetis.
 
-## Koreksi review independen (bukti terbaru terpisah)
+## Recovery Operasional + SLA (bukti terbaru terpisah)
+
+- Owner run lama tidak diketahui status keluarnya dan hasil tersimpan `verified=false`; log terakhir gagal pada assertion browser Kepala Lab. Hasil lama tidak dianggap browser full-pass.
+- Recovery memakai fresh schema-only clone, override kedua client DB, HTTP nyata untuk seluruh enum create/edit, guard 409, metadata-only, akses lima role, dan penyimpanan browser setelah reload. Browser layout sintetis mencakup Admin 320/768/1280 serta empat role baca pada 768; tidak ada overflow dokumen, permintaan `/lab`, atau error JS pada check yang disimpan.
+- Regresi mounted actual App memastikan link tiket ke aset Pembelajaran tetap membuka detail dan bertahan saat remount, tanpa memasukkan aset tersebut ke daftar Operasional.
+- SLA live hanya dibaca: empat prioritas valid tetap tersedia. Initializer di clone diuji dua kali dengan P2 custom; hanya prioritas hilang ditambahkan, custom tetap. Tidak ada reset akun, live repair ulang, atau perubahan helper SLA pada recovery.
+- Manifest terbaru: `C:/Users/LOQ/AppData/Local/hermes/cache/scratch/operational-assets-evidence/recovery-completion-evidence.json`. Hitungan test, hash sumber, clone, PID/cleanup dan batas concurrent-tree ada di sana; angka di bagian bawah adalah historis.
+- Protected original `sistem-manajemen-lab-fix` fingerprint sama sebelum/sesudah. Configured review source dapat menerima audit dari penggunaan paralel: run HTTP final mendeteksi perubahan **activity_logs saja**; jangan mengklaim seluruh configured source tidak berubah. Recovery sendiri tidak mengirim authenticated GET ke server live.
+
+## Koreksi review independen (historis; bukan perilaku Operasional terbaru)
 
 - Inventaris pada edit legacy sekarang opsional, termasuk submit multipart foto saja; guard nama/status/lab tetap berlaku. Regresi menjalankan handler submit aktual dan memeriksa FormData, bukan hanya teks sumber.
-- Muat ulang halaman aset juga meminta ulang `/lab` untuk Admin/Kepala Lab. Regresi membuktikan endpoint lab dipanggil lagi dan lab hasil pemulihan diteruskan ke form tambah.
+- Catatan historis: halaman aset dahulu memuat opsi `/lab`. Alur Operasional terbaru tidak meminta endpoint lab dan tidak menampilkan selector penggunaan/lab; form selalu mengirim `penggunaan=Operasional`, `lab_id=null`.
 - Pemeriksaan skema menolak harga selain DECIMAL(15,2), kolom opsional NOT NULL, dan definisi enum penggunaan/kategori yang berbeda dengan 503 terkontrol. Migrasi tidak memperbaiki kolom aset yang sudah ada secara destruktif; perubahan nullability lab dibatasi pada signed INT yang diharapkan.
 - Verifikasi terbaru: backend **115/115**, frontend **162/162**, lint **0 error / 6 warning lama**, production build ke direktori scratch berhasil. RED diamati sebelum perbaikan: dua regresi perilaku FE, delapan kasus metadata, dan guard tipe migrasi.
 - Runner existing dijalankan ulang dengan `--create-isolated` dan TMPDIR scratch: clone baru `simlab_review_20261114183534`, **gagal pada precondition unmigrated** (mengharapkan 503, menerima 200 karena clone skema sumber sudah kompatibel). Hanya dua check awal selesai; ini **bukan** independent-review pass atau HTTP suite pass baru. Fingerprint sumber sebelum/sesudah sama, server milik runner dihentikan di finally. Runner tidak diubah untuk menyamarkan kegagalan.

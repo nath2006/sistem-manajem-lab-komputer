@@ -352,7 +352,7 @@
           "assets"
         ],
         "summary": "Read school IT assets",
-        "description": "Reuses perangkat identity. All authenticated roles may read procurement fields. Admin writes all; Kepala Lab writes only Pembelajaran in assigned current AND destination lab. Other roles read-only. No manual status editing; new status Baik, existing status/photo preserved. Readiness checked per authenticated request. Update omitted fields preserve; explicit null/blank clears optional values. See docs/ASSETS_IT.md. Legacy perangkat endpoints retain explicit non-financial projections.",
+        "description": "Reuses perangkat identity. All authenticated roles may read procurement fields. Admin writes all; Kepala Lab writes only Pembelajaran in assigned current AND destination lab. Other roles read-only. Manual conditions are allowed only without active maintenance findings; omitted status preserves the existing condition (new assets default to Baik), and photos are preserved. Readiness checked per authenticated request. Update omitted fields preserve; explicit null/blank clears optional values. See docs/ASSETS_IT.md. Legacy perangkat endpoints retain explicit non-financial projections.",
         "security": [
           {
             "bearerAuth": []
@@ -518,7 +518,7 @@
           "assets"
         ],
         "summary": "Create school IT asset",
-        "description": "Reuses perangkat identity. All authenticated roles may read procurement fields. Admin writes all; Kepala Lab writes only Pembelajaran in assigned current AND destination lab. Other roles read-only. No manual status editing; new status Baik, existing status/photo preserved. Readiness checked per authenticated request. Update omitted fields preserve; explicit null/blank clears optional values. See docs/ASSETS_IT.md. Legacy perangkat endpoints retain explicit non-financial projections.",
+        "description": "Reuses perangkat identity. All authenticated roles may read procurement fields. Admin writes all; Kepala Lab writes only Pembelajaran in assigned current AND destination lab. Other roles read-only. Manual conditions are allowed only without active maintenance findings; omitted status preserves the existing condition (new assets default to Baik), and photos are preserved. Readiness checked per authenticated request. Update omitted fields preserve; explicit null/blank clears optional values. See docs/ASSETS_IT.md. Legacy perangkat endpoints retain explicit non-financial projections.",
         "security": [
           {
             "bearerAuth": []
@@ -682,6 +682,11 @@
                 "type": "object",
                 "additionalProperties": false,
                 "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["Baik", "Rusak", "Perlu Perbaikan", "Dalam Perbaikan"],
+                    "description": "Optional; create defaults to Baik, omitted update preserves. Manual changes with active findings are rejected with 409."
+                  },
                   "nama_perangkat": {
                     "type": "string",
                     "minLength": 1,
@@ -780,7 +785,7 @@
           "assets"
         ],
         "summary": "Read school IT assets",
-        "description": "Reuses perangkat identity. All authenticated roles may read procurement fields. Admin writes all; Kepala Lab writes only Pembelajaran in assigned current AND destination lab. Other roles read-only. No manual status editing; new status Baik, existing status/photo preserved. Readiness checked per authenticated request. Update omitted fields preserve; explicit null/blank clears optional values. See docs/ASSETS_IT.md. Legacy perangkat endpoints retain explicit non-financial projections.",
+        "description": "Reuses perangkat identity. All authenticated roles may read procurement fields. Admin writes all; Kepala Lab writes only Pembelajaran in assigned current AND destination lab. Other roles read-only. Manual conditions are allowed only without active maintenance findings; omitted status preserves the existing condition (new assets default to Baik), and photos are preserved. Readiness checked per authenticated request. Update omitted fields preserve; explicit null/blank clears optional values. See docs/ASSETS_IT.md. Legacy perangkat endpoints retain explicit non-financial projections.",
         "security": [
           {
             "bearerAuth": []
@@ -955,7 +960,7 @@
           "assets"
         ],
         "summary": "Update school IT asset",
-        "description": "Reuses perangkat identity. All authenticated roles may read procurement fields. Admin writes all; Kepala Lab writes only Pembelajaran in assigned current AND destination lab. Other roles read-only. No manual status editing; new status Baik, existing status/photo preserved. Readiness checked per authenticated request. Update omitted fields preserve; explicit null/blank clears optional values. See docs/ASSETS_IT.md. Legacy perangkat endpoints retain explicit non-financial projections.",
+        "description": "Reuses perangkat identity. All authenticated roles may read procurement fields. Admin writes all; Kepala Lab writes only Pembelajaran in assigned current AND destination lab. Other roles read-only. Manual conditions are allowed only without active maintenance findings; omitted status preserves the existing condition (new assets default to Baik), and photos are preserved. Readiness checked per authenticated request. Update omitted fields preserve; explicit null/blank clears optional values. See docs/ASSETS_IT.md. Legacy perangkat endpoints retain explicit non-financial projections.",
         "security": [
           {
             "bearerAuth": []
@@ -1131,6 +1136,11 @@
                 "type": "object",
                 "additionalProperties": false,
                 "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["Baik", "Rusak", "Perlu Perbaikan", "Dalam Perbaikan"],
+                    "description": "Optional; create defaults to Baik, omitted update preserves. Manual changes with active findings are rejected with 409."
+                  },
                   "nama_perangkat": {
                     "type": "string",
                     "minLength": 1,
@@ -1222,7 +1232,7 @@
           "assets"
         ],
         "summary": "Guarded delete school IT asset",
-        "description": "Reuses perangkat identity. All authenticated roles may read procurement fields. Admin writes all; Kepala Lab writes only Pembelajaran in assigned current AND destination lab. Other roles read-only. No manual status editing; new status Baik, existing status/photo preserved. Readiness checked per authenticated request. Update omitted fields preserve; explicit null/blank clears optional values. See docs/ASSETS_IT.md. Legacy perangkat endpoints retain explicit non-financial projections.",
+        "description": "Reuses perangkat identity. All authenticated roles may read procurement fields. Admin writes all; Kepala Lab writes only Pembelajaran in assigned current AND destination lab. Other roles read-only. Manual conditions are allowed only without active maintenance findings; omitted status preserves the existing condition (new assets default to Baik), and photos are preserved. Readiness checked per authenticated request. Update omitted fields preserve; explicit null/blank clears optional values. See docs/ASSETS_IT.md. Legacy perangkat endpoints retain explicit non-financial projections.",
         "security": [
           {
             "bearerAuth": []

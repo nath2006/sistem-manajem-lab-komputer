@@ -24,7 +24,7 @@ export default function AssetTable({
 }) {
   return (
     <Tabel
-      title="Inventaris Aset IT"
+      title="Inventaris Aset IT Operasional"
       breadcrumbContext={user?.role}
       data={data}
       headers={headers}

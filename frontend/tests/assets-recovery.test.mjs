@@ -51,16 +51,14 @@ test('legacy blank inventory submits photo-only update and preserves required na
     h.states[0]={...h.states[0],[field]:previous};
   }
 });
-test('lab failure retry requests labs again and supplies recovered labs to add form', async()=>{
-  let labs=0;
-  const recovered=[{lab_id:9,nama_lab:'Recovered lab'}];
-  const h=await harness('src/features/AsetIT/AsetIT.jsx',{get:async path=>{if(path==='/lab'){if(++labs===1)throw Error('offline');return {data:recovered};}return {data:[]};}});
+test('operational page ignores lab endpoint and displays only operational assets to Admin', async()=>{
+  const calls=[];
+  const h=await harness('src/features/AsetIT/AsetIT.jsx',{get:async path=>{calls.push(path);if(path==='/lab')throw Error('lab unavailable');return {data:[{perangkat_id:1,penggunaan:'Operasional'},{perangkat_id:2,penggunaan:'Pembelajaran'}]};}});
   h.render(); await Promise.all(h.effects.map(fn=>fn())); await new Promise(resolve=>setImmediate(resolve));
-  const retry=find(h.render(),n=>n.type==='button'&&n.props.children==='Muat ulang');
-  assert.ok(retry);
-  await retry.props.onClick(); await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(labs,2,'retry must reload lab endpoint');
-  const add=find(h.render(),n=>n.type==='button'&&n.props.children==='Tambah aset');
-  assert.equal(add.props.disabled,false); add.props.onClick();
-  assert.deepEqual(find(h.render(),n=>n.props?.labs).props.labs,recovered);
+  const tree=h.render();
+  assert.deepEqual(calls,['/assets']);
+  assert.deepEqual(find(tree,n=>Array.isArray(n.props?.data)).props.data,[{perangkat_id:1,penggunaan:'Operasional'}]);
+  assert.equal(find(tree,n=>n.props?.['aria-label']==='Filter penggunaan'),undefined);
+  const add=find(tree,n=>n.type==='button'&&n.props.children==='Tambah aset');
+  assert.equal(add.props.disabled,false);
 });

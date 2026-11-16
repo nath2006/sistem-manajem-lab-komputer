@@ -217,6 +217,31 @@ test('actual App routes navigate from a loaded ticket to the real asset modal an
   } finally { await h.close(); }
 });
 
+test('ticket-linked learning asset remains readable through its deep link outside operational inventory', async () => {
+  const original = { ...asset };
+  Object.assign(asset, { penggunaan: 'Pembelajaran', lab_id: 3, nama_lab: 'Linked learning laboratory' });
+  let h;
+  try {
+    h = await harness();
+    const link = h.root.root.findAllByType('a').find(n => n.children.some(c => typeof c === 'string' && c.includes('Lihat aset:')));
+    assert.ok(link);
+    await click(h, link);
+    assert.equal(h.location.pathname + h.location.search, '/aset-it?asset=7');
+    assert.match(text(h), /Detail Aset IT Sekolah/);
+    assert.match(text(h), /Linked learning laboratory/);
+    assert.equal(h.root.root.findAllByProps({ 'aria-label': `Edit ${asset.nama_perangkat}` }).length, 0);
+    await h.reload();
+    assert.match(text(h), /Linked learning laboratory/);
+    await click(h, h.root.root.findByProps({ 'aria-label': 'Tutup dialog' }));
+    assert.equal(h.root.root.findAllByProps({ 'aria-label': `Lihat ${asset.nama_perangkat}` }).length, 0);
+    assert.ok(h.requests.filter(path => path === '/assets/7').length >= 2);
+  } finally {
+    if (h) await h.close();
+    for (const key of Object.keys(asset)) delete asset[key];
+    Object.assign(asset, original);
+  }
+});
+
 test('invalid selections never request a detail and can recover to the existing inventory', async () => {
   for (const query of ['asset=', 'asset=..%2Fassets', 'asset=%252F7', 'asset=0', 'asset=-1', 'asset=1e2', 'asset=9007199254740992', 'asset=7&asset=8']) {
     const h = await harness(`/aset-it?keep=1&${query}`);
