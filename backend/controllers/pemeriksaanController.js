@@ -7,7 +7,7 @@ const selectInspection = `SELECT pm.*, pm.user_id AS pemeriksa_user_id,
   l.lab_id, l.nama_lab, l.kepala_lab_id FROM pemeriksaan pm
   LEFT JOIN user u ON pm.user_id = u.user_id
   JOIN perangkat pr ON pm.perangkat_id = pr.perangkat_id
-  JOIN laboratorium l ON pr.lab_id = l.lab_id`;
+  LEFT JOIN laboratorium l ON pr.lab_id = l.lab_id`;
 const validInspection = b => ['Baik', 'Bermasalah'].includes(b.hasil_pemeriksaan)
   && typeof b.tanggal_pemeriksaan === 'string' && !Number.isNaN(Date.parse(b.tanggal_pemeriksaan));
 const allowed = (req, row) => req.user.role !== 'Kepala Lab' || Number(row.kepala_lab_id) === Number(req.user.id);
@@ -21,7 +21,7 @@ export const createPemeriksaan = async (req, res) => {
     conn = await db.getConnection();
     await conn.beginTransaction();
     const [devices] = await conn.query(`SELECT pr.perangkat_id, l.kepala_lab_id FROM perangkat pr
-      JOIN laboratorium l ON pr.lab_id = l.lab_id WHERE pr.perangkat_id = ? FOR UPDATE`, [b.perangkat_id]);
+      LEFT JOIN laboratorium l ON pr.lab_id = l.lab_id WHERE pr.perangkat_id = ? FOR UPDATE`, [b.perangkat_id]);
     if (!devices.length || !allowed(req, devices[0])) {
       await conn.rollback(); return res.status(404).json({ message: 'Perangkat tidak ditemukan dalam laboratorium Anda.' });
     }

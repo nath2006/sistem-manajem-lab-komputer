@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./Components/dashboardTheme.css";
 @import "driver.js/dist/driver.css";
 @import "./Components/Onboarding/onboarding.css";
 @plugin "flowbite-react/plugin/tailwindcss";
@@ -60,13 +61,32 @@
 /* All widths keep native table/header/row/cell layout. */
 .mobile-cell-label { display: none; }
 .table-scroll-shell { width: 100%; min-width: 0; max-width: 100%; }
-.table-scroll-hint { padding: .75rem 1rem; font-size: .75rem; line-height: 1.5; color: var(--color-gray-600); }
+
 .table-scroll-region {
   width: 100%; min-width: 0; max-width: 100%; overflow-x: auto;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
+}
+
+/* Quiet neutral tracks, rounded thumbs, and a restrained brand tint on hover. */
+.table-scroll-region,
+.custom-scrollbar {
+  --scrollbar-thumb: color-mix(in srgb, var(--color-gray-500, #6b7280) 38%, transparent);
   scrollbar-width: thin;
-  scrollbar-color: var(--color-maroon) var(--color-gray-100);
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+.table-scroll-region:hover,
+.custom-scrollbar:hover {
+  --scrollbar-thumb: color-mix(in srgb, var(--color-maroon) 42%, var(--color-gray-400, #9ca3af));
+}
+.table-scroll-region::-webkit-scrollbar,
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.table-scroll-region::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.table-scroll-region::-webkit-scrollbar-thumb,
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 999px;
 }
 .table-scroll-region:focus-visible { outline: 2px solid var(--color-maroon); outline-offset: -2px; }
 .table-scroll-region table { width: 100%; min-width: 40rem; border-collapse: collapse; }

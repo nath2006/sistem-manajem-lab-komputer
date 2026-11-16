@@ -13,6 +13,6 @@ test('ticketing renders themed service management, honest SLA and accessible loa
   assert.match(html, /Catat perbaikan berhasil/);
   assert.match(html, /href="\/kelola-perbaikan"/);
   assert.ok(!module.exports.restricted.includes('href='));
-  for (const text of ['Tiket Layanan','incident','service request','Memuat tiket','24×7','Impor Temuan Pemeriksaan','Kebijakan SLA']) assert.ok(html.includes(text),text);
+  for (const text of ['Bantuan','Tiket Layanan','incident','service request','Memuat tiket','24×7','Impor Temuan Pemeriksaan','Kebijakan SLA']) assert.ok(html.includes(text),text);
   assert.ok(html.includes('bg-maroon')); assert.ok(html.includes('role="status"')); assert.ok(!html.includes('ISO certified'));
 });

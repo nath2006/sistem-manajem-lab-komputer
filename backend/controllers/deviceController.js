@@ -2,46 +2,26 @@ import db from "../config/db.js";
 import {createDeletionService,sendDeletionError} from "../services/deletionService.js";
 import path from "path";
 import fs from "fs";
+import {createLegacyDeviceWriter} from "../services/legacyDeviceService.js";
 
-//Buat Data Perangkat Baru
-export const createDevice = async (req, res) => {
+const writeLegacyDevice = createLegacyDeviceWriter(db);
+const removeDeviceImage = filename => {
+  if (!filename) return;
+  const target = path.join('uploads/perangkat', path.basename(filename));
+  try { if (fs.existsSync(target)) fs.unlinkSync(target); } catch { /* committed DB result preserved */ }
+};
+const saveDevice = update => async (req,res) => {
   try {
-    const {
-      nama_perangkat, 
-      spesifikasi, 
-      status, 
-      lab_id, 
-      nomor_inventaris
-    } = req.body;
-
-    const foto_perangkat = req.file ? req.file.filename : null;
-
-    const [result] = await db.query(
-      "INSERT INTO perangkat (nama_perangkat, spesifikasi, status, lab_id, foto_perangkat, nomor_inventaris) VALUES (?,?,?,?,?,?)",
-      [nama_perangkat, spesifikasi, status, lab_id,foto_perangkat, nomor_inventaris]
-    );
-
-    // Mengambil data yang baru saja di-insert beserta nama_lab untuk respons
-    const [newDeviceRows] = await db.query(
-      `SELECT p.*, l.nama_lab 
-       FROM perangkat p 
-       LEFT JOIN laboratorium l ON p.lab_id = l.lab_id 
-       WHERE p.perangkat_id = ?`,
-      [result.insertId]
-    );
-
-    res.status(201).json({
-      data: newDeviceRows[0], // Mengirim data lengkap termasuk nama_lab
-      message: "Data Perangkat Baru Berhasil Ditambahkan"
-    });
-  } catch (error) {
-    console.error("Error creating device:", error); // Log error lebih spesifik
-    res.status(500).json({ 
-      message: 'Membuat Perangkat Baru Gagal' ,
-      error: error.message,
-    });
+    const {row,oldPhoto} = await writeLegacyDevice(req.user,req.body,update?req.params.id:undefined,req.file?.filename);
+    if (oldPhoto) removeDeviceImage(oldPhoto);
+    res.status(update?200:201).json({data:row,message:update?'Data Perangkat Berhasil Diupdate':'Data Perangkat Baru Berhasil Ditambahkan'});
+  } catch(error) {
+    if(req.file?.filename) removeDeviceImage(req.file.filename);
+    const duplicate=error.code==='ER_DUP_ENTRY';
+    res.status(duplicate?409:error.status||500).json({message:duplicate?'Nomor inventaris sudah digunakan.':error.status?error.message:'Gagal menyimpan perangkat.'});
   }
 };
+export const createDevice = saveDevice(false);
 
 //Get All Perangkat (dengan nama_lab)
 export const getAllDevice = async (req,res) => {
@@ -112,105 +92,7 @@ export const getDeviceById = async (req, res) => {
   }
 };
 
-//Update data perangkat
-export const updateDevice = async (req, res) => {
-  try {
-    const {id} = req.params;
-    const { 
-      nama_perangkat, 
-      spesifikasi, 
-      status, 
-      lab_id, 
-      nomor_inventaris
-    } = req.body;
-    
-    const [oldRows] = await db.query(
-      "SELECT foto_perangkat, lab_id FROM perangkat WHERE perangkat_id = ?", // Ambil juga lab_id lama jika perlu validasi
-      [id]
-    );
-
-    if (oldRows.length === 0) {
-      return res.status(404).json({ 
-        message: 'Data Perangkat Tidak Ditemukan untuk diupdate' 
-      });
-    }
-    const oldFotoPerangkat = oldRows[0].foto_perangkat;
-    // const oldLabId = oldRows[0].lab_id; // Bisa digunakan jika ada logika validasi lab_id
-
-    let newFotoPerangkat = oldFotoPerangkat;
-
-    if(req.file) {
-      newFotoPerangkat = req.file.filename;
-      
-      if(oldFotoPerangkat){
-        const oldPath = path.join("uploads/perangkat", oldFotoPerangkat); // Pastikan base path "uploads/perangkat" benar
-        if (fs.existsSync(oldPath)) {
-          try {
-            fs.unlinkSync(oldPath);
-          } catch (unlinkErr) {
-            console.error("Gagal menghapus file lama:", unlinkErr);
-            // Pertimbangkan apakah ini error fatal atau bisa diabaikan (misalnya hanya log)
-          }
-        }
-      }
-    }
-
-    const [result] = await db.query(
-      `UPDATE perangkat SET 
-        nama_perangkat = ?, 
-        spesifikasi = ?, 
-        status = ?, 
-        lab_id = ?, 
-        foto_perangkat = ?, 
-        nomor_inventaris = ? 
-      WHERE perangkat_id = ?`,
-      [
-        nama_perangkat, 
-        spesifikasi, 
-        status, 
-        lab_id, 
-        newFotoPerangkat,
-        nomor_inventaris,
-        id
-      ]
-    );
-    
-    if (result.affectedRows === 0) {
-      // Ini bisa terjadi jika ID ada tapi data yang diinput sama persis dengan data lama,
-      // sehingga tidak ada baris yang 'terpengaruh'. Atau jika ID tidak ada.
-      // Untuk konsistensi, kita anggap jika ID ada tapi tidak ada perubahan, itu bukan error 404.
-      // Namun, jika ingin strict, bisa tetap 404 atau status lain.
-      // Kita ambil ulang data untuk memastikan.
-    }
-
-    // Ambil data yang baru diupdate beserta nama_lab untuk respons
-    const [updatedDeviceRows] = await db.query(
-      `SELECT p.*, l.nama_lab 
-       FROM perangkat p 
-       LEFT JOIN laboratorium l ON p.lab_id = l.lab_id 
-       WHERE p.perangkat_id = ?`,
-      [id]
-    );
-
-    if (updatedDeviceRows.length === 0) {
-        // Seharusnya tidak terjadi jika ID valid dan update berhasil (atau tidak ada perubahan)
-        return res.status(404).json({ message: "Data Perangkat tidak ditemukan setelah update." });
-    }
-
-    res.status(200).json({
-      data: updatedDeviceRows[0], // Mengirim data lengkap termasuk nama_lab
-      message: 'Data Perangkat Berhasil Diupdate'
-    });
-
-  } catch (error) {
-    console.error("Error updating device:", error); // Log error lebih spesifik
-    res.status(500).json({ 
-      message: 'Mengupdate Data Perangkat Gagal' ,
-      error: error.message,
-    });
-    
-  }
-}
+export const updateDevice = saveDevice(true);
 
 //Delete Perangkat
 export const createDeleteDevice = ({service = createDeletionService({db}), removeImage = filename => { const target = path.join("uploads/perangkat", path.basename(filename)); if (fs.existsSync(target)) fs.unlinkSync(target); }} = {}) => async (req,res) => {

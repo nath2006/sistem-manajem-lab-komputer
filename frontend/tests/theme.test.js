@@ -51,8 +51,10 @@ test('statistics icons, dashboard titles and copyright use theme tokens, not red
   assert.doesNotMatch(stats + card + footer, /(?:group-hover:|hover:)?(?:bg|text|border)-red-\d+/);
 });
 
-test('lab/user action icons and schedule navigation do not switch back to static colors', async () => {
-  for (const relative of ['features/KelolaLaboratorium/Laboratorium.jsx', 'features/KelolaUser/User.jsx', 'features/LihatJadwalLab/JadwalLab.jsx']) {
+test('lab action icons and schedule navigation retain the school theme', async () => {
+  // User/announcement row actions intentionally use distinct semantic colors;
+  // actual rendered controls are covered by action-buttons-scrollbars.test.mjs.
+  for (const relative of ['features/KelolaLaboratorium/Laboratorium.jsx', 'features/LihatJadwalLab/JadwalLab.jsx']) {
     const source = await readFile(new URL(`../src/${relative}`, import.meta.url), 'utf8');
     const buttons = source.match(/<button\b[\s\S]*?<\/button>/g) || [];
     assert.ok(buttons.length > 0, relative);

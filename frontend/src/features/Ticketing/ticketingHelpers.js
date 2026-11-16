@@ -1,3 +1,15 @@
+export function slaReadinessMessage(policies) {
+  const complete = Array.isArray(policies) && ['P1', 'P2', 'P3', 'P4'].every(priority => {
+    const matches = policies.filter(row => row.priority === priority);
+    if (matches.length !== 1) return false;
+    const { response_minutes: response, resolution_minutes: resolution } = matches[0];
+    const due = new Date(Date.now() + resolution * 60000);
+    return Number.isSafeInteger(response) && response > 0 && Number.isSafeInteger(resolution) &&
+      resolution >= response && Number.isFinite(+due) && due.getUTCFullYear() <= 9999;
+  });
+  return complete ? '' : 'SLA belum siap: kebijakan P1–P4 belum lengkap atau target tidak valid. Hubungi Admin untuk memeriksa Kebijakan SLA. Untuk database review baru, jalankan inisialisasi SLA review sesuai panduan sebelum membuat tiket.';
+}
+
 export const isManager = (role) => ['Admin', 'Koordinator Lab'].includes(role);
 export const isTerminal = (status) =>
   ['resolved', 'closed', 'cancelled'].includes(status);

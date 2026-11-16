@@ -1,3 +1,5 @@
+import DashboardInsights from '../../Components/DashboardInsights';
+import DashboardTheme from '../../Components/DashboardTheme';
 import LoadingSkeleton from '../../Components/Loading/Skeleton';
 // src/pages/KepalaLab/KepalaLabPage.js
 import React, { useContext, useState, useEffect } from "react";
@@ -131,19 +133,12 @@ export default function KepalaLabPage() {
 
   return (
     <>
-      <Dashboard title={`Dashboard Kepala Lab`}>
+      <Dashboard title={`Selamat ${getGreetingTime(moment())}, ${userName}!`}>
+      <DashboardTheme>
         {authState?.isLoading ? <LoadingSkeleton label="Memuat sesi Kepala Lab..." /> :
         <div className="min-h-[calc(100vh-80px)] flex flex-col px-4 py-6 md:px-6 lg:px-8 bg-white text-gray-800">
           <div className="flex-grow">
             {/* Ucapan Selamat Datang */}
-            <div className="mb-6 p-6 ">
-              <h1 className="font-semibold text-xl md:text-2xl text-gray-800">
-                Selamat {getGreetingTime(moment())}, {userName}!
-              </h1>
-              <p className="text-gray-600">
-                Semoga harimu menyenangkan dan produktif!
-              </p>
-            </div>
 
             <div className="mb-8 md:mb-12 group">
               <button type="button"
@@ -160,11 +155,13 @@ export default function KepalaLabPage() {
                 </div>
               </button>
             </div>
+            <DashboardInsights />
           </div>
           <Footer />
         </div>
         }
-      </Dashboard>
+      </DashboardTheme>
+    </Dashboard>
     </>
   );
 }

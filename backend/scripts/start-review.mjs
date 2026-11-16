@@ -1,3 +1,4 @@
+import { DEFAULT_POLICIES } from '../utils/ticketPolicy.js';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -20,6 +21,22 @@ export function reviewEnvironment(source, options) {
   return { ...source, DB_NAME: options.database, DATABASE_URL: `mysql://${user}:${password}@${hostname}:${port}/${options.database}`, PORT: String(options.port), TZ: 'UTC' };
 }
 
+// Only the explicit review workflow may repair reference data; normal startup/GETs never do.
+export async function initializeReviewSla(connection, database) {
+  if (!/^simlab_review_\d{14}$/.test(database || '')) throw new Error('Database review tidak valid.');
+  const [[selected]] = await connection.query('SELECT DATABASE() AS name');
+  if (selected.name !== database) throw new Error('Database review tidak cocok.');
+  for (const { priority, response_minutes, resolution_minutes } of DEFAULT_POLICIES) {
+    await connection.query('INSERT INTO ticket_sla_policies (priority,response_minutes,resolution_minutes) VALUES (?,?,?) ON DUPLICATE KEY UPDATE priority = priority', [priority, response_minutes, resolution_minutes]);
+  }
+  const [policies] = await connection.query('SELECT priority,response_minutes,resolution_minutes FROM ticket_sla_policies ORDER BY priority');
+  return policies;
+}
+
+export async function prepareReviewSla(connection, options) {
+  if (!options.check) return initializeReviewSla(connection, options.database);
+}
+
 async function main() {
   const options = parseReviewArguments(process.argv.slice(2));
   process.chdir(resolve(dirname(fileURLToPath(import.meta.url)), '..'));
@@ -34,6 +51,7 @@ async function main() {
       const [rows] = await connection.query('SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?', [options.database, table]);
       if (!rows.length) throw new Error(`Migrasi review belum lengkap: ${table}.`);
     }
+    await prepareReviewSla(connection, options);
   } finally { await connection.end(); }
   console.log(`Database review terverifikasi: ${options.database}; port API: ${options.port}. File .env tidak diubah.`);
   if (!options.check) await import('../index.js');

@@ -14,7 +14,7 @@ export const getTeknisiDashboardStats = async (req, res) => {
       db.query(`SELECT pc.*, pr.nama_perangkat, pr.nomor_inventaris,
       l.nama_lab, u.nama_lengkap AS nama_pelapor FROM pengecekan pc
       JOIN perangkat pr ON pc.perangkat_id = pr.perangkat_id
-      JOIN laboratorium l ON pr.lab_id = l.lab_id
+      LEFT JOIN laboratorium l ON pr.lab_id = l.lab_id
       LEFT JOIN user u ON pc.user_id = u.user_id
       WHERE pc.status_pengecekan IN ('Baru', 'Menunggu Perbaikan')
       ORDER BY pc.tanggal_pengecekan ASC, pc.pengecekan_id ASC LIMIT 20`),

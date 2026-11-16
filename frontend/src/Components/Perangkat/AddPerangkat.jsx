@@ -217,12 +217,13 @@ const AddPerangkat = () => {
 
         <div className="mb-4">
           <label htmlFor="status" className="block mb-2 font-medium text-md">Status Perangkat <span className="text-red-500">*</span></label>
-          <select id="status" name="status" value={formData.status} onChange={handleChange}
+          <select id="status" name="status" value={formData.status} disabled aria-describedby="maintenance-status-help"
             className="shadow-sm bg-white border-[2px] border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 h-12" required >
             {statusPerangkatOptions.map(option => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
+          <p id="maintenance-status-help" className="mt-1 text-xs text-gray-500">Status kondisi dikelola melalui pemeriksaan dan perbaikan.</p>
         </div>
 
         <div className="mb-4">

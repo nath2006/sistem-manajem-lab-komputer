@@ -1,0 +1,284 @@
+/* Scoped surfaces preserve the application's existing font and neutral shell. */
+.dashboard-theme {
+    min-width: 0;
+    max-width: 100%;
+    color: var(--dashboard-text);
+}
+
+.dashboard-theme .text-maroon {
+    color: var(--dashboard-accent);
+}
+
+.dashboard-theme :is(.bg-maroon, .from-maroon) {
+    background: var(--dashboard-primary);
+    color: var(--dashboard-on-primary);
+}
+
+.dashboard-theme :is(.bg-maroon, .from-maroon) .text-white {
+    color: var(--dashboard-on-primary);
+}
+
+.dashboard-theme .text-gray-500,
+.dashboard-muted {
+    color: var(--dashboard-muted);
+}
+
+.dashboard-insights {
+    min-width: 0;
+    margin: 0 0 1.5rem;
+}
+
+.dashboard-insights header {
+    margin-bottom: 1rem;
+}
+
+.dashboard-insights h2 {
+    font-size: 1.25rem;
+    font-weight: 650;
+}
+
+.dashboard-insights h3 {
+    font-size: .95rem;
+    font-weight: 600;
+    margin-bottom: .75rem;
+}
+
+.dashboard-insights p {
+    line-height: 1.6;
+    font-size: .875rem;
+}
+
+.dashboard-summaries,
+.dashboard-chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: 1rem;
+    min-width: 0;
+}
+
+.dashboard-summaries {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+    margin-bottom: 1rem;
+}
+
+.dashboard-summary {
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    gap: .25rem .65rem;
+    background: var(--dashboard-surface);
+    color: var(--dashboard-text);
+    border: 1px solid var(--dashboard-border);
+    padding: 1rem;
+    border-radius: .5rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.dashboard-summary>svg {
+    grid-row: span 2;
+    box-sizing: content-box;
+    width: 18px;
+    height: 18px;
+    padding: .4rem;
+    color: inherit;
+    background: transparent;
+}
+
+.dashboard-summary>span {
+    font-size: .75rem;
+    color: inherit;
+}
+
+/* All metrics use the configured primary; meaning stays in labels and icons. */
+.dashboard-summary {
+    background: var(--dashboard-primary);
+    color: var(--dashboard-on-primary);
+    border-color: var(--dashboard-accent);
+}
+
+.dashboard-summary strong {
+    font-size: 1.5rem;
+    line-height: 1.2;
+    font-weight: 650;
+}
+
+.dashboard-chart {
+    min-width: 0;
+    background: var(--dashboard-surface);
+    color: var(--dashboard-text);
+    border: 1px solid var(--dashboard-border);
+    border-radius: .5rem;
+    padding: 1rem;
+}
+
+.dashboard-canvas-container {
+    position: relative;
+    min-width: 0;
+    width: 100%;
+    height: 260px;
+}
+
+.dashboard-insights .dashboard-chart-note {
+    font-size: .75rem;
+    line-height: 1.5;
+    margin: -.25rem 0 .5rem;
+    color: var(--dashboard-muted);
+}
+
+.dashboard-chart-data {
+    margin-top: .75rem;
+    font-size: .75rem;
+    color: var(--dashboard-muted);
+}
+
+.dashboard-chart-data summary {
+    cursor: pointer;
+    min-height: 32px;
+    padding-top: .35rem;
+}
+
+.dashboard-chart-data ul {
+    padding: .5rem 0;
+}
+
+.dashboard-chart-data li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .3rem 0;
+    color: var(--dashboard-text);
+}
+
+.dashboard-chart-empty {
+    min-height: 200px;
+    display: grid;
+    place-items: center;
+    color: var(--dashboard-muted);
+}
+
+.dashboard-chart-skeleton {
+    min-height: 320px;
+    padding: 1rem;
+    border-radius: .5rem;
+    background: var(--dashboard-track);
+    animation: dashboard-pulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes dashboard-pulse {
+    to {
+        opacity: .6;
+    }
+}
+
+.dashboard-retry {
+    background: var(--dashboard-soft);
+    color: var(--dashboard-accent);
+    border: 1px solid var(--dashboard-accent);
+    padding: .5rem 1rem;
+    border-radius: .4rem;
+    min-height: 44px;
+}
+
+.dashboard-theme .dashboard-stat-card {
+    padding: 1rem;
+    border-radius: .5rem;
+    background: var(--dashboard-surface);
+    border: 1px solid var(--dashboard-border);
+    color: var(--dashboard-text);
+}
+
+.dashboard-theme .dashboard-stat-card :is(h1, p) {
+    color: inherit;
+}
+
+.dashboard-theme .dashboard-stat-card .bg-maroon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    box-shadow: none;
+}
+
+.dashboard-theme .dashboard-stat-card .bg-maroon svg {
+    width: 18px;
+    height: 18px;
+    color: inherit;
+}
+
+.dashboard-theme .dashboard-stat-card h1 {
+    font-size: 1.5rem;
+}
+
+.dashboard-theme .dashboard-stat-card {
+    background: var(--dashboard-primary);
+    color: var(--dashboard-on-primary);
+    border-color: var(--dashboard-accent);
+}
+
+.dashboard-theme .dashboard-stat-card p {
+    font-size: .8rem;
+    color: inherit;
+}
+
+.dashboard-admin-details {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+}
+
+.dashboard-theme table thead.bg-maroon {
+    background: var(--dashboard-canvas);
+    color: var(--dashboard-text);
+}
+
+.dashboard-theme table thead.bg-maroon .text-white {
+    color: var(--dashboard-text);
+}
+
+/* Retain the pre-existing operational card contract; no protected action selectors. */
+.dashboard-theme [data-tone="primary"] {
+    --dashboard-tone: var(--dashboard-primary);
+    --dashboard-on-tone: var(--dashboard-on-primary);
+}
+
+.dashboard-theme [data-tone="info"] {
+    --dashboard-tone: var(--dashboard-info);
+    --dashboard-on-tone: var(--dashboard-on-info);
+}
+
+.dashboard-theme [data-tone="success"] {
+    --dashboard-tone: var(--dashboard-success);
+    --dashboard-on-tone: var(--dashboard-on-success);
+}
+
+.dashboard-theme [data-tone="warning"] {
+    --dashboard-tone: var(--dashboard-warning);
+    --dashboard-on-tone: var(--dashboard-on-warning);
+}
+
+.dashboard-theme [data-tone="danger"] {
+    --dashboard-tone: var(--dashboard-danger);
+    --dashboard-on-tone: var(--dashboard-on-danger);
+}
+
+@media (max-width: 767px) {
+    .dashboard-theme .dashboard-insights {
+        width: 100%;
+    }
+
+    .dashboard-chart {
+        padding: .75rem;
+    }
+
+    .dashboard-canvas-container {
+        height: 240px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-chart-skeleton {
+        animation: none;
+    }
+}

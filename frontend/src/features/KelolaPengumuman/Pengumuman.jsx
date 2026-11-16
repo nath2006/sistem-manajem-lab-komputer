@@ -13,8 +13,8 @@ import EditPegumuman from '../../Components/Pengumuman/EditPengumuman';
 import truncateText from '../../utils/truncateText';
 import formatDate from '../../utils/formatDateView';
 import { resolveAnnouncementFileUrl } from '../../utils/announcementFile';
+import RowActionButton from '../../Components/RowActionButton';
 
-const actionClass = 'inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-maroon transition-colors hover:bg-maroon/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon focus-visible:ring-offset-2 active:scale-95';
 
 
 
@@ -120,17 +120,17 @@ const Pengumuman = () => {
       <td className="px-6 py-4 text-gray-900">{formatDate(item.created_at)}</td>
       <td className="px-6 py-4 text-gray-900">{item.created_by?.nama_lengkap || 'Tidak Diketahui'}</td>
       <td className="px-6 py-4 text-gray-900">
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.is_active === 1 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+        <span className={`inline-flex max-w-full items-center rounded-full px-2 py-1 text-[11px] font-medium leading-4 whitespace-normal ${item.is_active === 1 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
           {item.is_active === 1 ? 'Aktif' : 'Tidak Aktif'}
         </span>
       </td>
-      <td className='flex justify-center items-center py-6 px-5'>
+      <td className="px-3 py-4">
         <div className='flex items-center justify-between gap-1'>
-          <button type="button" aria-label={`Lihat pengumuman: ${item.judul}`} title="Lihat pengumuman" onClick={() => handleOpenModal(item.id)} className={actionClass}><FaEye size={18} aria-hidden="true" /></button>
+          <RowActionButton variant="view" label={`Lihat pengumuman: ${item.judul}`} tooltip="Lihat pengumuman" onClick={() => handleOpenModal(item.id)}><FaEye size={18} aria-hidden="true" /></RowActionButton>
           {isAuth && (
             <>
-              <button type="button" aria-label={`Edit pengumuman: ${item.judul}`} title="Edit pengumuman" onClick={() => handleOpenEditModal(item.id)} className={actionClass}><FaFilePen size={18} aria-hidden="true" /></button>
-              <button type="button" aria-label={`Hapus pengumuman: ${item.judul}`} title="Hapus pengumuman" onClick={() => handleDelete(item.id)} className={actionClass}><FaTrash size={18} aria-hidden="true" /></button>
+              <RowActionButton variant="edit" label={`Edit pengumuman: ${item.judul}`} tooltip="Edit pengumuman" onClick={() => handleOpenEditModal(item.id)}><FaFilePen size={18} aria-hidden="true" /></RowActionButton>
+              <RowActionButton variant="delete" label={`Hapus pengumuman: ${item.judul}`} tooltip="Hapus pengumuman" onClick={() => handleDelete(item.id)}><FaTrash size={18} aria-hidden="true" /></RowActionButton>
             </>
           )}
         </div>

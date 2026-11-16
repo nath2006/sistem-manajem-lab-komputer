@@ -22,6 +22,7 @@ import laporanPerangkat from './router/laporanPerangkat.js';
 import perbaikanRoutes from './router/perbaikanRoutes.js';
 // Perhatikan potensi typo: 'pengajunLab' mungkin seharusnya 'pengajuanLabRoutes'
 import pengajunLab from './router/pengajuanLabRoutes.js'; 
+import { createDashboardInsightsRouter } from './router/dashboardInsightsRoutes.js';
 import dashboardAdminRoutes from './router/dashboardAdminRoutes.js';
 import dashboardTeknisiRoutes from './router/dashboardTeknisiRoutes.js';
 import { getJadwalLabMingguan } from './controllers/jadwalLabController.js';
@@ -32,6 +33,8 @@ import db from './config/db.js';
 import { createTicketRouter } from './router/ticketRoutes.js';
 import { verifyToken } from './middleware/authMiddleware.js';
 import deletionRoutes from './router/deletionRoutes.js';
+import { createAssetRouter } from './router/assetRoutes.js';
+import { createAssetQrRouter } from './router/assetQrRoutes.js';
 
 dotenv.config();
 
@@ -63,6 +66,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Definisi Rute API Anda
 app.use('/api', activityLog);
 app.use('/api/deletion', deletionRoutes);
+app.use('/api/assets', createAssetRouter(db, verifyToken));
+app.use('/api/asset-qr', createAssetQrRouter(db, verifyToken));
 app.use('/api/tickets', createTicketRouter(db, verifyToken));
 app.use('/api/settings', settingsRoutes);
 app.use('/api/activity-logs', activityLogRoutes);
@@ -76,6 +81,7 @@ app.use("/api/pengecekan", pengecekanRouter);
 app.use("/api/laporan/perangkat", laporanPerangkat);
 app.use("/api/perbaikan", perbaikanRoutes);
 app.use("/api/pengajuan", pengajunLab); 
+app.use('/api/dashboard', createDashboardInsightsRouter(db));
 app.use("/api/dashboard", dashboardAdminRoutes); 
 app.use("/api/dashboard", dashboardTeknisiRoutes); 
 app.get("/api/jadwal-lab", verifyToken, getJadwalLabMingguan);

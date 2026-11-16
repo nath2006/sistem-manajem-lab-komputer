@@ -11,8 +11,9 @@ test('table primitive renders a local keyboard-scrollable responsive viewport', 
   assert.match(html, /Lab A/);
 });
 
-test('user and lab icon actions have explicit accessible touch targets', async () => {
-  for (const path of ['features/KelolaUser/User.jsx', 'features/KelolaLaboratorium/Laboratorium.jsx']) {
+test('lab icon actions have explicit accessible touch targets', async () => {
+  // User row actions are tested through their actual shared component rendering.
+  for (const path of ['features/KelolaLaboratorium/Laboratorium.jsx']) {
     const text = await source(path);
     const actions = [...text.matchAll(/<button\b[\s\S]*?<\/button>/g)].map(match => match[0]).filter(button => /FaEye|FaFilePen|FaTrash/.test(button));
     assert.equal(actions.length, 3);

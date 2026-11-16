@@ -3,16 +3,25 @@ import {
   FaHouse,
   FaBars,
   FaArrowRightFromBracket,
-  FaUserGear,
+  FaUsers,
+  FaGear,
+  FaWaveSquare,
+  FaWrench,
+  FaClipboardCheck,
+  FaStethoscope,
+  FaTicket,
+  FaClock,
+  FaCalendarPlus,
   FaRegNewspaper,
   FaRegCalendarDays,
-  FaRegCalendarCheck,
+
   FaLaptopFile,
-  FaLaptopMedical,
+
   FaComputer,
+  FaBoxesStacked,
   FaChevronDown,
-  FaCalendarCheck,
 } from 'react-icons/fa6';
+import Tooltip from '../Components/Tooltip';
 import img from '../assets/DUMMY-LOGO.png';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { post } from '../utils/api';
@@ -55,14 +64,14 @@ export const DashboardShell = ({ title, children, onReplayOnboarding }) => {
     { type: 'divider' },
     {
       name: 'Pengajuan  Jadwal Lab',
-      ic: <FaCalendarCheck />,
+      ic: <FaCalendarPlus />,
       to: '/kelola-jadwal-lab',
     },
     { name: 'Jadwal Lab', ic: <FaRegCalendarDays />, to: '/jadwal-lab' },
     { type: 'divider' },
     {
       name: 'Pemeriksaan Perangkat',
-      ic: <FaLaptopMedical />,
+      ic: <FaStethoscope />,
       to: '/kelola-pemeriksaan-perangkat',
     },
     {
@@ -92,12 +101,12 @@ export const DashboardShell = ({ title, children, onReplayOnboarding }) => {
     { type: 'divider' },
     {
       name: 'Perbaikan Perangkat',
-      ic: <FaLaptopMedical />,
+      ic: <FaWrench />,
       to: '/kelola-perbaikan',
     },
     {
       name: 'Pengecekan Perangkat',
-      ic: <FaLaptopMedical />,
+      ic: <FaClipboardCheck />,
       to: '/kelola-pengecekan',
     },
   ];
@@ -107,12 +116,12 @@ export const DashboardShell = ({ title, children, onReplayOnboarding }) => {
     { type: 'divider' },
     {
       name: 'Pengajuan  Jadwal Lab',
-      ic: <FaCalendarCheck />,
+      ic: <FaCalendarPlus />,
       to: '/pengajuan-jadwal-lab',
     },
     {
       name: 'Cek Status Pengajuan Jadwal ',
-      ic: <FaCalendarCheck />,
+      ic: <FaClock />,
       to: '/pengajuan-jadwal-lab/status',
     },
     { name: 'Jadwal Lab', ic: <FaRegCalendarDays />, to: '/jadwal-lab' },
@@ -123,7 +132,7 @@ export const DashboardShell = ({ title, children, onReplayOnboarding }) => {
     { type: 'divider' },
     {
       name: 'Pemeriksaan Perangkat',
-      ic: <FaLaptopMedical />,
+      ic: <FaStethoscope />,
       to: '/kelola-pemeriksaan-perangkat',
     },
     {
@@ -133,7 +142,7 @@ export const DashboardShell = ({ title, children, onReplayOnboarding }) => {
     },
     {
       name: 'Pengajuan Jadwal Lab',
-      ic: <FaRegCalendarCheck />,
+      ic: <FaCalendarPlus />,
       to: '/kelola-jadwal-lab',
     },
     { name: 'Jadwal Lab', ic: <FaRegCalendarDays />, to: '/jadwal-lab' },
@@ -147,18 +156,18 @@ export const DashboardShell = ({ title, children, onReplayOnboarding }) => {
     { type: 'divider' },
     {
       name: 'Perbaikan Perangkat',
-      ic: <FaLaptopMedical />,
+      ic: <FaWrench />,
       to: '/kelola-perbaikan',
     },
     {
       name: 'Pengecekan Perangkat',
-      ic: <FaLaptopMedical />,
+      ic: <FaClipboardCheck />,
       to: '/kelola-pengecekan',
     },
     { type: 'divider' },
-    { name: 'Kelola User', ic: <FaUserGear />, to: '/user' },
-    { name: 'Pengaturan Sistem', ic: <FaUserGear />, to: '/pengaturan' },
-    { name: 'Log Aktivitas', ic: <FaRegCalendarCheck />, to: '/log-aktivitas' },
+    { name: 'Kelola User', ic: <FaUsers />, to: '/user' },
+    { name: 'Pengaturan Sistem', ic: <FaGear />, to: '/pengaturan' },
+    { name: 'Log Aktivitas', ic: <FaWaveSquare />, to: '/log-aktivitas' },
   ];
 
   let data = [];
@@ -175,10 +184,14 @@ export const DashboardShell = ({ title, children, onReplayOnboarding }) => {
     data = menuTeknisi;
   }
 
+  if (['Admin','Kepala Lab','Koordinator Lab','Teknisi','Guru'].includes(userRole)) {
+    data = [...data, {name:'Aset IT Sekolah',ic:<FaBoxesStacked />,to:'/aset-it'}];
+  }
+
   if (!data.some((item) => item.to === '/ticketing')) {
     data = [
       ...data,
-      { name: 'Tiket Layanan', ic: <FaLaptopMedical />, to: '/ticketing' },
+      { name: 'Bantuan', ic: <FaTicket />, to: '/ticketing' },
     ];
   }
 
@@ -326,11 +339,11 @@ export const DashboardShell = ({ title, children, onReplayOnboarding }) => {
         role={mobileOpen && !isDesktop && !tour ? 'dialog' : undefined}
         aria-modal={mobileOpen && !isDesktop && !tour ? true : undefined}
         aria-label="Navigasi utama"
-        aria-hidden={!sidebarExpanded}
-        inert={!sidebarExpanded}
+        aria-hidden={!isDesktop && !sidebarExpanded}
+        inert={!isDesktop && !sidebarExpanded}
         tabIndex={-1}
         data-dialog-root={mobileOpen && !isDesktop && !tour ? 'true' : undefined}
-        className={`fixed inset-y-0 left-0 z-40 w-72 max-w-[calc(100vw-3rem)] border-r border-maroon bg-white pt-[69px] outline-none transition-transform duration-200 motion-reduce:transition-none lg:max-w-none ${sidebarExpanded ? 'translate-x-0 lg:translate-x-0' : '-translate-x-full lg:-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-40 w-72 max-w-[calc(100vw-3rem)] border-r border-maroon bg-white pt-[69px] outline-none transition-[width,transform] duration-200 motion-reduce:transition-none lg:max-w-none lg:translate-x-0 ${sidebarExpanded ? 'translate-x-0 lg:w-72' : '-translate-x-full lg:w-20'}`}
       >
         <div className="flex h-full min-h-0 flex-col">
           <div className="flex shrink-0 items-center justify-between border-b px-4 py-2 lg:hidden">
@@ -360,25 +373,29 @@ export const DashboardShell = ({ title, children, onReplayOnboarding }) => {
               const active = location.pathname === item.to;
               return (
                 <li key={item.to}>
+                  <Tooltip content={item.name} disabled={!isDesktop || sidebarExpanded}>
                   <Link
+                    aria-label={item.name}
                     data-tour-path={item.to}
                     to={item.to}
                     onClick={() => setMobileOpen(false)}
                     aria-current={active ? 'page' : undefined}
-                    className={`group flex min-h-11 items-center gap-3 rounded-lg p-2 focus-visible:ring-2 focus-visible:ring-maroon ${active ? 'bg-maroon/10 text-maroon' : 'text-gray-700 hover:bg-maroon/5'}`}
+                    className={`group flex min-h-11 min-w-0 ${isDesktop && !sidebarExpanded ? 'justify-center p-1' : 'p-2'} items-center gap-3 rounded-lg focus-visible:ring-2 focus-visible:ring-maroon ${active ? 'bg-maroon/10 text-maroon' : 'text-gray-700 hover:bg-maroon/5'}`}
                   >
                     <span
+                      aria-hidden="true"
                       className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors ${active ? 'bg-maroon text-white' : 'bg-gray-100 text-gray-700 group-hover:bg-maroon/10 group-hover:text-maroon'}`}
                     >
                       {item.ic}
                     </span>
-                    <span className="min-w-0 break-words">{item.name}</span>
+                    <span className={isDesktop && !sidebarExpanded ? 'sr-only' : 'min-w-0 break-words'}>{item.name}</span>
                   </Link>
+                  </Tooltip>
                 </li>
               );
             })}
           </ul>
-          <div className="shrink-0 border-t border-gray-200 px-4 py-3 pb-[max(.75rem,env(safe-area-inset-bottom))]">
+          <div className={`shrink-0 border-t border-gray-200 px-4 py-3 pb-[max(.75rem,env(safe-area-inset-bottom))] ${isDesktop && !sidebarExpanded ? 'hidden' : ''}`}>
             <p className="text-center text-sm font-semibold text-maroon">
               {dateFormatter.format(new Date())}
             </p>
@@ -390,7 +407,7 @@ export const DashboardShell = ({ title, children, onReplayOnboarding }) => {
         aria-label={title}
         tabIndex={-1}
         inert={mobileOpen && !isDesktop && !tour}
-        className={`min-h-dvh min-w-0 px-3 pb-6 pt-[85px] outline-none transition-[margin] duration-200 motion-reduce:transition-none sm:px-6 ${desktopExpanded ? 'lg:ml-72' : ''}`}
+        className={`min-h-dvh min-w-0 px-3 pb-6 pt-[85px] outline-none transition-[margin] duration-200 motion-reduce:transition-none sm:px-6 ${sidebarExpanded ? 'lg:ml-72' : 'lg:ml-20'}`}
       >
         <div className="min-w-0"><h1 data-tour="content" className="mb-4 text-xl font-semibold text-gray-900">{title}</h1>{children}</div>
       </main>

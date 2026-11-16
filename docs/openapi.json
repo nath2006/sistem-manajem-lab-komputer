@@ -12,6 +12,1295 @@
     }
   ],
   "paths": {
+    "/api/dashboard/insights": {
+      "get": {
+        "operationId": "getDashboardInsights",
+        "tags": ["Dashboard"],
+        "summary": "Role-scoped dashboard chart aggregates",
+        "description": "Reuses existing ticket scope and joins. Guru sees own tickets and assets=null; Kepala Lab sees own/owned-lab tickets. Missing asset metadata preserves real counts under Lainnya. Missing ticket schema returns available=false, never an invented zero. Existing dashboard endpoints remain unchanged.",
+        "security": [{"bearerAuth": []}],
+        "x-mounted": true,
+        "x-source": ["backend/index.js", "backend/router/dashboardInsightsRoutes.js", "backend/controllers/dashboardInsightsController.js", "backend/services/dashboardInsightsService.js"],
+        "responses": {
+          "200": {"description": "Role-scoped aggregates", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DashboardInsightsEnvelope"}}}},
+          "401": {"description": "Invalid or expired token"},
+          "403": {"description": "Missing token, unsupported role or invalid actor"},
+          "500": {"description": "Query failure, not represented as empty successful data"}
+        }
+      }
+    },
+    "/api/asset-qr/{publicId}": {
+      "get": {
+        "operationId": "get_asset_qr_AssetQrPublic",
+        "tags": [
+          "asset-qr"
+        ],
+        "summary": "Public identity and specifications only",
+        "description": "No financial, actor, creator, email, authentication or photo data on public route regardless of include/private flags or Authorization header. Public GET never authenticates or writes audits. Private reads and issuer retain authenticated audit policy. UUIDv4 persisted independently of JWT keys. Issuer permission checked under asset/lab row locks. Review-only migration; never startup DDL. See docs/QR_ASSETS.md.",
+        "security": [],
+        "x-mounted": true,
+        "x-source": [
+          "backend/index.js",
+          "backend/router/assetQrRoutes.js",
+          "backend/services/assetQrService.js"
+        ],
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; no-store",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                },
+                "description": "No browser/shared cache."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AssetQrPublic"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid UUIDv4 or asset ID."
+          },
+          "404": {
+            "description": "Asset/issued identity not found."
+          },
+          "500": {
+            "description": "Controlled database/internal failure; no SQL details."
+          },
+          "503": {
+            "description": "QR_SCHEMA_REQUIRED; missing or incompatible QR column or single-column unique index. Feature1 is independent."
+          }
+        }
+      }
+    },
+    "/api/asset-qr/{publicId}/private": {
+      "get": {
+        "operationId": "get_asset_qr_AssetQrPrivate",
+        "tags": [
+          "asset-qr"
+        ],
+        "summary": "Private procurement for every authenticated role",
+        "description": "No financial, actor, creator, email, authentication or photo data on public route regardless of include/private flags or Authorization header. Public GET never authenticates or writes audits. Private reads and issuer retain authenticated audit policy. UUIDv4 persisted independently of JWT keys. Issuer permission checked under asset/lab row locks. Review-only migration; never startup DDL. See docs/QR_ASSETS.md.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-mounted": true,
+        "x-source": [
+          "backend/index.js",
+          "backend/router/assetQrRoutes.js",
+          "backend/services/assetQrService.js"
+        ],
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; no-store",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                },
+                "description": "No browser/shared cache."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AssetQrPrivate"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid UUIDv4 or asset ID."
+          },
+          "404": {
+            "description": "Asset/issued identity not found."
+          },
+          "500": {
+            "description": "Controlled database/internal failure; no SQL details."
+          },
+          "503": {
+            "description": "QR_SCHEMA_REQUIRED; missing or incompatible QR column or single-column unique index. Feature1 is independent."
+          },
+          "401": {
+            "description": "Invalid/expired bearer token."
+          },
+          "403": {
+            "description": "Missing token; issuer also requires Admin or assigned Kepala Lab for Pembelajaran."
+          }
+        }
+      }
+    },
+    "/api/asset-qr/identity/{id}": {
+      "get": {
+        "operationId": "get_asset_qr_AssetQrIdentity",
+        "tags": [
+          "asset-qr"
+        ],
+        "summary": "Read current QR identity without issuing",
+        "description": "No financial, actor, creator, email, authentication or photo data on public route regardless of include/private flags or Authorization header. Public GET never authenticates or writes audits. Private reads and issuer retain authenticated audit policy. UUIDv4 persisted independently of JWT keys. Issuer permission checked under asset/lab row locks. Review-only migration; never startup DDL. See docs/QR_ASSETS.md.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-mounted": true,
+        "x-source": [
+          "backend/index.js",
+          "backend/router/assetQrRoutes.js",
+          "backend/services/assetQrService.js"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; no-store",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                },
+                "description": "No browser/shared cache."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AssetQrIdentity"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid UUIDv4 or asset ID."
+          },
+          "404": {
+            "description": "Asset/issued identity not found."
+          },
+          "500": {
+            "description": "Controlled database/internal failure; no SQL details."
+          },
+          "503": {
+            "description": "QR_SCHEMA_REQUIRED; missing or incompatible QR column or single-column unique index. Feature1 is independent."
+          },
+          "401": {
+            "description": "Invalid/expired bearer token."
+          },
+          "403": {
+            "description": "Missing token; issuer also requires Admin or assigned Kepala Lab for Pembelajaran."
+          }
+        }
+      }
+    },
+    "/api/asset-qr/issue/{id}": {
+      "post": {
+        "operationId": "post_asset_qr_AssetQrIdentity",
+        "tags": [
+          "asset-qr"
+        ],
+        "summary": "Issue or reuse stable QR identity under row lock",
+        "description": "No financial, actor, creator, email, authentication or photo data on public route regardless of include/private flags or Authorization header. Public GET never authenticates or writes audits. Private reads and issuer retain authenticated audit policy. UUIDv4 persisted independently of JWT keys. Issuer permission checked under asset/lab row locks. Review-only migration; never startup DDL. See docs/QR_ASSETS.md.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-mounted": true,
+        "x-source": [
+          "backend/index.js",
+          "backend/router/assetQrRoutes.js",
+          "backend/services/assetQrService.js"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; no-store",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                },
+                "description": "No browser/shared cache."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AssetQrIdentity"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid UUIDv4 or asset ID."
+          },
+          "404": {
+            "description": "Asset/issued identity not found."
+          },
+          "500": {
+            "description": "Controlled database/internal failure; no SQL details."
+          },
+          "503": {
+            "description": "QR_SCHEMA_REQUIRED; missing or incompatible QR column or single-column unique index. Feature1 is independent."
+          },
+          "401": {
+            "description": "Invalid/expired bearer token."
+          },
+          "403": {
+            "description": "Missing token; issuer also requires Admin or assigned Kepala Lab for Pembelajaran."
+          }
+        }
+      }
+    },
+    "/api/assets": {
+      "get": {
+        "operationId": "get_school_assets",
+        "tags": [
+          "assets"
+        ],
+        "summary": "Read school IT assets",
+        "description": "Reuses perangkat identity. All authenticated roles may read procurement fields. Admin writes all; Kepala Lab writes only Pembelajaran in assigned current AND destination lab. Other roles read-only. Manual conditions are allowed only without active maintenance findings; omitted status preserves the existing condition (new assets default to Baik), and photos are preserved. Readiness checked per authenticated request. Update omitted fields preserve; explicit null/blank clears optional values. See docs/ASSETS_IT.md. Legacy perangkat endpoints retain explicit non-financial projections.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-mounted": true,
+        "x-source": [
+          "backend/index.js",
+          "backend/router/assetRoutes.js",
+          "backend/controllers/assetController.js",
+          "backend/services/assetService.js",
+          "backend/utils/assetPolicy.js"
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid fields, IDs, lab/use conflict, year/decimal bounds. Status/photo/unknown fields rejected."
+          },
+          "401": {
+            "description": "Invalid/expired token."
+          },
+          "403": {
+            "description": "Missing token or write role/assigned-lab violation."
+          },
+          "404": {
+            "description": "Asset not found."
+          },
+          "409": {
+            "description": "Duplicate inventory, linked deletion blockers (data preview), or concurrent lock conflict."
+          },
+          "500": {
+            "description": "Controlled internal error, no database details."
+          },
+          "503": {
+            "description": "ASSET_SCHEMA_REQUIRED: authenticated schema readiness check failed. No startup migration or writes."
+          },
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "properties": {
+                          "nama_perangkat": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "spesifikasi": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 16000
+                          },
+                          "nomor_inventaris": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 50
+                          },
+                          "penggunaan": {
+                            "type": "string",
+                            "enum": [
+                              "Pembelajaran",
+                              "Operasional"
+                            ]
+                          },
+                          "kategori": {
+                            "type": "string",
+                            "enum": [
+                              "Komputer",
+                              "Laptop",
+                              "Monitor",
+                              "Printer",
+                              "Perangkat Jaringan",
+                              "Proyektor",
+                              "Lainnya"
+                            ]
+                          },
+                          "lab_id": {
+                            "nullable": true,
+                            "oneOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 2147483647
+                              },
+                              {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]*$"
+                              }
+                            ],
+                            "description": "Required valid lab for Pembelajaran; null/blank for Operasional. Assigned-lab check on Head writes."
+                          },
+                          "lokasi": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 150
+                          },
+                          "tahun_pengadaan": {
+                            "nullable": true,
+                            "oneOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 1900,
+                                "maximum": 2026
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ],
+                            "description": "1900 through current server year. Empty/whitespace/null clear unknown. Omitted on update preserves."
+                          },
+                          "sumber_dana": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 150
+                          },
+                          "harga_beli": {
+                            "type": "string",
+                            "nullable": true,
+                            "pattern": "^(?:\\s*|\\s*[0-9]{1,13}(?:\\.[0-9]{1,2})?\\s*)$",
+                            "description": "Exact DECIMAL(15,2) string, never JSON floating number. 0 valid; null/blank unknown. Omitted update preserves."
+                          },
+                          "perangkat_id": {
+                            "type": "integer"
+                          },
+                          "nama_lab": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "status": {
+                            "type": "string",
+                            "readOnly": true
+                          },
+                          "foto_perangkat": {
+                            "type": "string",
+                            "nullable": true,
+                            "readOnly": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post_school_assets",
+        "tags": [
+          "assets"
+        ],
+        "summary": "Create school IT asset",
+        "description": "Reuses perangkat identity. All authenticated roles may read procurement fields. Admin writes all; Kepala Lab writes only Pembelajaran in assigned current AND destination lab. Other roles read-only. Manual conditions are allowed only without active maintenance findings; omitted status preserves the existing condition (new assets default to Baik), and photos are preserved. Readiness checked per authenticated request. Update omitted fields preserve; explicit null/blank clears optional values. See docs/ASSETS_IT.md. Legacy perangkat endpoints retain explicit non-financial projections.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-mounted": true,
+        "x-source": [
+          "backend/index.js",
+          "backend/router/assetRoutes.js",
+          "backend/controllers/assetController.js",
+          "backend/services/assetService.js",
+          "backend/utils/assetPolicy.js"
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid fields, IDs, lab/use conflict, year/decimal bounds. Status/photo/unknown fields rejected."
+          },
+          "401": {
+            "description": "Invalid/expired token."
+          },
+          "403": {
+            "description": "Missing token or write role/assigned-lab violation."
+          },
+          "404": {
+            "description": "Asset not found."
+          },
+          "409": {
+            "description": "Duplicate inventory, linked deletion blockers (data preview), or concurrent lock conflict."
+          },
+          "500": {
+            "description": "Controlled internal error, no database details."
+          },
+          "503": {
+            "description": "ASSET_SCHEMA_REQUIRED: authenticated schema readiness check failed. No startup migration or writes."
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "properties": {
+                        "nama_perangkat": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "spesifikasi": {
+                          "type": "string",
+                          "nullable": true,
+                          "maxLength": 16000
+                        },
+                        "nomor_inventaris": {
+                          "type": "string",
+                          "nullable": true,
+                          "maxLength": 50
+                        },
+                        "penggunaan": {
+                          "type": "string",
+                          "enum": [
+                            "Pembelajaran",
+                            "Operasional"
+                          ]
+                        },
+                        "kategori": {
+                          "type": "string",
+                          "enum": [
+                            "Komputer",
+                            "Laptop",
+                            "Monitor",
+                            "Printer",
+                            "Perangkat Jaringan",
+                            "Proyektor",
+                            "Lainnya"
+                          ]
+                        },
+                        "lab_id": {
+                          "nullable": true,
+                          "oneOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]*$"
+                            }
+                          ],
+                          "description": "Required valid lab for Pembelajaran; null/blank for Operasional. Assigned-lab check on Head writes."
+                        },
+                        "lokasi": {
+                          "type": "string",
+                          "nullable": true,
+                          "maxLength": 150
+                        },
+                        "tahun_pengadaan": {
+                          "nullable": true,
+                          "oneOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 1900,
+                              "maximum": 2026
+                            },
+                            {
+                              "type": "string"
+                            }
+                          ],
+                          "description": "1900 through current server year. Empty/whitespace/null clear unknown. Omitted on update preserves."
+                        },
+                        "sumber_dana": {
+                          "type": "string",
+                          "nullable": true,
+                          "maxLength": 150
+                        },
+                        "harga_beli": {
+                          "type": "string",
+                          "nullable": true,
+                          "pattern": "^(?:\\s*|\\s*[0-9]{1,13}(?:\\.[0-9]{1,2})?\\s*)$",
+                          "description": "Exact DECIMAL(15,2) string, never JSON floating number. 0 valid; null/blank unknown. Omitted update preserves."
+                        },
+                        "perangkat_id": {
+                          "type": "integer"
+                        },
+                        "nama_lab": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "status": {
+                          "type": "string",
+                          "readOnly": true
+                        },
+                        "foto_perangkat": {
+                          "type": "string",
+                          "nullable": true,
+                          "readOnly": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["Baik", "Rusak", "Perlu Perbaikan", "Dalam Perbaikan"],
+                    "description": "Optional; create defaults to Baik, omitted update preserves. Manual changes with active findings are rejected with 409."
+                  },
+                  "nama_perangkat": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "spesifikasi": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 16000
+                  },
+                  "nomor_inventaris": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 50
+                  },
+                  "penggunaan": {
+                    "type": "string",
+                    "enum": [
+                      "Pembelajaran",
+                      "Operasional"
+                    ]
+                  },
+                  "kategori": {
+                    "type": "string",
+                    "enum": [
+                      "Komputer",
+                      "Laptop",
+                      "Monitor",
+                      "Printer",
+                      "Perangkat Jaringan",
+                      "Proyektor",
+                      "Lainnya"
+                    ]
+                  },
+                  "lab_id": {
+                    "nullable": true,
+                    "oneOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 2147483647
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^[1-9][0-9]*$"
+                      }
+                    ],
+                    "description": "Required valid lab for Pembelajaran; null/blank for Operasional. Assigned-lab check on Head writes."
+                  },
+                  "lokasi": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 150
+                  },
+                  "tahun_pengadaan": {
+                    "nullable": true,
+                    "oneOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1900,
+                        "maximum": 2026
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ],
+                    "description": "1900 through current server year. Empty/whitespace/null clear unknown. Omitted on update preserves."
+                  },
+                  "sumber_dana": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 150
+                  },
+                  "harga_beli": {
+                    "type": "string",
+                    "nullable": true,
+                    "pattern": "^(?:\\s*|\\s*[0-9]{1,13}(?:\\.[0-9]{1,2})?\\s*)$",
+                    "description": "Exact DECIMAL(15,2) string, never JSON floating number. 0 valid; null/blank unknown. Omitted update preserves."
+                  }
+                },
+                "required": [
+                  "nama_perangkat",
+                  "penggunaan",
+                  "kategori"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assets/{id}": {
+      "get": {
+        "operationId": "get_school_assets_id",
+        "tags": [
+          "assets"
+        ],
+        "summary": "Read school IT assets",
+        "description": "Reuses perangkat identity. All authenticated roles may read procurement fields. Admin writes all; Kepala Lab writes only Pembelajaran in assigned current AND destination lab. Other roles read-only. Manual conditions are allowed only without active maintenance findings; omitted status preserves the existing condition (new assets default to Baik), and photos are preserved. Readiness checked per authenticated request. Update omitted fields preserve; explicit null/blank clears optional values. See docs/ASSETS_IT.md. Legacy perangkat endpoints retain explicit non-financial projections.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-mounted": true,
+        "x-source": [
+          "backend/index.js",
+          "backend/router/assetRoutes.js",
+          "backend/controllers/assetController.js",
+          "backend/services/assetService.js",
+          "backend/utils/assetPolicy.js"
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid fields, IDs, lab/use conflict, year/decimal bounds. Status/photo/unknown fields rejected."
+          },
+          "401": {
+            "description": "Invalid/expired token."
+          },
+          "403": {
+            "description": "Missing token or write role/assigned-lab violation."
+          },
+          "404": {
+            "description": "Asset not found."
+          },
+          "409": {
+            "description": "Duplicate inventory, linked deletion blockers (data preview), or concurrent lock conflict."
+          },
+          "500": {
+            "description": "Controlled internal error, no database details."
+          },
+          "503": {
+            "description": "ASSET_SCHEMA_REQUIRED: authenticated schema readiness check failed. No startup migration or writes."
+          },
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "properties": {
+                        "nama_perangkat": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "spesifikasi": {
+                          "type": "string",
+                          "nullable": true,
+                          "maxLength": 16000
+                        },
+                        "nomor_inventaris": {
+                          "type": "string",
+                          "nullable": true,
+                          "maxLength": 50
+                        },
+                        "penggunaan": {
+                          "type": "string",
+                          "enum": [
+                            "Pembelajaran",
+                            "Operasional"
+                          ]
+                        },
+                        "kategori": {
+                          "type": "string",
+                          "enum": [
+                            "Komputer",
+                            "Laptop",
+                            "Monitor",
+                            "Printer",
+                            "Perangkat Jaringan",
+                            "Proyektor",
+                            "Lainnya"
+                          ]
+                        },
+                        "lab_id": {
+                          "nullable": true,
+                          "oneOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]*$"
+                            }
+                          ],
+                          "description": "Required valid lab for Pembelajaran; null/blank for Operasional. Assigned-lab check on Head writes."
+                        },
+                        "lokasi": {
+                          "type": "string",
+                          "nullable": true,
+                          "maxLength": 150
+                        },
+                        "tahun_pengadaan": {
+                          "nullable": true,
+                          "oneOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 1900,
+                              "maximum": 2026
+                            },
+                            {
+                              "type": "string"
+                            }
+                          ],
+                          "description": "1900 through current server year. Empty/whitespace/null clear unknown. Omitted on update preserves."
+                        },
+                        "sumber_dana": {
+                          "type": "string",
+                          "nullable": true,
+                          "maxLength": 150
+                        },
+                        "harga_beli": {
+                          "type": "string",
+                          "nullable": true,
+                          "pattern": "^(?:\\s*|\\s*[0-9]{1,13}(?:\\.[0-9]{1,2})?\\s*)$",
+                          "description": "Exact DECIMAL(15,2) string, never JSON floating number. 0 valid; null/blank unknown. Omitted update preserves."
+                        },
+                        "perangkat_id": {
+                          "type": "integer"
+                        },
+                        "nama_lab": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "status": {
+                          "type": "string",
+                          "readOnly": true
+                        },
+                        "foto_perangkat": {
+                          "type": "string",
+                          "nullable": true,
+                          "readOnly": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            }
+          }
+        ]
+      },
+      "put": {
+        "operationId": "put_school_assets_id",
+        "tags": [
+          "assets"
+        ],
+        "summary": "Update school IT asset",
+        "description": "Reuses perangkat identity. All authenticated roles may read procurement fields. Admin writes all; Kepala Lab writes only Pembelajaran in assigned current AND destination lab. Other roles read-only. Manual conditions are allowed only without active maintenance findings; omitted status preserves the existing condition (new assets default to Baik), and photos are preserved. Readiness checked per authenticated request. Update omitted fields preserve; explicit null/blank clears optional values. See docs/ASSETS_IT.md. Legacy perangkat endpoints retain explicit non-financial projections.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-mounted": true,
+        "x-source": [
+          "backend/index.js",
+          "backend/router/assetRoutes.js",
+          "backend/controllers/assetController.js",
+          "backend/services/assetService.js",
+          "backend/utils/assetPolicy.js"
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid fields, IDs, lab/use conflict, year/decimal bounds. Status/photo/unknown fields rejected."
+          },
+          "401": {
+            "description": "Invalid/expired token."
+          },
+          "403": {
+            "description": "Missing token or write role/assigned-lab violation."
+          },
+          "404": {
+            "description": "Asset not found."
+          },
+          "409": {
+            "description": "Duplicate inventory, linked deletion blockers (data preview), or concurrent lock conflict."
+          },
+          "500": {
+            "description": "Controlled internal error, no database details."
+          },
+          "503": {
+            "description": "ASSET_SCHEMA_REQUIRED: authenticated schema readiness check failed. No startup migration or writes."
+          },
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "properties": {
+                        "nama_perangkat": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "spesifikasi": {
+                          "type": "string",
+                          "nullable": true,
+                          "maxLength": 16000
+                        },
+                        "nomor_inventaris": {
+                          "type": "string",
+                          "nullable": true,
+                          "maxLength": 50
+                        },
+                        "penggunaan": {
+                          "type": "string",
+                          "enum": [
+                            "Pembelajaran",
+                            "Operasional"
+                          ]
+                        },
+                        "kategori": {
+                          "type": "string",
+                          "enum": [
+                            "Komputer",
+                            "Laptop",
+                            "Monitor",
+                            "Printer",
+                            "Perangkat Jaringan",
+                            "Proyektor",
+                            "Lainnya"
+                          ]
+                        },
+                        "lab_id": {
+                          "nullable": true,
+                          "oneOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]*$"
+                            }
+                          ],
+                          "description": "Required valid lab for Pembelajaran; null/blank for Operasional. Assigned-lab check on Head writes."
+                        },
+                        "lokasi": {
+                          "type": "string",
+                          "nullable": true,
+                          "maxLength": 150
+                        },
+                        "tahun_pengadaan": {
+                          "nullable": true,
+                          "oneOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 1900,
+                              "maximum": 2026
+                            },
+                            {
+                              "type": "string"
+                            }
+                          ],
+                          "description": "1900 through current server year. Empty/whitespace/null clear unknown. Omitted on update preserves."
+                        },
+                        "sumber_dana": {
+                          "type": "string",
+                          "nullable": true,
+                          "maxLength": 150
+                        },
+                        "harga_beli": {
+                          "type": "string",
+                          "nullable": true,
+                          "pattern": "^(?:\\s*|\\s*[0-9]{1,13}(?:\\.[0-9]{1,2})?\\s*)$",
+                          "description": "Exact DECIMAL(15,2) string, never JSON floating number. 0 valid; null/blank unknown. Omitted update preserves."
+                        },
+                        "perangkat_id": {
+                          "type": "integer"
+                        },
+                        "nama_lab": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "status": {
+                          "type": "string",
+                          "readOnly": true
+                        },
+                        "foto_perangkat": {
+                          "type": "string",
+                          "nullable": true,
+                          "readOnly": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["Baik", "Rusak", "Perlu Perbaikan", "Dalam Perbaikan"],
+                    "description": "Optional; create defaults to Baik, omitted update preserves. Manual changes with active findings are rejected with 409."
+                  },
+                  "nama_perangkat": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "spesifikasi": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 16000
+                  },
+                  "nomor_inventaris": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 50
+                  },
+                  "penggunaan": {
+                    "type": "string",
+                    "enum": [
+                      "Pembelajaran",
+                      "Operasional"
+                    ]
+                  },
+                  "kategori": {
+                    "type": "string",
+                    "enum": [
+                      "Komputer",
+                      "Laptop",
+                      "Monitor",
+                      "Printer",
+                      "Perangkat Jaringan",
+                      "Proyektor",
+                      "Lainnya"
+                    ]
+                  },
+                  "lab_id": {
+                    "nullable": true,
+                    "oneOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 2147483647
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^[1-9][0-9]*$"
+                      }
+                    ],
+                    "description": "Required valid lab for Pembelajaran; null/blank for Operasional. Assigned-lab check on Head writes."
+                  },
+                  "lokasi": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 150
+                  },
+                  "tahun_pengadaan": {
+                    "nullable": true,
+                    "oneOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1900,
+                        "maximum": 2026
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ],
+                    "description": "1900 through current server year. Empty/whitespace/null clear unknown. Omitted on update preserves."
+                  },
+                  "sumber_dana": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 150
+                  },
+                  "harga_beli": {
+                    "type": "string",
+                    "nullable": true,
+                    "pattern": "^(?:\\s*|\\s*[0-9]{1,13}(?:\\.[0-9]{1,2})?\\s*)$",
+                    "description": "Exact DECIMAL(15,2) string, never JSON floating number. 0 valid; null/blank unknown. Omitted update preserves."
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete_school_assets_id",
+        "tags": [
+          "assets"
+        ],
+        "summary": "Guarded delete school IT asset",
+        "description": "Reuses perangkat identity. All authenticated roles may read procurement fields. Admin writes all; Kepala Lab writes only Pembelajaran in assigned current AND destination lab. Other roles read-only. Manual conditions are allowed only without active maintenance findings; omitted status preserves the existing condition (new assets default to Baik), and photos are preserved. Readiness checked per authenticated request. Update omitted fields preserve; explicit null/blank clears optional values. See docs/ASSETS_IT.md. Legacy perangkat endpoints retain explicit non-financial projections.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-mounted": true,
+        "x-source": [
+          "backend/index.js",
+          "backend/router/assetRoutes.js",
+          "backend/controllers/assetController.js",
+          "backend/services/assetService.js",
+          "backend/utils/assetPolicy.js"
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid fields, IDs, lab/use conflict, year/decimal bounds. Status/photo/unknown fields rejected."
+          },
+          "401": {
+            "description": "Invalid/expired token."
+          },
+          "403": {
+            "description": "Missing token or write role/assigned-lab violation."
+          },
+          "404": {
+            "description": "Asset not found."
+          },
+          "409": {
+            "description": "Duplicate inventory, linked deletion blockers (data preview), or concurrent lock conflict."
+          },
+          "500": {
+            "description": "Controlled internal error, no database details."
+          },
+          "503": {
+            "description": "ASSET_SCHEMA_REQUIRED: authenticated schema readiness check failed. No startup migration or writes."
+          },
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            }
+          }
+        ]
+      }
+    },
     "/api/settings/public": {
       "get": {
         "operationId": "get__api_settings_public",
@@ -490,7 +1779,7 @@
           "activity-logs"
         ],
         "summary": "createActivityLogController(database)",
-        "description": "Sumber: backend/router/activityLogRoutes.js → backend/controllers/activityLogController.js#createActivityLogController(database). Akses: Admin. Admin saja. page string integer positif sampai 7 digit, default 1; limit 1–100, default 20. Urut id DESC. Data: id,user_id,username,role,method,path,action,status_code,duration_ms,created_at; pagination: page,limit,total,total_pages.",
+        "description": "Sumber: backend/router/activityLogRoutes.js → backend/controllers/activityLogController.js#createActivityLogController(database). Akses: Admin. page string integer positif sampai 7 digit, default 1; limit 1–100, default 20. Urut id DESC. Filter actor/category/date diterapkan pada hitungan dan baris sebelum pagination; date menggunakan hari WIB. Kategori menunjukkan jenis permintaan, bukan jaminan perubahan berhasil. facets=1 menambahkan facets.actors [{user_id,username}] dari snapshot historis, bukan direktori pengguna aktif. Tanpa facets, envelope lama tetap {data,pagination}. Semua parameter bernilai tunggal; filter tidak valid ditolak dengan 400 sebelum query.",
         "security": [
           {
             "bearerAuth": []
@@ -632,6 +1921,10 @@
             "expression": "{ message: 'page harus positif; limit 1–100.' }"
           },
           {
+            "status": "400",
+            "expression": "{ message: 'Filter tidak valid. Tanggal harus YYYY-MM-DD (WIB).' }"
+          },
+          {
             "status": "200",
             "expression": "{ data, pagination: { page, limit, total: Number(count.total), total_pages: Math.ceil(Number(count.total) / limit) } }"
           }
@@ -656,6 +1949,35 @@
             },
             "example": "1",
             "description": "Default 1; integer string positif sampai 7 digit."
+          },
+          {
+            "name": "actor",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "pattern": "^[1-9]\\d{0,14}$" },
+            "description": "ID pengguna historis positif maksimal 15 digit; tidak termasuk identitas anonim. Omit untuk semua orang."
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["create", "update", "delete", "read", "login", "logout", "refresh-token", "other"] },
+            "description": "Jenis operasi permintaan; HTTP status tetap menentukan berhasil/gagal."
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+            "example": "2026-11-11",
+            "description": "Hari kalender valid dalam WIB/Asia Jakarta: awal hari inklusif sampai awal hari berikutnya eksklusif."
+          },
+          {
+            "name": "facets",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["1"] },
+            "description": "Menambahkan facets.actors [{user_id,username}] dari seluruh snapshot aktivitas; tanpa parameter ini tidak ada field facets."
           }
         ]
       }
@@ -3691,7 +5013,7 @@
           "perangkat"
         ],
         "summary": "createDevice",
-        "description": "Sumber: backend/router/deviceRoutes.js → backend/controllers/deviceController.js#createDevice. Akses: Admin, Kepala Lab. Controller tidak memvalidasi field wajib secara eksplisit; kelengkapan/FK bergantung DB. Foto opsional. Route duplikat berikut terdaftar tetapi tertutup handler ini: createLaporanPerangkat.",
+        "description": "Sumber: backend/router/deviceRoutes.js → backend/controllers/deviceController.js#createDevice. Akses: Admin, Kepala Lab. Controller tidak memvalidasi field wajib secara eksplisit; kelengkapan/FK bergantung DB. Foto opsional. Route duplikat berikut terdaftar tetapi tertutup handler ini: createLaporanPerangkat. FITUR 1 compatibility update: guarded legacyDeviceService uses explicit non-financial projection. Admin writes all; Kepala Lab must own original and destination lab. New legacy devices require lab and default Baik. Update status must equal stored status (409 otherwise); operational null lab is retained and usage conversion uses /api/assets. Duplicate inventory 409; invalid fields 400; scope violation 403. Device upload filenames have unique random suffix; failed writes clean only the owned new file. No procurement fields are accepted or returned.",
         "security": [
           {
             "bearerAuth": []
@@ -3940,7 +5262,7 @@
           "perangkat"
         ],
         "summary": "updateDevice",
-        "description": "Sumber: backend/router/deviceRoutes.js → backend/controllers/deviceController.js#updateDevice. Akses: Admin, Kepala Lab. Bukan PATCH; kirim ulang field perangkat. Foto lama dipertahankan bila tidak ada upload baru.",
+        "description": "Sumber: backend/router/deviceRoutes.js → backend/controllers/deviceController.js#updateDevice. Akses: Admin, Kepala Lab. Bukan PATCH; kirim ulang field perangkat. Foto lama dipertahankan bila tidak ada upload baru. FITUR 1 compatibility update: guarded legacyDeviceService uses explicit non-financial projection. Admin writes all; Kepala Lab must own original and destination lab. New legacy devices require lab and default Baik. Update status must equal stored status (409 otherwise); operational null lab is retained and usage conversion uses /api/assets. Duplicate inventory 409; invalid fields 400; scope violation 403. Device upload filenames have unique random suffix; failed writes clean only the owned new file. No procurement fields are accepted or returned.",
         "security": [
           {
             "bearerAuth": []
@@ -8212,7 +9534,7 @@
           "laporan"
         ],
         "summary": "createDevice",
-        "description": "Sumber: backend/router/deviceRoutes.js → backend/controllers/deviceController.js#createDevice. Akses: Admin, Kepala Lab. Controller tidak memvalidasi field wajib secara eksplisit; kelengkapan/FK bergantung DB. Foto opsional. Route duplikat berikut terdaftar tetapi tertutup handler ini: createLaporanPerangkat. Karena router bersama, endpoint prefix laporan ini sebenarnya mengakses/mengubah PERANGKAT; role mengikuti route perangkat.",
+        "description": "Sumber: backend/router/deviceRoutes.js → backend/controllers/deviceController.js#createDevice. Akses: Admin, Kepala Lab. Controller tidak memvalidasi field wajib secara eksplisit; kelengkapan/FK bergantung DB. Foto opsional. Route duplikat berikut terdaftar tetapi tertutup handler ini: createLaporanPerangkat. Karena router bersama, endpoint prefix laporan ini sebenarnya mengakses/mengubah PERANGKAT; role mengikuti route perangkat. FITUR 1 compatibility update: guarded legacyDeviceService uses explicit non-financial projection. Admin writes all; Kepala Lab must own original and destination lab. New legacy devices require lab and default Baik. Update status must equal stored status (409 otherwise); operational null lab is retained and usage conversion uses /api/assets. Duplicate inventory 409; invalid fields 400; scope violation 403. Device upload filenames have unique random suffix; failed writes clean only the owned new file. No procurement fields are accepted or returned.",
         "security": [
           {
             "bearerAuth": []
@@ -8461,7 +9783,7 @@
           "laporan"
         ],
         "summary": "updateDevice",
-        "description": "Sumber: backend/router/deviceRoutes.js → backend/controllers/deviceController.js#updateDevice. Akses: Admin, Kepala Lab. Bukan PATCH; kirim ulang field perangkat. Foto lama dipertahankan bila tidak ada upload baru. Karena router bersama, endpoint prefix laporan ini sebenarnya mengakses/mengubah PERANGKAT; role mengikuti route perangkat.",
+        "description": "Sumber: backend/router/deviceRoutes.js → backend/controllers/deviceController.js#updateDevice. Akses: Admin, Kepala Lab. Bukan PATCH; kirim ulang field perangkat. Foto lama dipertahankan bila tidak ada upload baru. Karena router bersama, endpoint prefix laporan ini sebenarnya mengakses/mengubah PERANGKAT; role mengikuti route perangkat. FITUR 1 compatibility update: guarded legacyDeviceService uses explicit non-financial projection. Admin writes all; Kepala Lab must own original and destination lab. New legacy devices require lab and default Baik. Update status must equal stored status (409 otherwise); operational null lab is retained and usage conversion uses /api/assets. Duplicate inventory 409; invalid fields 400; scope violation 403. Device upload filenames have unique random suffix; failed writes clean only the owned new file. No procurement fields are accepted or returned.",
         "security": [
           {
             "bearerAuth": []
@@ -13621,6 +14943,117 @@
       }
     },
     "schemas": {
+      "DashboardCount": {
+        "type": "object",
+        "required": ["label", "count"],
+        "properties": {"label": {"type": "string"}, "count": {"type": "integer", "minimum": 0}}
+      },
+      "DashboardInsightsEnvelope": {
+        "type": "object",
+        "required": ["message", "data"],
+        "properties": {
+          "message": {"type": "string"},
+          "data": {
+            "type": "object",
+            "required": ["tickets", "assets"],
+            "properties": {
+              "tickets": {"type": "object", "required": ["available", "rows"], "properties": {"available": {"type": "boolean"}, "reason": {"type": "string"}, "rows": {"type": "array", "items": {"$ref": "#/components/schemas/DashboardCount"}}}},
+              "assets": {"type": "object", "nullable": true, "required": ["categories", "conditions"], "properties": {"categories": {"type": "array", "items": {"$ref": "#/components/schemas/DashboardCount"}}, "conditions": {"type": "array", "items": {"$ref": "#/components/schemas/DashboardCount"}}}}
+            }
+          }
+        }
+      },
+      "AssetQrPublic": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "perangkat_id",
+          "nama_perangkat",
+          "spesifikasi",
+          "nomor_inventaris",
+          "status",
+          "penggunaan",
+          "kategori",
+          "lokasi",
+          "nama_lab"
+        ],
+        "properties": {
+          "perangkat_id": {
+            "type": "integer"
+          },
+          "nama_perangkat": {
+            "type": "string"
+          },
+          "spesifikasi": {
+            "type": "string",
+            "nullable": true
+          },
+          "nomor_inventaris": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string"
+          },
+          "penggunaan": {
+            "type": "string"
+          },
+          "kategori": {
+            "type": "string"
+          },
+          "lokasi": {
+            "type": "string",
+            "nullable": true
+          },
+          "nama_lab": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "AssetQrPrivate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tahun_pengadaan",
+          "sumber_dana",
+          "harga_beli"
+        ],
+        "properties": {
+          "tahun_pengadaan": {
+            "type": "integer",
+            "nullable": true
+          },
+          "sumber_dana": {
+            "type": "string",
+            "nullable": true
+          },
+          "harga_beli": {
+            "type": "string",
+            "nullable": true,
+            "description": "Exact DECIMAL string; null unknown, 0.00 valid."
+          }
+        }
+      },
+      "AssetQrIdentity": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "perangkat_id",
+          "public_id"
+        ],
+        "properties": {
+          "perangkat_id": {
+            "type": "integer"
+          },
+          "public_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "Null until explicit authorized POST issues persisted UUIDv4."
+          }
+        }
+      },
       "TicketIdentifier": {
         "oneOf": [
           {
@@ -14292,6 +15725,7 @@
               },
               "devices": {
                 "type": "array",
+                "description": "Shared perangkat assets: learning and operational assets including printers/network equipment. No financial fields.",
                 "items": {
                   "type": "object",
                   "properties": {
@@ -14301,6 +15735,21 @@
                     "nama_perangkat": {
                       "type": "string"
                     },
+                    "kategori": {
+                      "type": "string"
+                    },
+                    "penggunaan": {
+                      "type": "string",
+                      "enum": ["Pembelajaran", "Operasional"]
+                    },
+                    "lokasi": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "nomor_inventaris": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "nama_lab": {
                       "type": "string",
                       "nullable": true
@@ -14309,6 +15758,10 @@
                   "required": [
                     "perangkat_id",
                     "nama_perangkat",
+                    "kategori",
+                    "penggunaan",
+                    "lokasi",
+                    "nomor_inventaris",
                     "nama_lab"
                   ]
                 }

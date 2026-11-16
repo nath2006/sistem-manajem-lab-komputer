@@ -1,5 +1,21 @@
 # Dokumentasi API — Sistem Informasi Manajemen Lab Komputer
 
+## Dashboard: agregasi grafik sesuai role
+
+`GET /api/dashboard/insights` membutuhkan token akses dan mengembalikan `{message,data:{tickets,assets}}`. `tickets` berisi `available`, `rows:[{label,count}]`, dan alasan bila skema tiket belum tersedia. `assets` berisi `categories` dan `conditions` dengan baris `{label,count}`, atau `null` untuk Guru. Guru hanya memperoleh tiket miliknya; Kepala Lab memakai scope tiket sendiri/lab yang ditugaskan; role lain mengikuti policy ticket service existing. Metadata kategori/kondisi yang belum tersedia memakai hitungan nyata berlabel `Lainnya`, bukan data contoh. Skema tiket yang belum tersedia ditandai eksplisit, bukan dianggap jumlah nol.
+
+Token hilang/actor atau role invalid: 403; token invalid/kedaluwarsa: 401; kegagalan query: 500 terkontrol. Endpoint statistik lama tetap tersedia. Sumber: `backend/index.js`, `router/dashboardInsightsRoutes.js`, `controllers/dashboardInsightsController.js`, dan `services/dashboardInsightsService.js`. Kontrak importable ada pada OpenAPI; pengujian HTTP/MySQL dan batas tema/role dijelaskan di `DASHBOARDS.md`.
+
+## FITUR 2: QR aset dan verifikasi
+
+- `GET /api/asset-qr/:publicId` **publik dan selalu aman**: hanya identitas/spesifikasi; include flags dan Authorization tidak membuka pengadaan. UUIDv4 kanonis, invalid 400, unknown 404; tidak ada write/audit pada GET publik.
+- `GET /api/asset-qr/:publicId/private`: semua role login; proyeksi hanya tahun pengadaan, sumber dana, harga string desimal/null.
+- `GET /api/asset-qr/identity/:id`: semua role login, baca UUID yang ada/null tanpa menerbitkan.
+- `POST /api/asset-qr/issue/:id`: Admin / Kepala Lab pada Pembelajaran lab sendiri; transaksi row-lock, UUID kriptografis persisten dan unique, reissue stabil.
+- Envelope sukses `{data:...}`. Semua respons QR dan `/api/assets` menggunakan `Cache-Control: no-store`. QR schema absent/incompatible → 503 `QR_SCHEMA_REQUIRED`, tanpa memblokir FITUR 1. Missing/invalid auth mengikuti middleware existing (403/401). Internal error 500 tidak membocorkan DB.
+- Migrasi **review-only additive/idempotent** `20261115_asset_qr.sql`, tidak auto-run. Panduan cetak PDF aktual, LAN/localhost trap, izin, prosedur clone dan batas bukti: `docs/QR_ASSETS.md`. Kontrak importable di `docs/openapi.json`; tidak menambah hosted Swagger UI.
+
+
 ## Ruang lingkup dan sumber
 
 Dokumen ini diturunkan dari `backend/index.js`, semua file `backend/router/*.js`, controller yang dirujuk, `middleware/authMiddleware.js`, `utils/multer.js`, `services/UserService.js`, `repositories/UserRepository.js`, `services/settingsService.js`, dan `shared/schedule.mjs`. Sumber spesifik dicantumkan pada setiap operasi; literal route dari kode mengungguli komentar route. Contoh memakai data ilustratif, bukan keluaran server yang direkam. Endpoint legacy di dokumen awal ditelaah secara statis; validasi JSON/OpenAPI/coverage bukan pengujian runtime legacy. Bukti pengujian HTTP/MySQL nyata khusus ticketing pada database terisolasi tersedia di `docs/ticketing-review-result.json` (nama database, waktu, daftar checks, `source_unchanged`, `server_stopped`); bukti itu bukan bukti semua endpoint legacy. Contoh dokumen tetap ilustratif, bukan rekaman respons.
@@ -33,6 +49,26 @@ curl -X POST http://localhost:5000/api/lab/create \
   -F "kepala_lab_id=2" -F "status=Tersedia" -F "jam_buka=07:00" -F "jam_tutup=17:00" \
   -F "foto_lab=@<PATH_FILE_GAMBAR>"
 ```
+
+## Aset IT Sekolah — kontrak FITUR 1
+
+Sumber: `backend/router/assetRoutes.js`, `controllers/assetController.js`, `services/assetService.js`, `utils/assetPolicy.js`. Rincian implementasi, migrasi review-only dan bukti: [ASSETS_IT.md](ASSETS_IT.md).
+
+| Method | Path | Akses |
+|---|---|---|
+| GET | `/api/assets` | Semua role dengan token; `{data: [...], message}` |
+| GET | `/api/assets/:id` | Semua role dengan token; `{data: {...}, message}` |
+| POST | `/api/assets` | Admin / Kepala Lab untuk Pembelajaran pada lab miliknya; **201** |
+| PUT | `/api/assets/:id` | Admin / Kepala Lab pada lab asal dan lab tujuan miliknya; **200** |
+| DELETE | `/api/assets/:id` | Guard penghapusan perangkat yang sama, tanpa cascade riwayat; **200** |
+
+- Identitas tetap `perangkat_id`, bukan tabel aset baru. Field tulis: `nama_perangkat` (100), `nomor_inventaris` (50, unik/null), `spesifikasi` (16000), `penggunaan`, `kategori`, `lab_id`, `lokasi` (150), `tahun_pengadaan`, `sumber_dana` (150), `harga_beli`.
+- Penggunaan: `Pembelajaran` memerlukan lab valid; `Operasional` tanpa lab (null/kosong), lab yang bertentangan ditolak. Kategori: Komputer, Laptop, Monitor, Printer, Perangkat Jaringan, Proyektor, Lainnya. Tahun: bilangan bulat 1900–tahun server saat ini, tanpa notasi eksponen.
+- Tiga field pengadaan opsional: null, string kosong dan whitespace menjadi SQL NULL. PUT yang tidak mengirim field mempertahankan nilai; explicit null/kosong menghapus nilai. Harga wajib **string desimal** non-negatif, maksimum `9999999999999.99`, maksimal dua angka desimal; contoh `"0"` valid dan respons `"0.00"`. UI menampilkan `-` untuk tidak diketahui, bukan untuk nol.
+- `status` opsional menerima Baik, Rusak, Perlu Perbaikan, atau Dalam Perbaikan. Create tanpa status memakai Baik; update tanpa status mempertahankan kondisi dan foto. Perubahan manual ditolak **409** bila ada temuan aktif yang masih dikelola workflow pengecekan/perbaikan; edit metadata atau status yang tetap sama tidak diblokir. Kepala Lab tidak dapat membuat/mengubah/menghapus aset Operasional atau lintas lab. Koordinator, Teknisi dan Guru hanya baca.
+- **400** validasi/field atau kondisi tidak valid; **401** token invalid; **403** tanpa token/izin; **404** aset tidak ada; **409** nomor inventaris duplikat, kondisi dimiliki maintenance aktif, data masih terkait atau konflik lock; **503** `{code:"ASSET_SCHEMA_REQUIRED",message}` bila skema belum siap. API baru tidak menjalankan migrasi startup.
+- Preview hapus tetap `GET /api/deletion/perangkat/:id`. DELETE memeriksa ulang dependensi dalam transaksi; riwayat pemeriksaan, temuan, perbaikan dan tiket tetap dilindungi.
+- **Pembaruan kontrak legacy di bagian snapshot berikut:** create/update `/api/perangkat` (dan alias prefix laporan yang berbagi router) memakai proyeksi eksplisit tanpa pengadaan. Kepala Lab diperiksa terhadap lab asal/tujuan. Kondisi memakai enum dan guard maintenance yang sama dengan API aset; perubahan valid diizinkan bila tidak ada temuan aktif, sedangkan metadata tetap dapat diperbarui. Edit Operasional mempertahankan null lab; konversi penggunaan lewat API aset. Contoh historis wildcard bukan lagi kontrak respons. Operasional tetap terlihat pada pemeriksaan, temuan dan antrean teknisi melalui LEFT JOIN. Menu Aset IT berfokus pada Operasional; aset lab tetap dimasukkan melalui Kelola Data Perangkat (Lab).
 
 ## Inventaris operasi
 
@@ -275,7 +311,12 @@ Sumber: backend/router/activityLogRoutes.js → backend/controllers/activityLogC
 
 - Akses: **Admin**.
 - Status yang didokumentasikan: `200`, `400`, `401`, `403`, `500`.
-- Parameter: `limit` (query, opsional); `page` (query, opsional).
+- Parameter query opsional: `limit`, `page`, `actor`, `category`, `date`, dan `facets`.
+- `actor`: ID pengguna historis berupa string desimal positif, maksimal 15 digit; tidak membaca direktori pengguna aktif.
+- `category`: `create`, `update`, `delete`, `read`, `login`, `logout`, `refresh-token`, atau `other`. Kategori menunjukkan jenis permintaan, bukan jaminan perubahan berhasil; status HTTP tetap disediakan.
+- `date`: tanggal kalender valid `YYYY-MM-DD` dalam WIB/Asia Jakarta. Rentang inklusif awal hari, eksklusif awal hari berikutnya; filter baris dan hitungan diterapkan sebelum pagination.
+- `facets=1`: menambahkan `facets.actors` berisi `{user_id, username}` dari snapshot riwayat. Tanpa parameter ini, envelope lama tidak berubah. Seluruh filter harus berupa nilai tunggal; nilai tidak valid ditolak dengan `400` sebelum query.
+- Detail UI dan batas verifikasi: `docs/ACTIVITY_LOG_UI.md`.
 
 Contoh respons 200 (ilustratif, dapat parsial):
 ```json
@@ -294,8 +335,12 @@ Ekspresi respons aktual dari source (variabel/SQL bukan JSON literal):
 ```js
 // HTTP 400
 { message: 'page harus positif; limit 1–100.' }
+// HTTP 400: filter yang diberikan tidak valid
+{ message: 'Filter tidak valid. Tanggal harus YYYY-MM-DD (WIB).' }
 // HTTP 200
 { data, pagination: { page, limit, total: Number(count.total), total_pages: Math.ceil(Number(count.total) / limit) } }
+// Hanya jika facets=1, ditambahkan ke hasil di atas:
+result.facets = { actors } // actors: [{ user_id, username }]
 ```
 
 Proyeksi SQL yang menentukan field hasil controller (varian list/detail bisa berbeda):
@@ -1025,7 +1070,7 @@ Ekspresi respons aktual dari source (variabel/SQL bukan JSON literal):
 
 Proyeksi SQL yang menentukan field hasil controller (varian list/detail bisa berbeda):
 ```sql
-p.*, l.nama_lab
+p.perangkat_id, p.nama_perangkat, p.spesifikasi, p.status, p.lab_id, p.foto_perangkat, p.nomor_inventaris, l.nama_lab
 ```
 
 Handler tertutup `createLaporanPerangkat` — sumber `backend/controllers/laporanPerangkatController.js`; **bukan respons operasi aktif di atas**.
@@ -1120,7 +1165,7 @@ Proyeksi SQL yang menentukan field hasil controller (varian list/detail bisa ber
 ```sql
 foto_perangkat, lab_id
 
-p.*, l.nama_lab
+p.perangkat_id, p.nama_perangkat, p.spesifikasi, p.status, p.lab_id, p.foto_perangkat, p.nomor_inventaris, l.nama_lab
 ```
 
 ### DELETE `/api/perangkat/delete/:id`
@@ -2114,7 +2159,7 @@ Ekspresi respons aktual dari source (variabel/SQL bukan JSON literal):
 
 Proyeksi SQL yang menentukan field hasil controller (varian list/detail bisa berbeda):
 ```sql
-p.*, l.nama_lab
+p.perangkat_id, p.nama_perangkat, p.spesifikasi, p.status, p.lab_id, p.foto_perangkat, p.nomor_inventaris, l.nama_lab
 ```
 
 Handler tertutup `createLaporanPerangkat` — sumber `backend/controllers/laporanPerangkatController.js`; **bukan respons operasi aktif di atas**.
@@ -2209,7 +2254,7 @@ Proyeksi SQL yang menentukan field hasil controller (varian list/detail bisa ber
 ```sql
 foto_perangkat, lab_id
 
-p.*, l.nama_lab
+p.perangkat_id, p.nama_perangkat, p.spesifikasi, p.status, p.lab_id, p.foto_perangkat, p.nomor_inventaris, l.nama_lab
 ```
 
 ### DELETE `/api/laporan/perangkat/delete/:id`
@@ -3238,7 +3283,9 @@ Error controller `{message}`: 400 input invalid (termasuk rentang tanggal SLA), 
 
 All authenticated users; technicians list only for managers/Teknisi, otherwise []. Devices and policies available to all.
 
-Sukses 200 `{data:{technicians:[{user_id,nama_lengkap}], devices:[{perangkat_id,nama_perangkat,nama_lab}], policies:[{priority,response_minutes,resolution_minutes}], types, categories}}`.
+Sukses 200 `{data:{technicians:[{user_id,nama_lengkap}], devices:[{perangkat_id,nama_perangkat,kategori,penggunaan,lokasi,nomor_inventaris,nama_lab}], policies:[{priority,response_minutes,resolution_minutes}], types, categories}}`.
+
+`devices` memakai identitas aset bersama pada tabel `perangkat`, mencakup Pembelajaran dan Operasional (termasuk Printer/Perangkat Jaringan), bukan tabel tiket/aset baru. `nama_lab`, `lokasi`, dan `nomor_inventaris` nullable; aset operasional dapat tanpa lab. Proyeksi opsi tidak memuat harga/sumber dana. Form Bantuan menampilkan klasifikasi/lokasi dan baris tiket menaut ke `/aset-it/{perangkat_id}`; akses detail aset tetap diverifikasi oleh endpoint aset. Nama menu **Bantuan** tetap memakai deep-link `/ticketing` dan target onboarding yang sama; tidak ada `/bantuan` atau endpoint tiket duplikat. Ringkasan adaptasi GLPI: `docs/TICKETING_SCHOOL.md`.
 
 #### PUT `/api/tickets/policies`
 

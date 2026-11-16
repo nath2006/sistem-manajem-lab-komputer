@@ -16,11 +16,11 @@ test('tour anchors every role task to its real navigation target, without naviga
   }
 });
 
-test('replacement uses effect-owned Driver lifecycle and version two identity', () => {
+test('replacement uses effect-owned Driver lifecycle and version three identity', () => {
   const source = readFileSync(new URL('./Onboarding.jsx', import.meta.url), 'utf8');
   assert.match(source, /useEffect/);
   assert.match(source, /startTour/);
   assert.doesNotMatch(source, /ModalContainer/);
   const identity = readFileSync(new URL('../../utils/onboarding.js', import.meta.url), 'utf8');
-  assert.match(identity, /ONBOARDING_VERSION = 2/);
+  assert.match(identity, /ONBOARDING_VERSION = 3/);
 });

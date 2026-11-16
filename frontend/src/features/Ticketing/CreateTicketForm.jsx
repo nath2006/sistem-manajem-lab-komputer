@@ -65,14 +65,14 @@ return (<FormContainer
                     </label>
                     <Classification value={create} onChange={setCreate} options={options} />
                     <Select
-                      label="Perangkat (opsional)"
+                      label="Aset IT (opsional)"
                       required={false}
                       value={create.perangkat_id}
                       options={[
-                        { value: '', label: 'Tanpa perangkat' },
+                        { value: '', label: 'Tanpa aset' },
                         ...(options?.devices || []).map((d) => ({
                           value: d.perangkat_id,
-                          label: `${d.nama_perangkat} — ${d.nama_lab}`,
+                          label: `${d.nama_perangkat} — ${[d.nomor_inventaris, d.kategori, d.penggunaan, d.nama_lab || d.lokasi || 'Lokasi belum diisi'].filter(Boolean).join(' · ')}`,
                         })),
                       ]}
                       onChange={(v) =>
