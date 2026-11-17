@@ -83,9 +83,17 @@ export default function AsetIT() {
   const save = async (body) => {
     setSaving(true);
     try {
+      const isBatch = !modal.asset && body.jumlah > 1;
       const response = modal.asset
         ? await put(`/assets/${modal.asset.perangkat_id}`, body)
-        : await post("/assets", body);
+        : await post(isBatch ? "/assets/batch" : "/assets", body);
+      if (isBatch) {
+        const count = response.data.data.created_count;
+        setModal(null);
+        setNotice(`${count} unit aset berhasil ditambahkan. Setiap unit memiliki nomor inventaris dan riwayat sendiri. QR dapat diterbitkan melalui detail aset.`);
+        await load();
+        return;
+      }
       const saved = response.data.data;
       setData((old) =>
         [
@@ -110,6 +118,9 @@ export default function AsetIT() {
           Inventaris IT operasional sekolah (administrasi, printer, dan jaringan).
           Perangkat pembelajaran tetap dikelola melalui Kelola Data Perangkat (Lab).
           Data pengadaan yang belum diketahui ditampilkan sebagai “-”.
+        </p>
+        <p role="status" aria-live="polite" aria-label="Total unit Operasional" className="text-sm font-semibold text-gray-800">
+          {loading ? "Memuat total unit..." : error ? "Total unit belum tersedia." : `Total unit Operasional: ${data.filter((a) => a.penggunaan === "Operasional").length} unit`}
         </p>
         {error && (
           <div

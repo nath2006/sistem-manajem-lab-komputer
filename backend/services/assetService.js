@@ -1,6 +1,7 @@
 import {
   ASSET_FIELDS,
   normalizeAsset,
+  normalizeAssetBatch,
   assetError,
   assetId,
 } from "../utils/assetPolicy.js";
@@ -80,6 +81,25 @@ export function createAssetService(db) {
   return {
     list: () => read(),
     get: (id) => read(id),
+    async createBatch(actor, body) {
+      if (actor?.role !== "Admin")
+        throw assetError(403, "Aset operasional hanya dapat dikelola Admin.");
+      const batch = normalizeAssetBatch(body);
+      const value = batch.aset;
+      return transaction(async (c) => {
+        const assets = [];
+        for (let index = 1; index <= batch.jumlah; index++) {
+          const unit = { ...value, status: value.status ?? "Baik", nomor_inventaris: `${batch.awalan_nomor_inventaris}-${String(index).padStart(3, "0")}` };
+          const fields = [...ASSET_FIELDS, "status"];
+          const [saved] = await c.query(
+            `INSERT INTO perangkat (${fields.join(",")}) VALUES (${fields.map(() => "?").join(",")})`,
+            fields.map((key) => unit[key]),
+          );
+          assets.push(await read(saved.insertId, c));
+        }
+        return { created_count: assets.length, assets };
+      });
+    },
     async create(actor, body) {
       const value = normalizeAsset(body);
       return transaction(async (c) => {

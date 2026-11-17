@@ -54,6 +54,23 @@ export function assetId(value) {
     invalid("ID");
   return Number(value);
 }
+export function normalizeAssetBatch(input) {
+  if (!input || typeof input !== "object" || Array.isArray(input) ||
+      Object.keys(input).some(key => !["jumlah", "awalan_nomor_inventaris", "aset"].includes(key)))
+    invalid("Field batch");
+  if (!Number.isInteger(input.jumlah) || input.jumlah < 1 || input.jumlah > 100)
+    invalid("Jumlah");
+  const prefix = input.awalan_nomor_inventaris;
+  if (typeof prefix !== "string" || prefix !== prefix.trim() || [...prefix].length < 1 || [...prefix].length > 46)
+    invalid("Awalan nomor inventaris");
+  const asset = input.aset;
+  if (!asset || typeof asset !== "object" || Array.isArray(asset) ||
+      Object.keys(asset).some(key => key === "nomor_inventaris" || (key !== "status" && !ASSET_FIELDS.includes(key))))
+    invalid("Field aset batch");
+  if (asset.penggunaan !== "Operasional" || asset.lab_id !== null)
+    invalid("Batch hanya untuk aset operasional tanpa laboratorium");
+  return { jumlah: input.jumlah, awalan_nomor_inventaris: prefix, aset: normalizeAsset(asset) };
+}
 export function normalizeAsset(input, previous = {}) {
   if (
     !input ||

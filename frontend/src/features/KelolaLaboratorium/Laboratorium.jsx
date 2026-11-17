@@ -11,6 +11,7 @@ import useDeletionDialog from '../../Components/Deletion/useDeletionDialog';
 import DetailLaboratorium from '../../Components/DataLab/DetailLaboratorium';
 import EditLaboratorium from '../../Components/DataLab/EditLaboratorium';
 import truncateText from '../../utils/truncateText';
+import RowActionButton from '../../Components/RowActionButton';
 
 const Lab = () => {
   useTitle('Kelola Data Laboratorium');
@@ -166,32 +167,29 @@ const Lab = () => {
         <td className="px-6 py-4 text-gray-700">{truncateText(item.deskripsi, 30) || '-'}</td>
         <td className='px-6 py-4 text-center'>
           <div className='flex items-center justify-center space-x-2'>
-            <button 
-              type="button" aria-label={`Lihat detail laboratorium ${item.nama_lab}`}
+            <RowActionButton variant="view"
+              label={`Lihat detail laboratorium ${item.nama_lab}`}
               onClick={() => handleOpenDetailModal(item.lab_id)} 
-              className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 text-maroon rounded-full hover:bg-maroon/10 hover:shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon transition-all duration-150"
-              title="Lihat Detail"
+              tooltip="Lihat Detail"
             >
               <FaEye size={18} />
-            </button>
+            </RowActionButton>
             {isAuthorized && ( // Logika isAuthorized tetap sama
               <>
-                <button 
-                  type="button" aria-label={`Edit laboratorium ${item.nama_lab}`}
+                <RowActionButton variant="edit"
+                  label={`Edit laboratorium ${item.nama_lab}`}
               onClick={() => handleOpenEditModal(item.lab_id)} 
-                  className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 text-maroon rounded-full hover:bg-maroon/10 hover:shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon transition-all duration-150"
-                  title="Edit Data"
+                  tooltip="Edit Data"
                 >
                   <FaFilePen size={17} />
-                </button>
-                <button
-                  type="button" aria-label={`Hapus laboratorium ${item.nama_lab}`}
+                </RowActionButton>
+                <RowActionButton variant="delete"
+                  label={`Hapus laboratorium ${item.nama_lab}`}
               onClick={() => handleDelete(item.lab_id)}
-                  className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 text-maroon rounded-full hover:bg-maroon/10 hover:shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maroon transition-all duration-150"
-                  title="Hapus Data"
+                  tooltip="Hapus Data"
                 >
                   <FaTrash size={17}/>
-                </button>
+                </RowActionButton>
               </>
             )}
           </div>

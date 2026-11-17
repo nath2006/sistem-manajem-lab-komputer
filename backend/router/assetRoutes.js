@@ -27,6 +27,8 @@ export function createAssetRouter(db, authenticate) {
           .json({ message: "Anda hanya memiliki akses baca aset." });
   router.get("/", c.list);
   router.get("/:id", c.get);
+  router.post("/batch", (req, res, next) =>
+    req.user?.role === "Admin" ? next() : res.status(403).json({ message: "Aset operasional hanya dapat dikelola Admin." }), c.createBatch);
   router.post("/", write, c.create);
   router.put("/:id", write, c.update);
   router.delete("/:id", write, c.remove);

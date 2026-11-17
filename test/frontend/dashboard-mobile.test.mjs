@@ -15,14 +15,15 @@ test('lab icon actions have explicit accessible touch targets', async () => {
   // User row actions are tested through their actual shared component rendering.
   for (const path of ['features/KelolaLaboratorium/Laboratorium.jsx']) {
     const text = await source(path);
-    const actions = [...text.matchAll(/<button\b[\s\S]*?<\/button>/g)].map(match => match[0]).filter(button => /FaEye|FaFilePen|FaTrash/.test(button));
+    const actions = [...text.matchAll(/<RowActionButton\b[\s\S]*?<\/RowActionButton>/g)].map(match => match[0]);
     assert.equal(actions.length, 3);
-    for (const button of actions) {
-      assert.match(button, /type="button"/);
-      assert.match(button, /aria-label=/);
-      assert.match(button, /min-h-\[44px\]/);
-      assert.match(button, /min-w-\[44px\]/);
-    }
+    for (const button of actions) assert.match(button, /label=/);
+    // Native semantics and 44px targets now belong to the shared component;
+    // lab-action-colors.test.mjs also checks the actual mounted Lab controls.
+    const shared = await source('Components/RowActionButton.jsx');
+    assert.match(shared, /type="button"/);
+    assert.match(shared, /aria-label=/);
+    assert.match(shared, /min-h-11 min-w-11/);
   }
 });
 
