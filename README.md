@@ -11,6 +11,7 @@ Dibangun dengan React 19, Vite, Express 5, dan MySQL.
 - Lihat ringkasan aset, kondisi perangkat, dan perkembangan tiket dari dashboard.
 - Kelola data lab dan perangkat yang digunakan untuk pembelajaran.
 - Catat aset Operasional sekolah, termasuk printer, proyektor, dan perangkat jaringan.
+- Tambahkan beberapa unit sekaligus tanpa mencampur identitas dan riwayat perbaikannya.
 - Terbitkan QR aset, buka halaman verifikasinya, dan cetak ulang label saat diperlukan.
 - Laporkan masalah melalui Bantuan lalu ikuti penanganannya lewat status dan komentar.
 - Catat pemeriksaan dan perbaikan tanpa kehilangan riwayat pekerjaan sebelumnya.
@@ -33,6 +34,10 @@ Semua pengguna yang sudah login dapat melihat inventaris dan data pengadaan sert
 ## Cara kerja
 
 Perangkat untuk pembelajaran dikelola melalui **Kelola Data Perangkat** dan terhubung dengan labnya. Menu **Aset IT Sekolah** digunakan untuk perangkat Operasional. Tahun pengadaan, sumber dana, dan harga beli boleh dikosongkan jika belum diketahui.
+
+Saat menambah aset Operasional, isi **Jumlah unit** untuk memasukkan sampai 100 unit dalam satu proses. Jika jumlahnya lebih dari satu, isi awalan nomor inventaris. Contohnya awalan `MOUSE` untuk tiga unit menghasilkan `MOUSE-001`, `MOUSE-002`, dan `MOUSE-003`. Gunakan awalan lain bila nomor tersebut sudah terpakai. Harga beli yang diisi berlaku **per unit**, bukan total seluruh barang.
+
+Setiap unit tetap mempunyai catatan, kondisi, dan riwayat sendiri. QR juga diterbitkan terpisah melalui tindakan penerbitan yang sudah tersedia. Jumlah hanya mempersingkat pengisian formulir dan tidak menggabungkan aset lama. Jika satu nomor inventaris bentrok atau penyimpanan gagal, seluruh penambahan pada proses tersebut dibatalkan agar tidak ada hasil setengah tersimpan.
 
 Saat perangkat bermasalah, pengelola dapat mencatat temuan dan teknisi menambahkan hasil perbaikan. Tiket di menu Bantuan membantu pengguna mengikuti penanganan masalah. Aset boleh dikaitkan ke tiket, tetapi tidak wajib.
 

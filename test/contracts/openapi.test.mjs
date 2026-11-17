@@ -139,5 +139,26 @@ test('all OpenAPI Markdown references resolve to existing root README sections',
   }
 });
 
+test('batch contract defines independent full assets and rejects caller identity and inventory', () => {
+  const op = spec.paths['/api/assets/batch'].post;
+  assert.deepEqual(op.security, [{ bearerAuth: [] }]);
+  const body = op.requestBody.content['application/json'].schema;
+  assert.equal(body.additionalProperties, false);
+  assert.deepEqual(body.required, ['jumlah', 'awalan_nomor_inventaris', 'aset']);
+  assert.deepEqual(body.properties.jumlah, { type: 'integer', minimum: 1, maximum: 100 });
+  assert.equal(body.properties.awalan_nomor_inventaris.maxLength, 46);
+  const aset = body.properties.aset;
+  assert.equal(aset.additionalProperties, false);
+  assert.equal(aset.properties.nomor_inventaris, undefined);
+  assert.deepEqual(aset.properties.penggunaan.enum, ['Operasional']);
+  assert.deepEqual(aset.properties.lab_id.enum, [null]);
+  const data = op.responses['201'].content['application/json'].schema.properties.data;
+  assert.deepEqual(data.required, ['created_count', 'assets']);
+  for (const key of ['perangkat_id', 'nomor_inventaris', 'status', 'harga_beli', 'condition_editable', 'condition_edit_reason'])
+    assert.ok(data.properties.assets.items.properties[key], key);
+  assert.match(op.description, /PER UNIT/);
+  assert.match(op.description, /No quantity column/);
+  assert.ok(op.responses['409']);
+});
 // Optional scratch evidence output, never needed by the root test runner.
 if (process.env.OPENAPI_INVENTORY_OUTPUT) writeFileSync(process.env.OPENAPI_INVENTORY_OUTPUT, JSON.stringify({ registrations: inventory, uniqueOperations: keys.length, paths: Object.keys(spec.paths).length, documentedOperations: documented.length }, null, 2));

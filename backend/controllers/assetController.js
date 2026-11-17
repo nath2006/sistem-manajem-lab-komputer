@@ -47,6 +47,12 @@ export function createAssetController(
         message: "Aset berhasil dimuat.",
       }),
     ),
+    createBatch: handle(async (req, res) =>
+      res.status(201).json({
+        data: await service.createBatch(req.user, req.body),
+        message: "Batch aset berhasil ditambahkan.",
+      }),
+    ),
     create: handle(async (req, res) =>
       res
         .status(201)

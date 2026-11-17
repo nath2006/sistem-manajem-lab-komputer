@@ -15556,6 +15556,336 @@
           }
         ]
       }
+    },
+    "/api/assets/batch": {
+      "post": {
+        "operationId": "post_school_assets_batch",
+        "tags": [
+          "assets"
+        ],
+        "summary": "Atomically create individually traceable operational assets",
+        "description": "Admin only; actor is the verified JWT user, never request data. Creates 1..100 independent perangkat rows in ONE transaction; any write, readback or inventory collision rolls the entire batch back, never skipping units. Prefix is required and preserved exactly; leading/trailing whitespace is rejected. Inventory numbers are prefix-001 through prefix-100 using the actual unit index. Each returned perangkat_id comes from its own insert (IDs need not be contiguous). No quantity column, legacy record merging, QR issuance, or schema change. QR must be explicitly issued per unit later; maintenance and condition remain independent. harga_beli is PER UNIT, an exact DECIMAL string; blank/null procurement remains unknown. Default status Baik. Single creation and laboratory flows are unchanged.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-mounted": true,
+        "x-source": [
+          "backend/index.js",
+          "backend/router/assetRoutes.js",
+          "backend/controllers/assetController.js",
+          "backend/services/assetService.js",
+          "backend/utils/assetPolicy.js"
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid quantity type/range, prefix length/edge whitespace, nested/top-level unknown fields, explicit inventory/IDs/QR/actor fields, non-operational use, non-null/missing lab_id, or invalid existing common asset fields."
+          },
+          "401": {
+            "description": "Invalid/expired token."
+          },
+          "403": {
+            "description": "Missing token or write role/assigned-lab violation."
+          },
+          "409": {
+            "description": "Inventory collision or concurrent lock conflict: entire batch rolled back. Safe message, no SQL detail. Retrying an existing prefix never adds partial rows."
+          },
+          "500": {
+            "description": "Controlled internal error, no database details."
+          },
+          "503": {
+            "description": "ASSET_SCHEMA_REQUIRED: authenticated schema readiness check failed. No startup migration or writes."
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "created_count",
+                        "assets"
+                      ],
+                      "properties": {
+                        "created_count": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100
+                        },
+                        "assets": {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 100,
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true,
+                            "properties": {
+                              "nama_perangkat": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              "spesifikasi": {
+                                "type": "string",
+                                "nullable": true,
+                                "maxLength": 16000
+                              },
+                              "nomor_inventaris": {
+                                "type": "string",
+                                "nullable": false,
+                                "maxLength": 50
+                              },
+                              "penggunaan": {
+                                "type": "string",
+                                "enum": [
+                                  "Pembelajaran",
+                                  "Operasional"
+                                ]
+                              },
+                              "kategori": {
+                                "type": "string",
+                                "enum": [
+                                  "Komputer",
+                                  "Laptop",
+                                  "Monitor",
+                                  "Printer",
+                                  "Perangkat Jaringan",
+                                  "Proyektor",
+                                  "Lainnya"
+                                ]
+                              },
+                              "lab_id": {
+                                "nullable": true,
+                                "oneOf": [
+                                  {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 2147483647
+                                  },
+                                  {
+                                    "type": "string",
+                                    "pattern": "^[1-9][0-9]*$"
+                                  }
+                                ],
+                                "description": "Required valid lab for Pembelajaran; null/blank for Operasional. Assigned-lab check on Head writes."
+                              },
+                              "lokasi": {
+                                "type": "string",
+                                "nullable": true,
+                                "maxLength": 150
+                              },
+                              "tahun_pengadaan": {
+                                "nullable": true,
+                                "oneOf": [
+                                  {
+                                    "type": "integer",
+                                    "minimum": 1900
+                                  },
+                                  {
+                                    "type": "string"
+                                  }
+                                ],
+                                "description": "1900 through current server year. Empty/whitespace/null clear unknown. Omitted on update preserves."
+                              },
+                              "sumber_dana": {
+                                "type": "string",
+                                "nullable": true,
+                                "maxLength": 150
+                              },
+                              "harga_beli": {
+                                "type": "string",
+                                "nullable": true,
+                                "pattern": "^(?:\\s*|\\s*[0-9]{1,13}(?:\\.[0-9]{1,2})?\\s*)$",
+                                "description": "Exact DECIMAL(15,2) string, never JSON floating number. 0 valid; null/blank unknown. Omitted update preserves."
+                              },
+                              "perangkat_id": {
+                                "type": "integer"
+                              },
+                              "nama_lab": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "Baik",
+                                  "Rusak",
+                                  "Perlu Perbaikan",
+                                  "Dalam Perbaikan"
+                                ]
+                              },
+                              "foto_perangkat": {
+                                "type": "string",
+                                "nullable": true,
+                                "readOnly": true
+                              },
+                              "condition_editable": {
+                                "type": "boolean",
+                                "readOnly": true,
+                                "description": "False while Baru/Menunggu Perbaikan findings own condition; metadata remains editable."
+                              },
+                              "condition_edit_reason": {
+                                "type": "string",
+                                "nullable": true,
+                                "readOnly": true
+                              }
+                            },
+                            "required": [
+                              "nama_perangkat",
+                              "spesifikasi",
+                              "nomor_inventaris",
+                              "penggunaan",
+                              "kategori",
+                              "lab_id",
+                              "lokasi",
+                              "tahun_pengadaan",
+                              "sumber_dana",
+                              "harga_beli",
+                              "perangkat_id",
+                              "nama_lab",
+                              "status",
+                              "foto_perangkat",
+                              "condition_editable",
+                              "condition_edit_reason"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "jumlah",
+                  "awalan_nomor_inventaris",
+                  "aset"
+                ],
+                "properties": {
+                  "jumlah": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100
+                  },
+                  "awalan_nomor_inventaris": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 46,
+                    "pattern": "^\\S(?:[\\s\\S]*\\S)?$",
+                    "description": "Exact prefix; reject edge whitespace rather than trimming. Suffix -001..-100 adds four characters."
+                  },
+                  "aset": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "Baik",
+                          "Rusak",
+                          "Perlu Perbaikan",
+                          "Dalam Perbaikan"
+                        ],
+                        "description": "Optional; create defaults to Baik, omitted update preserves. Manual changes with active findings are rejected with 409."
+                      },
+                      "nama_perangkat": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "spesifikasi": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 16000
+                      },
+                      "penggunaan": {
+                        "type": "string",
+                        "enum": [
+                          "Operasional"
+                        ]
+                      },
+                      "kategori": {
+                        "type": "string",
+                        "enum": [
+                          "Komputer",
+                          "Laptop",
+                          "Monitor",
+                          "Printer",
+                          "Perangkat Jaringan",
+                          "Proyektor",
+                          "Lainnya"
+                        ]
+                      },
+                      "lab_id": {
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ],
+                        "description": "Required explicit null; batch is operational only."
+                      },
+                      "lokasi": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 150
+                      },
+                      "tahun_pengadaan": {
+                        "nullable": true,
+                        "oneOf": [
+                          {
+                            "type": "integer",
+                            "minimum": 1900
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "description": "1900 through current server year. Empty/whitespace/null clear unknown. Omitted on update preserves."
+                      },
+                      "sumber_dana": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 150
+                      },
+                      "harga_beli": {
+                        "type": "string",
+                        "nullable": true,
+                        "pattern": "^(?:\\s*|\\s*[0-9]{1,13}(?:\\.[0-9]{1,2})?\\s*)$",
+                        "description": "Exact DECIMAL(15,2) string, never JSON floating number. 0 valid; null/blank unknown. Omitted update preserves. PER UNIT, not a batch total."
+                      }
+                    },
+                    "required": [
+                      "nama_perangkat",
+                      "penggunaan",
+                      "kategori",
+                      "lab_id"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

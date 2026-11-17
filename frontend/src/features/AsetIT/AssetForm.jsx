@@ -16,6 +16,8 @@ export default function AssetForm({ asset, onSave, onCancel }) {
     kategori: asset?.kategori || "Lainnya",
     lab_id: null,
   }));
+  const [jumlah, setJumlah] = useState(1);
+  const batch = !asset && Number(jumlah) > 1;
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const lock = useRef(false);
@@ -35,7 +37,19 @@ export default function AssetForm({ asset, onSave, onCancel }) {
     setBusy(true);
     setError("");
     try {
-      await onSave(assetPayload(form));
+      const count = Number(jumlah);
+      if (!asset && (!/^\d+$/.test(String(jumlah)) || !Number.isInteger(count) || count < 1 || count > 100)) {
+        throw Error("Jumlah unit harus bilangan bulat 1–100.");
+      }
+      const body = assetPayload(form);
+      if (batch) {
+        const prefix = form.nomor_inventaris;
+        if (!prefix || prefix !== prefix.trim() || [...prefix].length > 46) throw Error("Awalan nomor inventaris wajib diisi, maksimal 46 karakter, tanpa spasi di awal atau akhir.");
+        delete body.nomor_inventaris;
+        await onSave({ jumlah: count, awalan_nomor_inventaris: prefix, aset: body });
+      } else {
+        await onSave(body);
+      }
     } catch (e) {
       setError(e.message || "Gagal menyimpan aset.");
     } finally {
@@ -73,7 +87,18 @@ export default function AssetForm({ asset, onSave, onCancel }) {
           required: true,
           maxLength: 100,
         })}
-        {field("nomor_inventaris", "Nomor inventaris", { maxLength: 50 })}
+        {!asset && <label className="block space-y-1 text-sm font-medium">
+          <span>Jumlah unit</span>
+          <input className={control} name="jumlah" type="number" min={1} max={100} step={1}
+            required value={jumlah} disabled={busy} onChange={(e) => setJumlah(e.target.value)} />
+        </label>}
+        {field("nomor_inventaris", batch ? "Awalan nomor inventaris" : "Nomor inventaris", {
+          maxLength: batch ? 46 : 50, required: batch,
+        })}
+        {batch && <p className="text-sm text-gray-600 sm:col-span-2" role="status">
+          Pratinjau: {form.nomor_inventaris || "AWALAN"}-001 sampai {form.nomor_inventaris || "AWALAN"}-{String(Number(jumlah)).padStart(3, "0")}.
+          Setiap unit dicatat terpisah agar kondisi dan riwayatnya dapat dilacak. QR diterbitkan untuk masing-masing unit melalui detail aset.
+        </p>}
         <label className="block space-y-1 text-sm font-medium">
           <span>Kategori</span>
           <select
@@ -112,7 +137,7 @@ export default function AssetForm({ asset, onSave, onCancel }) {
           maxLength: 150,
           placeholder: "Tidak diketahui",
         })}
-        {field("harga_beli", "Harga beli (Rp, opsional)", {
+        {field("harga_beli", "Harga beli PER UNIT (Rp, opsional)", {
           inputMode: "decimal",
           pattern: "[0-9]{1,13}(\\.[0-9]{1,2})?",
           placeholder: "Contoh: 2500000.00",
