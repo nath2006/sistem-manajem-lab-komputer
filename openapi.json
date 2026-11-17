@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "API Sistem Informasi Manajemen Lab Komputer",
+    "title": "API Sistem Manajemen IT dan Penggunaan Lab",
     "version": "1.1.0",
     "description": "Source-audited static OpenAPI for the Express application mounted in backend/index.js. This root openapi.json is the sole specification. No hosted Swagger UI or /api/docs mount exists. Examples are illustrative, not HTTP/DB evidence. Authentication, response envelopes and legacy shared-router shadowing intentionally reflect implementation, not desired behavior. Validation is static only; no database or API operations were performed."
   },
