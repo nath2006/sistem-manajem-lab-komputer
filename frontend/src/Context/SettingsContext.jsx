@@ -2,6 +2,8 @@ import { minutes } from '../../../shared/schedule.mjs';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../utils/api';
 import { resolveLogoUrl } from '../utils/resolveLogoUrl';
+import { updateSchoolFavicon } from '../utils/schoolFavicon';
+const defaultLogo = `${import.meta.env?.BASE_URL || '/'}assets/images/login/DUMMY-LOGO.png`;
 
 const defaults = Object.freeze({ school_name: 'Sekolah Anda', logo_url: '', primary_color: '#800000', schedule_start: '07:00', schedule_end: '17:00', lesson_duration: 60 });
 const validSchedule = data => !!data
@@ -58,6 +60,7 @@ export function SettingsProvider({ children }) {
     return () => { if (previous) root.style.setProperty('--color-maroon', previous); else root.style.removeProperty('--color-maroon'); };
   }, [settings.primary_color]);
   const value = useMemo(() => ({ settings, logoSrc: resolveLogoUrl(settings.logo_url, import.meta.env?.VITE_ASSET_BASE_URL, import.meta.env?.VITE_BASE_URL), loading, loaded, error, updateSettings, reloadSettings, refreshSettings: reloadSettings }), [settings, loading, loaded, error, updateSettings, reloadSettings]);
+  useEffect(() => updateSchoolFavicon(value.logoSrc, defaultLogo), [value.logoSrc]);
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 }
 
