@@ -78,6 +78,7 @@ const roleTasks = {
   ],
   Teknisi: [
     dashboard('/dashboard-teknisi'),
+    task('Data Perangkat Lab', '/kelola-perangkat', 'Lihat perangkat di semua lab lalu pilih lab dan pencarian untuk ekspor Excel atau PDF tanpa mengubah data perangkat'),
     task(
       'Pengecekan Perangkat',
       '/kelola-pengecekan',

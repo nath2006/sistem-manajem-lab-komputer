@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Dashboard from "../../Layouts/Dashboard";
 import { AuthContext } from "../../Context/AuthContext";
@@ -10,11 +10,19 @@ import AssetTable from "./AssetTable";
 import AssetForm from "./AssetForm";
 import AssetDetail from "./AssetDetail";
 import { assetCategories } from "./assetView";
+import InventoryExportMenu from "../../Components/InventoryExportMenu";
+import { useSettings } from "../../Context/SettingsContext";
+import { getDocumentBranding } from "../../utils/documentBranding";
 const filterControl =
   "min-h-11 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:ring-maroon";
 export default function AsetIT() {
   useTitle("Aset IT Operasional");
   const { state: user } = useContext(AuthContext);
+  const { settings, logoSrc } = useSettings();
+  const request = useRef(0);
+  const currentAuth = useRef(user);
+  currentAuth.current = user;
+  const [dataOwner, setDataOwner] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const assetId = searchParams.get("asset");
   const validAssetId = searchParams.getAll("asset").length === 1 &&
@@ -53,21 +61,27 @@ export default function AsetIT() {
     [modal, setModal] = useState(null),
     [saving, setSaving] = useState(false);
   const load = useCallback(async () => {
+    const generation = ++request.current;
+    const owner = user;
     setLoading(true);
     setError("");
     try {
       const response = await get("/assets");
+      if (generation !== request.current || currentAuth.current !== owner) return;
       if (!Array.isArray(response.data))
         throw Error("Format daftar aset tidak valid.");
       setData(response.data);
+      setDataOwner(owner);
     } catch (e) {
+      if (generation !== request.current || currentAuth.current !== owner) return;
       setError(e.message || "Gagal memuat aset.");
     } finally {
-      setLoading(false);
+      if (generation === request.current && currentAuth.current === owner) setLoading(false);
     }
-  }, []);
+  }, [user]);
   useEffect(() => {
     load();
+    return () => { request.current += 1; };
   }, [load]);
   const { requestDeletion, dialog } = useDeletionDialog({
     resource: "perangkat",
@@ -107,7 +121,8 @@ export default function AsetIT() {
       setSaving(false);
     }
   };
-  const visible = data.filter(
+  const scopeReady = !!user?.role && user.isAuthenticated !== false && !user.isLoading && dataOwner === user;
+  const visible = (scopeReady ? data : []).filter(
     (a) =>
       a.penggunaan === "Operasional" && (!category || a.kategori === category),
   );
@@ -175,6 +190,7 @@ export default function AsetIT() {
           data={visible}
           user={user}
           isLoading={loading}
+          renderActions={(rows) => ['Admin', 'Teknisi'].includes(user?.role) && <InventoryExportMenu kategori={category} owner={user} key={scopeReady ? 'ready' : 'pending'} rows={rows} kind="assets" title="Inventaris Aset IT Operasional" branding={getDocumentBranding(settings, logoSrc)} disabled={!scopeReady || loading || !!error} />}
           onDetail={(asset) => setSearchParams((previous) => {
             const next = new URLSearchParams(previous);
             next.set("asset", asset.perangkat_id);

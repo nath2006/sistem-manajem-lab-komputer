@@ -99,6 +99,7 @@ export const DashboardShell = ({ title, children, onReplayOnboarding }) => {
   const menuTeknisi = [
     { name: 'Dashboard', ic: <FaHouse />, to: '/dashboard-teknisi' },
     { type: 'divider' },
+    { name: 'Data Perangkat Lab', ic: <FaLaptopFile />, to: '/kelola-perangkat' },
     {
       name: 'Perbaikan Perangkat',
       ic: <FaWrench />,

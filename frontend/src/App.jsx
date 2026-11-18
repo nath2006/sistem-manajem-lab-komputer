@@ -98,8 +98,10 @@ function App() {
               />
             </Route>
           {/* Shared: Admin + Kepala Lab */}
-          <Route element={<RoleRoute allowedRoles={["Admin", "Kepala Lab"]} />}>
+          <Route element={<RoleRoute allowedRoles={["Admin", "Kepala Lab", "Teknisi"]} />}>
             <Route path="/kelola-perangkat" element={<Perangkat />} />
+          </Route>
+          <Route element={<RoleRoute allowedRoles={["Admin", "Kepala Lab"]} />}>
             <Route path="/add-perangkat" element={<AddPerangkat />} />
             <Route path="/add-pemeriksaan" element={<AddPemeriksaan />} />
             <Route

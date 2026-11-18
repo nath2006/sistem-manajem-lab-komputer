@@ -25,6 +25,7 @@ export default function AssetTable({
   data,
   user,
   isLoading,
+  renderActions,
   onDetail,
   onEdit,
   onDelete,
@@ -36,6 +37,7 @@ export default function AssetTable({
       data={data}
       headers={headers}
       isLoading={isLoading}
+      renderActions={renderActions}
       itemsPerPage={10}
       renderRow={(asset) => (
         <tr

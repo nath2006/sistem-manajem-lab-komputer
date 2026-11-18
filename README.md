@@ -13,6 +13,9 @@ Dibangun dengan React 19, Vite, Express 5, dan MySQL.
 - Catat aset Operasional sekolah, termasuk printer, proyektor, dan perangkat jaringan.
 - Tambahkan beberapa unit sekaligus tanpa mencampur identitas dan riwayat perbaikannya.
 - Terbitkan QR aset, buka halaman verifikasinya, dan cetak ulang label saat diperlukan.
+- Cetak label QR dengan logo sekolah, nama instansi, dan nama sistem dari identitas aplikasi.
+- Ekspor daftar aset sekolah dan perangkat lab ke Excel atau PDF melalui satu menu Ekspor.
+- Pantau status Online dan Offline pengguna secara realtime tanpa memuat ulang daftar.
 - Laporkan masalah melalui Bantuan lalu ikuti penanganannya lewat status dan komentar.
 - Catat pemeriksaan dan perbaikan tanpa kehilangan riwayat pekerjaan sebelumnya.
 - Ajukan jadwal lab dan periksa hasil persetujuannya.
@@ -38,6 +41,16 @@ Perangkat untuk pembelajaran dikelola melalui **Kelola Data Perangkat** dan terh
 Saat menambah aset Operasional, isi **Jumlah unit** untuk memasukkan sampai 100 unit dalam satu proses. Jika jumlahnya lebih dari satu, isi awalan nomor inventaris. Contohnya awalan `MOUSE` untuk tiga unit menghasilkan `MOUSE-001`, `MOUSE-002`, dan `MOUSE-003`. Gunakan awalan lain bila nomor tersebut sudah terpakai. Harga beli yang diisi berlaku **per unit**, bukan total seluruh barang.
 
 Setiap unit tetap mempunyai catatan, kondisi, dan riwayat sendiri. QR juga diterbitkan terpisah melalui tindakan penerbitan yang sudah tersedia. Jumlah hanya mempersingkat pengisian formulir dan tidak menggabungkan aset lama. Jika satu nomor inventaris bentrok atau penyimpanan gagal, seluruh penambahan pada proses tersebut dibatalkan agar tidak ada hasil setengah tersimpan.
+
+Label QR mengikuti nama instansi dan logo pada **Pengaturan Sistem**, disertai nama **Sistem Manajemen IT dan Penggunaan Lab**. Logo diletakkan di luar kode agar QR tetap mudah dipindai. Jika logo belum diatur, label menggunakan teks tanpa logo; jika logo yang sudah diatur gagal dimuat, perbaiki sumber logo lalu coba cetak kembali. Mencetak ulang tidak mengubah identitas aset.
+
+Pada daftar aset sekolah dan perangkat lab, **Admin dan Teknisi** dapat membuka **Ekspor** lalu memilih **Excel (.xlsx)** atau **PDF (.pdf)**. Hak ekspor diperiksa kembali oleh server, bukan hanya dengan menyembunyikan tombol. Kepala Lab, Koordinator Lab, dan Guru tidak memiliki hak ekspor. Kepala Lab tetap dapat mengelola perangkat lab sesuai kewenangannya.
+
+Berkas berisi seluruh hasil filter dan pencarian, bukan hanya halaman tabel yang sedang terbuka. Satu proses ekspor dibatasi 5.000 unit; gunakan filter untuk membagi laporan yang lebih besar. Data pengadaan yang belum diketahui ditampilkan sebagai `-`, sedangkan harga beli tetap dicatat per unit. Jika pilihan data berubah sebelum ekspor selesai, muat ulang daftar dan coba kembali.
+
+Status **Online** berarti setidaknya satu koneksi aplikasi pengguna masih aktif. Menutup satu tab tidak membuat pengguna Offline jika tab lain masih terhubung. Status berubah ketika koneksi terakhir ditutup; koneksi yang putus mendadak diperiksa melalui heartbeat dan batas waktu sekitar satu menit. Saat sambungan status belum tersedia, tampilan tidak menganggap semua pengguna Offline. Status ini dikelola otomatis dan tidak dapat diubah dari formulir edit pengguna.
+
+Presence berjalan pada satu proses backend dan tidak mengubah skema database. Jika aplikasi dijalankan pada beberapa instance backend, diperlukan penyimpanan presence bersama agar status antarmesin tetap konsisten. Contoh systemd di panduan ini menjalankan satu instance.
 
 Saat perangkat bermasalah, pengelola dapat mencatat temuan dan teknisi menambahkan hasil perbaikan. Tiket di menu Bantuan membantu pengguna mengikuti penanganan masalah. Aset boleh dikaitkan ke tiket, tetapi tidak wajib.
 
@@ -245,6 +258,10 @@ server {
 
     location /api {
         proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_buffering off;
+        proxy_read_timeout 75s;
+        proxy_set_header Connection "";
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;

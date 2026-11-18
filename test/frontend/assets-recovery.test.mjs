@@ -5,12 +5,14 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 async function harness(entry, api) {
   let cursor = 0;
-  const states = [], effects = [];
-  const hooks = { ...require('react'), useContext: () => ({state:{role:'Admin'}}), useCallback: fn => fn, useMemo: fn => fn(),
+  const states = [], effects = [], refs = [];
+  const auth = {state:{role:"Admin"}};let refCursor=0;
+  const hooks = { ...require('react'), useContext: () => auth, useRef: initial => {const i=refCursor++;return refs[i] ||= {current:initial};}, useCallback: fn => fn, useMemo: fn => fn(),
     useState(initial) { const i=cursor++; if (!(i in states)) states[i]=initial; return [states[i], next=>{states[i]=typeof next==='function'?next(states[i]):next;}]; },
     useEffect(fn) { if (effects.length < 2) effects.push(fn); } };
   globalThis.__assetRecoveryApi = api;
   const result = await build({entryPoints:[entry],bundle:true,platform:'node',format:'cjs',write:false,jsx:'automatic',external:['react','react/jsx-runtime'],plugins:[{name:'boundaries',setup(b){
+    b.onResolve({filter:/Context\/SettingsContext$/},()=>({path:'settings',namespace:'test'}));
     b.onResolve({filter:/Context\/AuthContext$/},()=>({path:'auth',namespace:'test'}));
     b.onResolve({filter:/utils\/api$/},()=>({path:'api',namespace:'test'}));
     b.onResolve({filter:/useDeletionDialog$/},()=>({path:'deletion',namespace:'test'}));
@@ -18,12 +20,12 @@ async function harness(entry, api) {
     // covered with the real App route tree in ticket-asset-navigation.test.mjs.
     b.onResolve({filter:/^react-router-dom$/},()=>({path:'router',namespace:'test'}));
     b.onResolve({filter:/(Layouts\/Dashboard|ModalContainer|LoadingSpinner|Loading\/Skeleton|useObjectUrl|useTitle|AssetTable|AssetForm|AssetDetail)$/},()=>({path:'stub',namespace:'test'}));
-    b.onLoad({filter:/.*/,namespace:'test'},({path})=>({contents:path==='router'?'export const useSearchParams=()=>[new URLSearchParams(),()=>{}];':path==='api'?'export const {get,putWithFile,post,put,deleteData}=globalThis.__assetRecoveryApi;':path==='auth'?'export const AuthContext={};':path==='deletion'?'export default ()=>({requestDeletion(){},dialog:null});':'export default function Stub(){return null;}'}));
+    b.onLoad({filter:/.*/,namespace:'test'},({path})=>({contents:path==='settings'?'export const useSettings=()=>({settings:{},logoSrc:null})':path==='router'?'export const useSearchParams=()=>[new URLSearchParams(),()=>{}];':path==='api'?'export const {get,putWithFile,post,put,deleteData}=globalThis.__assetRecoveryApi;':path==='auth'?'export const AuthContext={};':path==='deletion'?'export default ()=>({requestDeletion(){},dialog:null});':'export default function Stub(){return null;}'}));
   }}]});
   const module={exports:{}};
   new Function('require','module','exports',result.outputFiles[0].text)(name=>name==='react'?hooks:require(name),module,module.exports);
   delete globalThis.__assetRecoveryApi;
-  return {states,effects,render(props={}) {cursor=0;return module.exports.default(props);}};
+  return {states,effects,render(props={}) {cursor=0;refCursor=0;return module.exports.default(props);}};
 }
 function find(node, predicate) {
   if (!node || typeof node!=='object') return;

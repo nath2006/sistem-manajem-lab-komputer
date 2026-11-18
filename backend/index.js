@@ -37,6 +37,7 @@ import { createAssetRouter } from './router/assetRoutes.js';
 import { createOnboardingRouter } from './router/onboardingRoutes.js';
 import { createAssetQrRouter } from './router/assetQrRoutes.js';
 import { createPresenceRouter } from './router/presenceRoutes.js';
+import { createInventoryExportRouter } from './router/inventoryExportRoutes.js';
 
 dotenv.config();
 
@@ -68,6 +69,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Definisi Rute API Anda
 app.use('/api/presence', createPresenceRouter(db, verifyToken));
 app.use('/api', activityLog);
+app.use('/api/inventory-exports', createInventoryExportRouter(db, verifyToken));
 app.use('/api/onboarding', createOnboardingRouter(db, verifyToken));
 app.use('/api/deletion', deletionRoutes);
 app.use('/api/assets', createAssetRouter(db, verifyToken));

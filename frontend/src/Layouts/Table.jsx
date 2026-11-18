@@ -49,6 +49,7 @@ const Tabel = ({
   data,
   itemsPerPage = 5,
   renderRow,
+  renderActions,
   buttonText = 'Tambah Data',
   isLoading = false,
 }) => {
@@ -142,6 +143,7 @@ const Tabel = ({
               }}
             />
           </div>
+          {renderActions?.(filteredData)}
           {to && (
             <Link
               to={to}
