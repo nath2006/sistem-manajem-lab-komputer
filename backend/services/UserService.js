@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import { presenceRegistry } from "./presenceRegistry.js";
 import { HttpError } from "../core/HttpError.js";
 import { UserRepository } from "../repositories/UserRepository.js";
 import coerceUserRole from "../utils/coerceUserRole.js";
@@ -8,14 +9,19 @@ export class UserService {
     this.repo = new UserRepository();
   }
 
-  list() {
-    return this.repo.list();
+  project(user) {
+    const { user_id, username, nama_lengkap, email, role } = user;
+    return { user_id, username, nama_lengkap, email, role, is_online: presenceRegistry.isOnline(user_id) };
+  }
+
+  async list() {
+    return (await this.repo.list()).map(user => this.project(user));
   }
 
   async detail(id) {
     const user = await this.repo.getById(id);
     if (!user) throw new HttpError(404, "User tidak ditemukan");
-    return user;
+    return this.project(user);
   }
 
   async create({ username, password, nama_lengkap, email, role }) {
@@ -30,10 +36,9 @@ export class UserService {
         nama_lengkap,
         email,
         role: coerceUserRole(role),
-        is_online: false,
         password: hashedPassword,
       });
-      return created;
+      return this.project(created);
     } catch (e) {
       if (
         String(e.message).toLowerCase().includes("unique") ||
@@ -50,13 +55,13 @@ export class UserService {
   }
 
   async update(id, payload) {
+    if (Object.hasOwn(payload, "is_online")) throw new HttpError(400, "Status online dikelola otomatis");
     const data = {};
     if (payload.username !== undefined) data.username = payload.username;
     if (payload.nama_lengkap !== undefined)
       data.nama_lengkap = payload.nama_lengkap;
     if (payload.email !== undefined) data.email = payload.email;
     if (payload.role !== undefined) data.role = payload.role;
-    if (payload.is_online !== undefined) data.is_online = !!payload.is_online;
 
     if (payload.password && payload.password.trim()) {
       data.password = await bcrypt.hash(payload.password, 10);
@@ -64,7 +69,7 @@ export class UserService {
 
     try {
       const updated = await this.repo.update(id, data);
-      return updated;
+      return this.project(updated);
     } catch (e) {
 
       if (

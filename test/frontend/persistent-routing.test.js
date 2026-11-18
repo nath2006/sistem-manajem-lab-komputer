@@ -22,11 +22,12 @@ test('actual App routing shares one persistent shell and retains every role boun
     if(id==='react')return {...React,lazy:()=>feature};
     if(id==='react-router-dom')return {...Router,BrowserRouter:({children})=>React.createElement(Router.MemoryRouter,{initialEntries:[path]},children)};
     if(id==='./Context/AuthContext')return context;
+    if(id==='./Context/PresenceContext')return {PresenceProvider:({children})=>children};
     if(id==='./utils/Middleware/ProtectedRoute')return {ProtectedRoute:real.ProtectedRoute,RoleRoute:real.RoleRoute};
     if(defaults[id])return {__esModule:true,default:defaults[id]};
     return require(id);
   },module,module.exports);
-  const matrix=[['/dashboard',['Admin']],['/ticketing',['Admin','Guru','Kepala Lab','Koordinator Lab','Teknisi']],['/pengaturan',['Admin']],['/log-aktivitas',['Admin']],['/user',['Admin']],['/kelola/data-lab',['Admin','Koordinator Lab']],['/kelola-pengumuman',['Admin','Koordinator Lab']],['/kelola-perangkat',['Admin','Kepala Lab']],['/kelola-pemeriksaan-perangkat',['Admin','Kepala Lab']],['/kelola-jadwal-lab',['Admin','Kepala Lab']],['/jadwal-lab',['Admin','Guru','Kepala Lab']],['/pengajuan-jadwal-lab',['Guru']],['/pengajuan-jadwal-lab/status',['Guru']],['/kelola-pengecekan',['Admin','Teknisi']],['/kelola-perbaikan',['Admin','Teknisi']],['/dashboard-guru',['Guru']],['/dashboard-kepala-lab',['Kepala Lab']],['/dashboard-koordinator-lab',['Koordinator Lab']],['/dashboard-teknisi',['Teknisi']]];
+  const matrix=[['/dashboard',['Admin']],['/ticketing',['Admin','Guru','Kepala Lab','Koordinator Lab','Teknisi']],['/pengaturan',['Admin']],['/log-aktivitas',['Admin']],['/user',['Admin']],['/kelola/data-lab',['Admin','Koordinator Lab']],['/kelola-pengumuman',['Admin','Koordinator Lab']],['/kelola-perangkat',['Admin','Kepala Lab','Teknisi']],['/add-perangkat',['Admin','Kepala Lab']],['/add-pemeriksaan',['Admin','Kepala Lab']],['/kelola-pemeriksaan-perangkat',['Admin','Kepala Lab']],['/kelola-jadwal-lab',['Admin','Kepala Lab']],['/jadwal-lab',['Admin','Guru','Kepala Lab']],['/pengajuan-jadwal-lab',['Guru']],['/pengajuan-jadwal-lab/status',['Guru']],['/kelola-pengecekan',['Admin','Teknisi']],['/kelola-perbaikan',['Admin','Teknisi']],['/dashboard-guru',['Guru']],['/dashboard-kepala-lab',['Kepala Lab']],['/dashboard-koordinator-lab',['Koordinator Lab']],['/dashboard-teknisi',['Teknisi']]];
   for(const [url,allowed] of matrix)for(const candidate of ['Admin','Guru','Kepala Lab','Koordinator Lab','Teknisi']){
     path=url;role=candidate;
     const html=renderToString(React.createElement(module.exports.default));

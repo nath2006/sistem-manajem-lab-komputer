@@ -13,8 +13,8 @@ test('condition labels cannot mistake perbaikan for baik', () => {
 });
 test('confident brand surfaces and coordinated series are derived from the configured theme', () => {
  const t=dashboardTokens('#2563eb');
- assert.equal(t['--dashboard-card-medium'], '#bed0f9');
- assert.equal(t['--dashboard-chart-fill'], '#6692f1');
+ assert.equal(t['--dashboard-card-medium'], '#bccbeb');
+ assert.equal(t['--dashboard-chart-fill'], '#6285d1');
  assert.equal(t['--dashboard-series-0'],t['--dashboard-accent']);
  assert.ok(contrastRatio(t['--dashboard-on-card-medium'],t['--dashboard-card-medium'])>=4.5);
 });
@@ -36,7 +36,8 @@ test('soft surfaces follow primary but readable outlines do not rely on pastel c
 test('chart fills stay at official defaults while selected primary updates metric tokens', () => {
  for (const primary of ['#2563eb','#15803d','#ff0000','#ffff00','#f8fafc','#000000','#07152e']) {
   const tokens = dashboardTokens(primary);
-  assert.equal(tokens['--dashboard-primary'],primary);
+  assert.equal(tokens['--dashboard-brand'],primary);
+  assert.equal(tokens['--dashboard-on-primary'],'#ffffff');
   for (const [tone,index] of Object.entries({info:0,success:4,warning:3,danger:1})) assert.equal(tokens[`--dashboard-fill-${tone}`],theme.DEFAULT_CHART_COLORS[index]);
  }
 });

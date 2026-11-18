@@ -32,6 +32,7 @@ async function harness(entry = '/ticketing', state = { isAuthenticated: true, ro
   globalThis.__assetNavigation = h;
   const bundle = await build({ entryPoints: ['src/App.jsx'], bundle: true, platform: 'node', format: 'cjs', write: false, jsx: 'automatic', loader: { '.css': 'empty', '.png': 'dataurl' }, external: ['react', 'react/jsx-runtime', 'react-dom', 'react-dom/server'], define: { 'import.meta.env': '{}' }, plugins: [{ name: 'mounted-app-boundaries', setup(b) {
     b.onResolve({ filter: /^react-router-dom$/ }, args => args.importer.endsWith('/src/App.jsx') || args.importer.endsWith('\\src\\App.jsx') ? { path: 'router', namespace: 'asset-navigation' } : { path: 'react-router-dom', external: true });
+    b.onResolve({ filter: /Context\/PresenceContext$/ }, () => ({ path: 'presence', namespace: 'asset-navigation' }));
     b.onResolve({ filter: /Context\/AuthContext$/ }, () => ({ path: 'auth', namespace: 'asset-navigation' }));
     b.onResolve({ filter: /utils\/api$/ }, () => ({ path: 'api', namespace: 'asset-navigation' }));
     b.onResolve({ filter: /Layouts\/Dashboard(Layout)?$/ }, args => ({ path: args.path.endsWith('DashboardLayout') ? 'shell' : 'layout', namespace: 'asset-navigation' }));
@@ -42,6 +43,7 @@ async function harness(entry = '/ticketing', state = { isAuthenticated: true, ro
       router: 'import React from "react";import {MemoryRouter,useLocation,useNavigate} from "react-router-dom";export * from "react-router-dom";const h=globalThis.__assetNavigation;function Probe(){h.location=useLocation();h.navigate=useNavigate();return null}export function BrowserRouter({children}){return <MemoryRouter initialEntries={[h.entry]}><Probe/>{children}</MemoryRouter>}',
       shell: 'import React,{Suspense} from "react";import {Outlet} from "react-router-dom";export default function Shell(){return <Suspense fallback="Loading"><Outlet/></Suspense>}',
       layout: 'export default function Layout({children}){return children}',
+      presence: 'export function PresenceProvider({children}){return children};export const usePresence=()=>({connected:false,ready:false,onlineUserIds:[]});',
       login: 'export default function Login(){return "LOGIN"}',
     }[path] }));
   } }] });

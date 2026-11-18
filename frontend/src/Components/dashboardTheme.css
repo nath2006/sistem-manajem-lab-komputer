@@ -229,12 +229,12 @@
 }
 
 .dashboard-theme table thead.bg-maroon {
-    background: var(--dashboard-canvas);
-    color: var(--dashboard-text);
+    background: var(--dashboard-primary);
+    color: var(--dashboard-on-primary);
 }
 
 .dashboard-theme table thead.bg-maroon .text-white {
-    color: var(--dashboard-text);
+    color: var(--dashboard-on-primary);
 }
 
 /* Retain the pre-existing operational card contract; no protected action selectors. */

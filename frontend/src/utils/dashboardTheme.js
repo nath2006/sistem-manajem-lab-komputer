@@ -6,6 +6,30 @@ const mix = (color, target, amount) => hex(rgb(color).map((value, index) => valu
 const luminance = color => rgb(color).map(value => { const x = value / 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
 export function contrastRatio(a, b) { const x = luminance(a), y = luminance(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
 export function foreground(background) { return contrastRatio(PALETTE.black, background) >= contrastRatio(PALETTE.white, background) ? PALETTE.black : PALETTE.white; }
+// Keep the stored brand intact; derive restrained, readable solid UI surfaces.
+function brandSurface(color) {
+  const channels = rgb(color).map(value => value / 255);
+  const highest = Math.max(...channels), lowest = Math.min(...channels);
+  const delta = highest - lowest, lightness = (highest + lowest) / 2;
+  let hue = 0;
+  if (delta) {
+    const [red, green, blue] = channels;
+    hue = 60 * (highest === red ? ((green - blue) / delta + 6) % 6 : highest === green ? (blue - red) / delta + 2 : (red - green) / delta + 4);
+  }
+  const saturation = delta ? Math.min(0.72, delta / (1 - Math.abs(2 * lightness - 1))) : 0;
+  // Bright yellow becomes warm gold rather than a fluorescent or olive surface.
+  if (saturation > 0.25 && hue >= 40 && hue <= 75) hue = 42;
+  for (let step = 0; step <= 100; step++) {
+    const light = Math.min(lightness, 0.43) * (1 - step / 100);
+    const chroma = (1 - Math.abs(2 * light - 1)) * saturation;
+    const intermediate = chroma * (1 - Math.abs((hue / 60) % 2 - 1));
+    const sector = Math.floor(hue / 60);
+    const values = [[chroma, intermediate, 0], [intermediate, chroma, 0], [0, chroma, intermediate], [0, intermediate, chroma], [intermediate, 0, chroma], [chroma, 0, intermediate]][sector];
+    const candidate = hex(values.map(value => (value + light - chroma / 2) * 255));
+    if (contrastRatio(PALETTE.white, candidate) >= 6) return candidate;
+  }
+  return PALETTE.black;
+}
 function safeAccent(color) {
   for (let step = 0; step <= 100; step++) { const candidate = mix(color, PALETTE.black, step / 100); if (contrastRatio(candidate, PALETTE.surface) >= 6) return candidate; }
   return PALETTE.black;
@@ -21,9 +45,10 @@ export function conditionTone(label) {
   return /\bbaik\b|layak/i.test(value) ? 'success' : 'info';
 }
 export function dashboardTokens(value) {
-  const primary = /^#[0-9a-f]{6}$/i.test(value) ? value : PALETTE.primary;
+  const brand = /^#[0-9a-f]{6}$/i.test(value) ? value : PALETTE.primary;
+  const primary = brandSurface(brand);
   const accent = safeAccent(primary);
-  const colors = { primary, accent, soft: mix(primary, PALETTE.white, 0.92), 'soft-strong': mix(primary, PALETTE.white, 0.85),
+  const colors = { brand, primary, accent, soft: mix(primary, PALETTE.white, 0.92), 'soft-strong': mix(primary, PALETTE.white, 0.85),
     'card-medium': mix(primary, PALETTE.white, 0.7), 'card-strong': mix(primary, PALETTE.white, 0.65), 'card-light': mix(primary, PALETTE.white, 0.8),
     'chart-fill': mix(primary, PALETTE.white, 0.3),
     surface: PALETTE.surface, canvas: PALETTE.canvas, text: PALETTE.text, muted: PALETTE.muted, border: PALETTE.border, track: PALETTE.track,

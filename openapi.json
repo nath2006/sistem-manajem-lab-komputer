@@ -12,6 +12,122 @@
     }
   ],
   "paths": {
+  "/api/presence/stream": {
+    "get": {
+      "tags": [
+        "Presence"
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "x-mounted": true,
+      "x-source": [
+        "backend/router/presenceRoutes.js",
+        "backend/services/presenceRegistry.js"
+      ],
+      "operationId": "getPresenceStream",
+      "summary": "Live process-local online presence (all authenticated roles)",
+      "description": "Bearer Authorization header required; query parameters/tokens forbidden. Read-only user existence/current role check. SSE connected event JSON: {connection_id,heartbeat_interval_ms:15000,lease_timeout_ms:45000}; presence event full snapshot JSON {online_user_ids:integer[],revision:integer}; ping event JSON {} every 15s requires POST heartbeat ACK. No names, email or tokens streamed. Each connection owned separately; last close removes online presence. Missing ACK expires in 45s, swept every 15s (up to ~60s). Token expiry closes stream on sweep. Slow consumers disconnected, max 2000 connections/process and 10/user. No DB writes/audit inserts. Restart resets offline and clients reconnect; single-process only (multiworker requires shared broker).",
+      "responses": {
+        "200": {
+          "description": "SSE connected, presence full snapshots and ping events. Cache-Control private, no-store; X-Accel-Buffering no.",
+          "content": {
+            "text/event-stream": {
+              "schema": {
+                "type": "string"
+              },
+              "example": "event: connected\ndata: {\"connection_id\":\"550e8400-e29b-41d4-a716-446655440000\",\"heartbeat_interval_ms\":15000,\"lease_timeout_ms\":45000}\n\nevent: presence\ndata: {\"online_user_ids\":[1,2],\"revision\":2}\n\nevent: ping\ndata: {}\n\n"
+            }
+          }
+        },
+        "401": {
+          "description": "Missing/invalid Bearer header, query parameters, invalid id/exp or expired token"
+        },
+        "403": {
+          "description": "Deleted user or stale/revoked role"
+        },
+        "429": {
+          "description": "Connection limit reached"
+        },
+        "500": {
+          "description": "Presence unavailable"
+        }
+      }
+    }
+  },
+  "/api/presence/heartbeat": {
+    "post": {
+      "tags": [
+        "Presence"
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "x-mounted": true,
+      "x-source": [
+        "backend/router/presenceRoutes.js",
+        "backend/services/presenceRegistry.js"
+      ],
+      "operationId": "postPresenceHeartbeat",
+      "summary": "ACK a live owned presence connection",
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "connection_id"
+              ],
+              "properties": {
+                "connection_id": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "204": {
+          "description": "Owned live lease renewed; empty response"
+        },
+        "400": {
+          "description": "Expected only UUIDv4 connection_id; user IDs/extra fields rejected"
+        },
+        "401": {
+          "description": "Invalid or expired Bearer identity"
+        },
+        "403": {
+          "description": "Current user missing/deleted or role revoked; terminal identity authorization failure",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "message": { "type": "string" } } },
+                "example": { "message": "User no longer authorized" }
+              }
+            }
+          },
+          "409": {
+            "description": "Lease unavailable; reconnect using the verified identity. Does not disclose connection existence or ownership.",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "required": ["code", "message"], "properties": { "code": { "type": "string", "enum": ["PRESENCE_LEASE_UNAVAILABLE"] }, "message": { "type": "string" } } },
+                "example": { "code": "PRESENCE_LEASE_UNAVAILABLE", "message": "Presence connection unavailable; reconnect" }
+              }
+            }
+        },
+        "500": {
+          "description": "Presence unavailable"
+        }
+      }
+    }
+  },
   "/api/onboarding": {
     "get": {
       "operationId": "getOnboarding",
@@ -523,6 +639,76 @@
           "403": {
             "description": "Missing token; issuer also requires Admin or assigned Kepala Lab for Pembelajaran."
           }
+        }
+      }
+    },
+    "/api/inventory-exports/assets": {
+      "post": {
+        "operationId": "authorize_school_asset_export",
+        "tags": ["inventory-exports"],
+        "summary": "Read authorized school-asset export data",
+        "description": "Only current Admin and Teknisi roles may export. The verified token role must match the current user role. Returns a strict projection in requested ID order for up to 5000 unique selected Operasional assets without a laboratory. An optional category constrains the selection. The browser formats this authorized dataset as XLSX or PDF. Any missing or out-of-scope selection returns 409 without partial data. See README.md#cara-kerja.",
+        "security": [{"bearerAuth": []}],
+        "x-mounted": true,
+        "x-source": ["backend/index.js", "backend/router/inventoryExportRoutes.js"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/SchoolAssetExportSelection"}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authorized export dataset; no file generation or database mutation on the server.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/InventoryExportDataset"}
+              }
+            }
+          },
+          "400": {"description": "Invalid, duplicate or excessive IDs, invalid category, or unknown fields."},
+          "401": {"description": "Invalid or expired authentication."},
+          "403": {"description": "Missing authentication, deleted user, disallowed role or token/current-role mismatch."},
+          "409": {"description": "Selected inventory changed or contains missing or out-of-scope assets; reload before retrying."},
+          "500": {"description": "Controlled export-data failure without database details."},
+          "503": {"description": "ASSET_SCHEMA_REQUIRED; no automatic migration."}
+        }
+      }
+    },
+    "/api/inventory-exports/lab": {
+      "post": {
+        "operationId": "authorize_lab_device_export",
+        "tags": ["inventory-exports"],
+        "summary": "Read authorized laboratory-device export data",
+        "description": "Only current Admin and Teknisi roles may export. The verified token role must match the current user role. Returns a strict projection in requested ID order for up to 5000 unique selected assigned, non-Operasional laboratory devices, retaining legacy null-use rows. An optional laboratory ID constrains the selection. The browser formats this authorized dataset as XLSX or PDF. Kepala Lab management rights do not grant export rights. Any missing or out-of-scope selection returns 409 without partial data. See README.md#cara-kerja.",
+        "security": [{"bearerAuth": []}],
+        "x-mounted": true,
+        "x-source": ["backend/index.js", "backend/router/inventoryExportRoutes.js"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/LabDeviceExportSelection"}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authorized export dataset; no file generation or database mutation on the server.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/InventoryExportDataset"}
+              }
+            }
+          },
+          "400": {"description": "Invalid, duplicate or excessive IDs, invalid laboratory ID, or unknown fields."},
+          "401": {"description": "Invalid or expired authentication."},
+          "403": {"description": "Missing authentication, deleted user, disallowed role or token/current-role mismatch."},
+          "409": {"description": "Selected inventory changed or contains missing or out-of-scope devices; reload before retrying."},
+          "500": {"description": "Controlled export-data failure without database details."},
+          "503": {"description": "ASSET_SCHEMA_REQUIRED; no automatic migration."}
         }
       }
     },
@@ -2262,7 +2448,7 @@
           "user"
         ],
         "summary": "getAllUser",
-        "description": "Sumber: backend/router/userRoutes.js → backend/controllers/userController.js#getAllUser. Akses: Token; semua role. Data user tidak memuat password; daftar tidak memilih is_online, sedangkan detail/create/update memilih is_online. Current controller delegates to UserService/UserRepository (Prisma). Password is never selected in responses. Service errors reach the app error handler as {message,error}; error is {} outside development, stack string in development. Numeric detail/update IDs use parseInt rather than strict integer-string validation.",
+        "description": "Sumber: backend/router/userRoutes.js → backend/controllers/userController.js#getAllUser. Akses: Token; semua role. Data user tidak memuat password; list/detail/create/update menghitung is_online dari registry koneksi proses, bukan kolom DB. Current controller delegates to UserService/UserRepository (Prisma). Password is never selected in responses. Service errors reach the app error handler as {message,error}; error is {} outside development, stack string in development. Numeric detail/update IDs use parseInt rather than strict integer-string validation.",
         "security": [
           {
             "bearerAuth": []
@@ -2299,6 +2485,11 @@
                           },
                           "role": {
                             "type": "string"
+                          },
+                          "is_online": {
+                            "type": "boolean",
+                            "readOnly": true,
+                            "description": "Computed from process-local live connection leases"
                           }
                         },
                         "additionalProperties": false
@@ -2824,7 +3015,7 @@
           "user"
         ],
         "summary": "updateUser",
-        "description": "Sumber: backend/router/userRoutes.js → backend/controllers/userController.js#updateUser. Akses: Admin. Update parsial. Password kosong tidak diganti. is_online dikonversi dengan !!nilai; gunakan boolean JSON, bukan string. Role update tidak melalui coerceUserRole. Current controller delegates to UserService/UserRepository (Prisma). Password is never selected in responses. Service errors reach the app error handler as {message,error}; error is {} outside development, stack string in development. Numeric detail/update IDs use parseInt rather than strict integer-string validation.",
+        "description": "Sumber: backend/router/userRoutes.js → backend/controllers/userController.js#updateUser. Akses: Admin. Update parsial. Password kosong tidak diganti. is_online bersifat read-only; setiap update manual is_online ditolak 400. Role update tidak melalui coerceUserRole. Current controller delegates to UserService/UserRepository (Prisma). Password is never selected in responses. Service errors reach the app error handler as {message,error}; error is {} outside development, stack string in development. Numeric detail/update IDs use parseInt rather than strict integer-string validation.",
         "security": [
           {
             "bearerAuth": []
@@ -3040,7 +3231,8 @@
                   },
                   "is_online": {
                     "type": "boolean",
-                    "example": false
+                    "readOnly": true,
+                    "description": "Computed connection presence; manual updates return 400"
                   },
                   "username": {
                     "type": "string",
@@ -3058,8 +3250,7 @@
               "example": {
                 "nama_lengkap": "Guru Contoh",
                 "email": "guru@example.com",
-                "role": "Guru",
-                "is_online": false
+                "role": "Guru"
               }
             }
           }
@@ -15902,6 +16093,72 @@
       }
     },
     "schemas": {
+      "SchoolAssetExportSelection": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["perangkat_ids"],
+        "properties": {
+          "perangkat_ids": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5000,
+            "uniqueItems": true,
+            "items": {"type": "integer", "minimum": 1, "maximum": 2147483647}
+          },
+          "kategori": {
+            "type": "string",
+            "nullable": true,
+            "enum": ["Komputer", "Laptop", "Monitor", "Printer", "Perangkat Jaringan", "Proyektor", "Lainnya", null]
+          }
+        }
+      },
+      "LabDeviceExportSelection": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["perangkat_ids"],
+        "properties": {
+          "perangkat_ids": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5000,
+            "uniqueItems": true,
+            "items": {"type": "integer", "minimum": 1, "maximum": 2147483647}
+          },
+          "lab_id": {"type": "integer", "nullable": true, "minimum": 1, "maximum": 2147483647}
+        }
+      },
+      "InventoryExportDataset": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5000,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["perangkat_id", "nama_perangkat", "spesifikasi", "status", "nomor_inventaris", "penggunaan", "kategori", "lab_id", "nama_lab", "lokasi", "tahun_pengadaan", "sumber_dana", "harga_beli"],
+              "properties": {
+                "perangkat_id": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+                "nama_perangkat": {"type": "string", "nullable": true},
+                "spesifikasi": {"type": "string", "nullable": true},
+                "status": {"type": "string", "nullable": true},
+                "nomor_inventaris": {"type": "string", "nullable": true},
+                "penggunaan": {"type": "string", "nullable": true},
+                "kategori": {"type": "string", "nullable": true},
+                "lab_id": {"type": "integer", "nullable": true},
+                "nama_lab": {"type": "string", "nullable": true},
+                "lokasi": {"type": "string", "nullable": true},
+                "tahun_pengadaan": {"type": "integer", "nullable": true},
+                "sumber_dana": {"type": "string", "nullable": true},
+                "harga_beli": {"type": "string", "nullable": true, "description": "Exact per-unit decimal string, never binary-float coerced."}
+              }
+            }
+          }
+        }
+      },
       "DashboardCount": {
         "type": "object",
         "required": [

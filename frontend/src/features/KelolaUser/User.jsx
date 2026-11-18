@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react'
+import React, { useState, useEffect, useContext, useMemo, useRef, useCallback } from 'react'
+import { usePresence } from '../../Context/PresenceContext';
 import Dashboard from '../../Layouts/Dashboard';
 import Tabel from '../../Layouts/Table';
 import { FaEye, FaTrash, FaFilePen } from "react-icons/fa6";
@@ -25,6 +26,13 @@ const User = () => {
     
     const { state } = useContext(AuthContext);
     const userRole = state?.role;
+    const presence = usePresence();
+    const owner = useMemo(() => ({ authenticated: state?.isAuthenticated, userId: state?.userId, token: state?.token }), [state?.isAuthenticated, state?.userId, state?.token]);
+    const ownerRef = useRef(owner);
+    ownerRef.current = owner;
+    const requestRef = useRef(0);
+    const aliveRef = useRef(false);
+    const [dataOwner, setDataOwner] = useState(null);
 
     const isAdmin = userRole == 'Admin';
 
@@ -69,19 +77,26 @@ const User = () => {
         {judul: "Aksi"}
     ];
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
+        const requestOwner = owner;
+        const request = ++requestRef.current;
+        const active = () => aliveRef.current && ownerRef.current === requestOwner && requestRef.current === request;
         try {
             const response = await get('/user');
-            setData(response.data);
-        } catch (err) {
-            // setErrorMsg('Gagal Mengambil Data');
-            console.error("Error fetching user data:", err);
+            if (active()) { setData(response.data); setDataOwner(requestOwner); }
+        } catch {
+            if (active()) setErrorMsg('Gagal mengambil data user');
         } finally {
-            setIsLoading(false);
+            if (active()) setIsLoading(false);
         }
-    };
+    }, [owner]);
 
     useEffect(() => {
+        aliveRef.current = true;
+        setIsLoading(true);
+        setShowModal(false);
+        setShowEditModal(false);
+        if (!state?.isAuthenticated) return () => { aliveRef.current = false; };
         fetchData();
         const refreshInterval = import.meta.env.VITE_REFRESH_INTERVAL || 10000;
 
@@ -89,8 +104,8 @@ const User = () => {
             fetchData();
         }, refreshInterval);  
 
-        return () => clearInterval(refreshData);
-    }, []);
+        return () => { aliveRef.current = false; clearInterval(refreshData); };
+    }, [owner, fetchData, state?.isAuthenticated]);
 
     const renderUserRow = (item, index) => (
         <tr className="bg-white border-b" key={item.user_id || index}>
@@ -120,9 +135,9 @@ const User = () => {
           </td>
           <td className="px-6 py-4 text-gray-900">
             <span className={`inline-flex max-w-full items-center rounded-full px-2 py-1 text-[11px] font-medium leading-4 ${
-                item.is_online ? 'bg-green-100 text-green-800' : 'bg-gray-300 text-gray-800'
+                presence.connected && presence.ready && presence.onlineUserIds.includes(item.user_id) ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
             }`}>
-                {item.is_online ? 'Online' : 'Offline'}
+                {!presence.connected || !presence.ready ? 'Tidak diketahui' : presence.onlineUserIds.includes(item.user_id) ? 'Online' : 'Offline'}
             </span>
           </td>
           <td className="px-3 py-4">
@@ -163,13 +178,13 @@ const User = () => {
                     breadcrumbContext={userRole}
                     headers={headTable}
                     to="/add-user"
-                    data={data}
+                    data={dataOwner === owner ? data : []}
                     itemsPerPage={5}
                     renderRow={renderUserRow}
                 />
 
-                {showModal && <DetailUser id={selectedId} onClose={() => setShowModal(false)} />}
-                {showEditModal && <EditUser id={selectedId} onClose={() => setShowEditModal(false)} onUpdate={fetchData} />}
+                {dataOwner === owner && showModal && <DetailUser id={selectedId} onClose={() => setShowModal(false)} />}
+                {dataOwner === owner && showEditModal && <EditUser id={selectedId} onClose={() => setShowEditModal(false)} onUpdate={fetchData} />}
             
             </div>
             {deletionDialog}

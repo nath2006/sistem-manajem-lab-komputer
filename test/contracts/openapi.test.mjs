@@ -64,7 +64,7 @@ export function mountedInventory() {
   }
   for (const match of index.matchAll(/app\.(get|post|put|patch|delete|head|options)\(\s*['"]([^'"]+)['"]/g)) result.push({ method: match[1], path: match[2], source: 'backend/index.js', mount: 'app' });
   assert.ok(result.length > 80, 'Mount discovery unexpectedly incomplete');
-  assert.equal(imports.size, 21, 'New router import: review mount inventory adapter');
+  assert.equal(imports.size, 23, 'New router import: review mount inventory adapter');
   return result;
 }
 
@@ -160,5 +160,27 @@ test('batch contract defines independent full assets and rejects caller identity
   assert.match(op.description, /No quantity column/);
   assert.ok(op.responses['409']);
 });
+test('both inventory export contracts require authenticated current Admin or Teknisi with bounded selections', () => {
+  for (const [kind, schemaName, filter] of [['assets', 'SchoolAssetExportSelection', 'kategori'], ['lab', 'LabDeviceExportSelection', 'lab_id']]) {
+    const operation = spec.paths[`/api/inventory-exports/${kind}`].post;
+    assert.deepEqual(operation.security, [{ bearerAuth: [] }]);
+    assert.match(operation.description, /Admin and Teknisi/);
+    assert.match(operation.description, /current user role/);
+    assert.equal(operation.requestBody.content['application/json'].schema.$ref, `#/components/schemas/${schemaName}`);
+    const body = spec.components.schemas[schemaName];
+    assert.equal(body.additionalProperties, false);
+    assert.deepEqual(body.required, ['perangkat_ids']);
+    assert.equal(body.properties.perangkat_ids.minItems, 1);
+    assert.equal(body.properties.perangkat_ids.maxItems, 5000);
+    assert.equal(body.properties.perangkat_ids.uniqueItems, true);
+    assert.deepEqual(Object.keys(body.properties).sort(), ['perangkat_ids', filter].sort());
+    for (const status of ['200', '400', '401', '403', '409', '500', '503']) assert.ok(operation.responses[status]);
+  }
+  const row = spec.components.schemas.InventoryExportDataset.properties.data.items;
+  assert.equal(row.additionalProperties, false);
+  for (const privateField of ['password', 'token', 'qr_public_id', 'foto_perangkat']) assert.equal(row.properties[privateField], undefined);
+  assert.equal(row.properties.harga_beli.type, 'string');
+});
+
 // Optional scratch evidence output, never needed by the root test runner.
 if (process.env.OPENAPI_INVENTORY_OUTPUT) writeFileSync(process.env.OPENAPI_INVENTORY_OUTPUT, JSON.stringify({ registrations: inventory, uniqueOperations: keys.length, paths: Object.keys(spec.paths).length, documentedOperations: documented.length }, null, 2));

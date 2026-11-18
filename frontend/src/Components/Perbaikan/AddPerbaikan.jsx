@@ -2,6 +2,7 @@
 // (Biasanya ditempatkan di folder seperti src/Components/Perbaikan/AddPerbaikan.jsx)
 
 import React, { useState } from 'react';
+import useRepairPrimary from './useRepairPrimary';
 import { post } from '../../utils/api'; // Sesuaikan path jika perlu
 import ModalContainer from '../../Components/DetailModal/ModalContainer'; // Asumsi Anda punya komponen ModalContainer generik
 // Jika ModalContainer Anda ada di DetailModal, gunakan path itu:
@@ -80,12 +81,13 @@ const AddPerbaikan = ({ pengecekanData, loggedInUserId, onClose, onSuccess }) =>
   ];
 
   // Tombol untuk ModalContainer
+  const primaryAppearance = useRepairPrimary();
   const primaryButton = (
     <button
       type="button" // Type button agar tidak submit form secara otomatis jika form di luar ModalContainer
       onClick={handleSubmit}
       disabled={isSubmitting}
-      className="w-full px-5 py-2 text-sm font-semibold text-center rounded-md bg-red-600 hover:bg-red-700 text-white active:scale-95 focus:outline-none"
+      {...primaryAppearance}
     >
       {isSubmitting ? 'Menyimpan...' : 'Simpan Data Perbaikan'}
     </button>
@@ -143,7 +145,7 @@ const AddPerbaikan = ({ pengecekanData, loggedInUserId, onClose, onSuccess }) =>
             name="tanggal_perbaikan"
             value={formData.tanggal_perbaikan}
             onChange={handleChange}
-            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5"
             required
           />
         </div>
@@ -156,7 +158,7 @@ const AddPerbaikan = ({ pengecekanData, loggedInUserId, onClose, onSuccess }) =>
             rows="3"
             value={formData.tindakan}
             onChange={handleChange}
-            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5"
             placeholder="Jelaskan tindakan perbaikan yang telah dilakukan"
             required
           ></textarea>
@@ -169,7 +171,7 @@ const AddPerbaikan = ({ pengecekanData, loggedInUserId, onClose, onSuccess }) =>
             name="hasil_perbaikan"
             value={formData.hasil_perbaikan}
             onChange={handleChange}
-            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5"
             required
           >
             {hasilPerbaikanOptions.map(option => (
@@ -188,7 +190,7 @@ const AddPerbaikan = ({ pengecekanData, loggedInUserId, onClose, onSuccess }) =>
             rows="2"
             value={formData.catatan_tambahan}
             onChange={handleChange}
-            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5"
             placeholder="Informasi tambahan mengenai perbaikan"
           ></textarea>
         </div>

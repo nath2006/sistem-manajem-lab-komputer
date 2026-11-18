@@ -249,7 +249,7 @@ const LoginPage = () => {
                   onClick={() => setShowPassword(value => !value)}
                   className="absolute inset-y-0 right-0 px-3 text-gray-500 hover:text-maroon focus:outline-none focus:ring-2 focus:ring-maroon rounded-r-lg"
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
                 </button>
               </div>
             </div>

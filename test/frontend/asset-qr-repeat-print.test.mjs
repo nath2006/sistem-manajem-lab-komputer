@@ -106,8 +106,8 @@ test('mounted real controls keep the same QR after three jobs, detail reopen and
     external: ['react', 'react/jsx-runtime', 'jspdf', 'qrcode'],
     define: { 'import.meta.env': JSON.stringify({ VITE_QR_PUBLIC_ORIGIN: 'http://localhost:5174' }) },
     plugins: [{ name: 'read-only-identity-fixture', setup(b) {
-      b.onResolve({ filter: /(AuthContext|utils\/api)$/ }, () => ({ path: 'adapter', namespace: 'repeat' }));
-      b.onLoad({ filter: /.*/, namespace: 'repeat' }, () => ({ contents: 'export const {AuthContext,get,post}=globalThis.__repeatLabelBoundary;' }));
+      b.onResolve({ filter: /(AuthContext|SettingsContext|utils\/api)$/ }, () => ({ path: 'adapter', namespace: 'repeat' }));
+      b.onLoad({ filter: /.*/, namespace: 'repeat' }, () => ({ contents: 'export const useSettings=()=>({settings:{},logoSrc:""});export const {AuthContext,get,post}=globalThis.__repeatLabelBoundary;' }));
     } }],
   });
   const module = { exports: {} };

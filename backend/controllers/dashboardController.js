@@ -1,5 +1,7 @@
 import db from "../config/db.js"; // Pastikan path ke konfigurasi database Anda benar
 
+import { presenceRegistry } from "../services/presenceRegistry.js";
+
 // Fungsi untuk mendapatkan semua statistik dashboard admin
 export const getDashboardStats = async (req, res) => {
   try {
@@ -13,7 +15,7 @@ export const getDashboardStats = async (req, res) => {
       [perangkatByStatusRows],
       [labByStatusRows],
     ] = await Promise.all([
-      db.query("SELECT COUNT(user_id) AS total_online_users FROM user WHERE is_online = true"),
+      db.query("SELECT user_id FROM user"),
       db.query("SELECT COUNT(perangkat_id) AS total_perangkat FROM perangkat"),
       db.query("SELECT COUNT(lab_id) AS total_lab FROM laboratorium"),
       db.query("SELECT COUNT(user_id) AS total_user FROM user"),
@@ -22,7 +24,7 @@ export const getDashboardStats = async (req, res) => {
       db.query("SELECT status, COUNT(perangkat_id) AS jumlah FROM perangkat GROUP BY status"),
       db.query("SELECT status, COUNT(lab_id) AS jumlah FROM laboratorium GROUP BY status"),
     ]);
-    const totalOnlineUsers = onlineUsersRows[0].total_online_users || 0;
+    const totalOnlineUsers = onlineUsersRows.filter(user => presenceRegistry.isOnline(user.user_id)).length;
     const totalPerangkat = devicesRows[0].total_perangkat || 0;
     const totalLab = labsRows[0].total_lab || 0;
     const totalUser = usersRows[0].total_user || 0;
@@ -97,8 +99,7 @@ export const getUsersWithRoles = async (req, res) => {
         username,
         nama_lengkap,
         email,
-        role,
-        is_online
+        role
       FROM 
         user
       ORDER BY 
@@ -115,7 +116,7 @@ export const getUsersWithRoles = async (req, res) => {
 
     res.status(200).json({
       message: "Berhasil mengambil data pengguna beserta rolenya.",
-      data: rows,
+      data: rows.map(user => ({ ...user, is_online: presenceRegistry.isOnline(user.user_id) })),
     });
   } catch (error) {
     console.error("Error in getUsersWithRoles function:", error);

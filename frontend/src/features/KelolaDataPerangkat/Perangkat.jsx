@@ -1,8 +1,8 @@
 // Perangkat.jsx
-import React, { useState, useRef, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useContext, useCallback, useMemo } from 'react';
 import Dashboard from '../../Layouts/Dashboard';
 import Tabel from '../../Layouts/Table';
-import { FaEye, FaTrash, FaFilePen, FaPrint, FaClipboardList } from "react-icons/fa6"; 
+import { FaEye, FaTrash, FaFilePen, FaClipboardList } from "react-icons/fa6";
 import { get, deleteData} from '../../utils/api';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Notification from '../../Components/Notification/Notif';
@@ -15,13 +15,17 @@ import EditPerangkat from '../../Components/Perangkat/EditPerangkat';
 import AddPemeriksaan from '../../Components/Pemeriksaan/AddPemeriksaan';
 import truncateText from '../../utils/truncateText';
 
-import { loadPdfTools } from '../../utils/loadPdfTools';
+import InventoryExportMenu from '../../Components/InventoryExportMenu';
+import { useSettings } from '../../Context/SettingsContext';
+import { getDocumentBranding } from '../../utils/documentBranding';
 import { filterLabDevices } from '../AsetIT/assetView';
+import { deletionRelation } from '../../utils/deletionContext';
 
 const Perangkat = () => {
-  const printLock = useRef(false);
-  const [isPrinting, setIsPrinting] = useState(false);
-  const [printError, setPrintError] = useState('');
+  const { settings, logoSrc } = useSettings();
+  const request = useRef(0);
+  const [dataOwner, setDataOwner] = useState(null);
+  const [loadError, setLoadError] = useState(false);
   useTitle('Kelola Data Perangkat');
   const location = useLocation();
   const navigate = useNavigate();
@@ -29,12 +33,13 @@ const Perangkat = () => {
   const { state: authState } = useContext(AuthContext);
   const userRole = authState?.role;
   const kepalaLabAssignedLabId = authState?.lab_id_kepala;
-  const teknisiAssignedLabId = authState?.user?.lab_id;
+  // Teknisi can read all assigned laboratory devices without gaining CRUD access.
 
   const [successMsg, setSuccessMsg] = useState(location.state?.successMsg || '');
   const [errorMsg, setErrorMsg] = useState(location.state?.errorMsg || '');
   
   const [allLabs, setAllLabs] = useState([]); 
+  const [labsOwner, setLabsOwner] = useState(null);
   const [selectedLabId, setSelectedLabId] = useState(location.state?.labId || '');
   
   const [dataPerangkat, setDataPerangkat] = useState([]); 
@@ -52,66 +57,82 @@ const Perangkat = () => {
   const isAdmin = userRole === 'Admin';
   const isKepalaLab = userRole === 'Kepala Lab';
   const isTeknisi = userRole === 'Teknisi'; 
+  const canBrowseAllLabs = isAdmin || isTeknisi;
   
   const canManageRowActions = isAdmin || isKepalaLab; 
   const canPerformPemeriksaan = isAdmin || isTeknisi || isKepalaLab; 
   const canAccessAddPerangkatPage = isAdmin || (isKepalaLab && !!kepalaLabAssignedLabId);
-  const canPrintData = isAdmin || isKepalaLab;
+  const canPrintData = isAdmin || isTeknisi;
+  const relatedLabId = deletionRelation(location.pathname, location.state?.deletionContext)?.id;
+  const exportLabId = selectedLabId || relatedLabId;
+  const scope = useMemo(() => ({ auth: authState, labId: selectedLabId, relatedLabId }), [authState, selectedLabId, relatedLabId]);
+  const currentScope = useRef(scope);
+  currentScope.current = scope;
+  const scopeReady = dataOwner === scope;
+  const scopedLoading = isLoading || !scopeReady || labsOwner !== authState || authState?.isLoading || authState?.isAuthenticated === false;
 
   // ... (useEffect fetchLabs, fetchPerangkatData, notifikasi tetap sama) ...
   useEffect(() => {
+    let active = true;
     const fetchLabs = async () => {
       setIsLoading(true);
       try {
-        if (isAdmin) {
+        if (canBrowseAllLabs) {
           const response = await get('/lab');
+          if (!active) return;
           if (response.data && Array.isArray(response.data)) {
             setAllLabs(response.data);
+            setLabsOwner(authState);
           } else {
             setAllLabs([]);
             setErrorMsg("Gagal memuat daftar laboratorium.");
           }
-        } else if ((isKepalaLab && kepalaLabAssignedLabId) || (isTeknisi && teknisiAssignedLabId)) {
-            const userLabId = isKepalaLab ? kepalaLabAssignedLabId : teknisiAssignedLabId;
+        } else if (isKepalaLab && kepalaLabAssignedLabId) {
+            const userLabId = kepalaLabAssignedLabId;
             const response = await get(`/lab/${userLabId}`);
+            if (!active) return;
             if (response.data) {
               setAllLabs([response.data]);
+              setLabsOwner(authState);
               setSelectedLabId(userLabId.toString());
             } else {
               setErrorMsg(`Gagal memuat detail lab untuk ${userRole}.`);
             }
         }
       } catch (err) {
+        if (!active) return;
         console.error("Error fetching labs:", err);
         setErrorMsg("Gagal memuat data laboratorium.");
         setAllLabs([]);
       } finally {
-        if (!isAdmin && 
-            !(isKepalaLab && kepalaLabAssignedLabId) && 
-            !(isTeknisi && teknisiAssignedLabId)
+        if (active && !canBrowseAllLabs &&
+            !(isKepalaLab && kepalaLabAssignedLabId)
            ) {
           setIsLoading(false);
         }
       }
     };
     fetchLabs();
-  }, [isAdmin, isKepalaLab, kepalaLabAssignedLabId, isTeknisi, teknisiAssignedLabId, userRole]);
+    return () => { active = false; };
+  }, [authState, canBrowseAllLabs, isKepalaLab, kepalaLabAssignedLabId, userRole]);
 
   const fetchPerangkatData = useCallback(async (currentSelectedLabId) => {
+    const generation = ++request.current;
+    const owner = scope;
+    setLoadError(false);
     setIsLoading(true); 
     setErrorMsg(''); 
     try {
       let perangkatToDisplay = [];
-      const response = await get('/perangkat'); 
+      const response = await get('/perangkat');
+      if (generation !== request.current || currentScope.current !== owner) return;
       if (response.data && Array.isArray(response.data)) {
-        const userSpecificLabId = isKepalaLab ? kepalaLabAssignedLabId?.toString() 
-                                : isTeknisi ? teknisiAssignedLabId?.toString() 
-                                : '';
-        const labIdToFilter = isAdmin ? currentSelectedLabId : userSpecificLabId;
+        const userSpecificLabId = isKepalaLab ? kepalaLabAssignedLabId?.toString() : '';
+        const labIdToFilter = canBrowseAllLabs ? currentSelectedLabId : userSpecificLabId;
         if (labIdToFilter) { 
-          perangkatToDisplay = filterLabDevices(response.data, labIdToFilter);
-        } else if (isAdmin && !currentSelectedLabId) {
-          perangkatToDisplay = response.data;
+          perangkatToDisplay = filterLabDevices(response.data.filter(row => row.penggunaan !== 'Operasional'), labIdToFilter);
+        } else if (canBrowseAllLabs && !currentSelectedLabId) {
+          perangkatToDisplay = response.data.filter(row => row.lab_id != null && row.penggunaan !== 'Operasional');
         } else if (!isAdmin && !userSpecificLabId) {
             perangkatToDisplay = []; 
             if (!isKepalaLab && !isTeknisi) setErrorMsg("Role tidak dikenal atau tidak memiliki akses ke lab.")
@@ -119,26 +140,29 @@ const Perangkat = () => {
             perangkatToDisplay = [];
         }
         setDataPerangkat(perangkatToDisplay);
+        setDataOwner(owner);
       } else {
         setDataPerangkat([]);
+        setLoadError(true);
         setErrorMsg("Data perangkat tidak ditemukan atau format respons salah.");
       }
     } catch (err) {
+      if (generation !== request.current || currentScope.current !== owner) return;
+      setLoadError(true);
       console.error("Error fetching perangkat data:", err);
       setErrorMsg("Gagal mengambil data perangkat. " + (err.response?.data?.message || err.message || ''));
       setDataPerangkat([]);
     } finally {
-      setIsLoading(false);
+      if (generation === request.current && currentScope.current === owner) setIsLoading(false);
     }
-  }, [isAdmin, isKepalaLab, kepalaLabAssignedLabId, isTeknisi, teknisiAssignedLabId]);
+  }, [scope, canBrowseAllLabs, isAdmin, isKepalaLab, kepalaLabAssignedLabId, isTeknisi]);
 
   useEffect(() => {
-    if (isAdmin) {
+    if (canBrowseAllLabs) {
       fetchPerangkatData(selectedLabId);
     } else if (isKepalaLab && kepalaLabAssignedLabId) {
       fetchPerangkatData(kepalaLabAssignedLabId.toString());
-    } else if (isTeknisi && teknisiAssignedLabId) {
-      fetchPerangkatData(teknisiAssignedLabId.toString());
+
     }
      else { 
       if (!isKepalaLab && !isTeknisi) { 
@@ -146,7 +170,7 @@ const Perangkat = () => {
         setDataPerangkat([]);
       }
     }
-  }, [selectedLabId, isAdmin, isKepalaLab, kepalaLabAssignedLabId, isTeknisi, teknisiAssignedLabId, fetchPerangkatData]); 
+  }, [selectedLabId, canBrowseAllLabs, isKepalaLab, kepalaLabAssignedLabId, isTeknisi, fetchPerangkatData]);
 
   useEffect(() => {
     if (successMsg || errorMsg) {
@@ -296,7 +320,7 @@ const Perangkat = () => {
   const addPerangkatPathObject = () => {
     if (!canAccessAddPerangkatPage) return null;
     let navState = {};
-    let userLabForAdd = isKepalaLab ? kepalaLabAssignedLabId : (isTeknisi ? teknisiAssignedLabId : null);
+    let userLabForAdd = isKepalaLab ? kepalaLabAssignedLabId : null;
 
     if (isAdmin) {
       if (selectedLabId) {
@@ -308,84 +332,23 @@ const Perangkat = () => {
       navState = { labId: userLabForAdd.toString(), labName: getLabNameById(userLabForAdd) };
     }
     
-    if (isAdmin || (isKepalaLab && !!kepalaLabAssignedLabId) || (isTeknisi && !!teknisiAssignedLabId) ) {
+    if (isAdmin || (isKepalaLab && !!kepalaLabAssignedLabId)) {
       return { pathname: "/add-perangkat", state: navState };
     }
     return null;
   };
 
-  const labIdUntukEdit = isAdmin ? selectedLabId 
-                        : (isKepalaLab ? kepalaLabAssignedLabId?.toString() 
-                        : (isTeknisi ? teknisiAssignedLabId?.toString() 
-                        : null));
+  const labIdUntukEdit = isAdmin ? selectedLabId : (isKepalaLab ? kepalaLabAssignedLabId?.toString() : null);
 
   const getCurrentTableTitle = () => {
     let titleLabId = selectedLabId; // Default untuk admin
     if (isKepalaLab) titleLabId = kepalaLabAssignedLabId;
-    else if (isTeknisi) titleLabId = teknisiAssignedLabId;
+
     
-    if (isAdmin && !selectedLabId) return "Data Perangkat (Semua Lab)";
+    if (canBrowseAllLabs && !selectedLabId) return "Data Perangkat (Semua Lab)";
     return `Data Perangkat Lab: ${getLabNameById(titleLabId)}`;
   };
   
-  const formatDateForFilename = (date) => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  };
-
-  const handlePrintData = async () => {
-    if (dataPerangkat.length === 0) {
-      alert("Tidak ada data perangkat untuk dicetak.");
-      return;
-    }
-    if (printLock.current) return;
-    printLock.current = true;
-    setIsPrinting(true);
-    setPrintError('');
-    try {
-      const { jsPDF, autoTable } = await loadPdfTools();
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const margin = 10;
-      const reportTitle = getCurrentTableTitle();
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Laporan ${reportTitle}`, pageWidth / 2, margin + 5, { align: 'center' });
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, pageWidth / 2, margin + 10, { align: 'center' });
-      const tableColumn = ["No. Inventaris", "Nama Perangkat", "Lab", "Status", "Spesifikasi"];
-      const tableRows = dataPerangkat.map(item => [
-        item.nomor_inventaris || '-',
-        item.nama_perangkat || '-',
-        item.nama_lab || '-',
-        item.status || 'N/A',
-        item.spesifikasi || '-',
-      ]);
-      autoTable(doc, { 
-        head: [tableColumn], body: tableRows, startY: margin + 20, theme: 'grid',
-        headStyles: { fillColor: [22, 160, 133] },
-        styles: { fontSize: 8, cellPadding: 1.5, overflow: 'linebreak' },
-        columnStyles: {
-          0: { cellWidth: 35 }, 1: { cellWidth: 50 }, 2: { cellWidth: 40 }, 
-          3: { cellWidth: 30 }, 4: { cellWidth: 'auto' }, 
-        }
-      });
-      let labNameForFile = 'Semua_Lab';
-      if (selectedLabId && isAdmin) labNameForFile = getLabNameById(selectedLabId).replace(/\s+/g, '_');
-      else if (isKepalaLab) labNameForFile = getLabNameById(kepalaLabAssignedLabId).replace(/\s+/g, '_');
-      else if (isTeknisi) labNameForFile = getLabNameById(teknisiAssignedLabId).replace(/\s+/g, '_');
-      doc.save(`Laporan_Perangkat_${labNameForFile}_${formatDateForFilename(new Date())}.pdf`);
-    } catch {
-      setPrintError('Gagal membuat PDF. Periksa koneksi lalu coba cetak kembali.');
-    } finally {
-      printLock.current = false;
-      setIsPrinting(false);
-    }
-  };
-
   const displayUserLabInfo = () => {
     if (isAdmin) return null; 
     return null;
@@ -393,14 +356,13 @@ const Perangkat = () => {
 
   return (
     <Dashboard title="Kelola Data Perangkat">
-      {printError && <p role="alert" className="p-3 text-red-700">{printError}</p>}
       <div className="flex flex-col w-full min-h-[calc(100vh-110px)] px-4 py-6 md:px-6 lg:px-8">
         {successMsg && <Notification type="success" message={successMsg} onClose={() => setSuccessMsg('')} />}
         {errorMsg && <Notification type="error" message={errorMsg} onClose={() => setErrorMsg('')} />}
 
         {/* ... (Layout Tombol Print dan Filter Lab tetap sama) ... */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
-          {isAdmin && (
+          {canBrowseAllLabs && (
             <div className="w-full sm:w-1/3">
               <label htmlFor="labFilter" className="sr-only">Filter berdasarkan Lab:</label>
               <select
@@ -418,31 +380,22 @@ const Perangkat = () => {
               </select>
             </div>
           )}
-          {!isAdmin && <div className="w-full sm:w-1/3"></div>} {/* Placeholder */}
-          {canPrintData && dataPerangkat.length > 0 && (
-            <div className="w-full sm:w-auto flex sm:justify-end">
-              <button
-                disabled={isPrinting} aria-busy={isPrinting} onClick={handlePrintData}
-                className="w-full sm:w-auto px-4 py-2.5 bg-teal-500 text-white rounded-md hover:bg-teal-600 flex items-center justify-center"
-                title="Cetak Data Perangkat ke PDF"
-              >
-                {isPrinting && <span role="status">Menyiapkan PDF… </span>}<FaPrint className="mr-2" /> Cetak Data
-              </button>
-            </div>
-          )}
+          {!canBrowseAllLabs && <div className="w-full sm:w-1/3"></div>} {/* Placeholder */}
+
         </div>
         {displayUserLabInfo()}
 
         <Tabel
-          isLoading={isLoading}
+          isLoading={scopedLoading}
           title={getCurrentTableTitle()}
           breadcrumbContext={userRole}
           headers={headTable}
-          data={dataPerangkat}
+          data={scopeReady ? dataPerangkat : []}
+          renderActions={(rows) => canPrintData && <InventoryExportMenu lab_id={exportLabId} owner={scope} key={scopeReady ? 'ready' : 'pending'} rows={rows} kind="lab" title={getCurrentTableTitle()} branding={getDocumentBranding(settings, logoSrc)} disabled={scopedLoading || loadError || !!errorMsg} />}
           itemsPerPage={10}
           renderRow={renderPerangkatRow}
           to={addPerangkatPathObject()} 
-          buttonText={(isAdmin || ((isKepalaLab || isTeknisi) && !!(kepalaLabAssignedLabId || teknisiAssignedLabId))) ? "Tambah Perangkat" : ""}
+          buttonText={canAccessAddPerangkatPage ? "Tambah Perangkat" : ""}
         />
 
         {/* --- 4. Render Modal AddPemeriksaan --- */}
@@ -486,7 +439,7 @@ const Perangkat = () => {
                     setSuccessMsg(updatedData.message || "Data perangkat berhasil diupdate.");
                     const currentActiveLabId = isAdmin ? selectedLabId 
                                             : isKepalaLab ? kepalaLabAssignedLabId?.toString() 
-                                            : isTeknisi ? teknisiAssignedLabId?.toString()
+                                            : isTeknisi ? selectedLabId
                                             : '';
                     fetchPerangkatData(currentActiveLabId); 
                     setShowEditModal(false);

@@ -1,23 +1,25 @@
 # Sistem Manajemen IT dan Penggunaan Lab
 
-Sistem Manajemen IT dan Penggunaan Lab membantu sekolah mengelola laboratorium komputer, aset IT, jadwal pemakaian, dan laporan kerusakan. Guru dapat mengajukan jadwal, pengelola memantau inventaris, dan teknisi mencatat perbaikan dalam satu aplikasi.
+Sistem Manajemen IT dan Penggunaan Lab adalah aplikasi web untuk mengurus laboratorium komputer dan aset IT sekolah. Guru mengajukan pemakaian lab, pengelola mencatat perangkat dan memeriksa kondisinya, sedangkan teknisi menangani laporan masalah dan mencatat perbaikan.
 
-Dibangun dengan React 19, Vite, Express 5, dan MySQL.
+Tujuannya agar sekolah bisa mengetahui perangkat yang tersedia, kondisi barang, jadwal penggunaan lab, dan siapa yang menangani masalah. Catatan inventaris, pengajuan jadwal, serta riwayat penanganan dapat dilihat dalam satu aplikasi, dengan akses yang dibedakan untuk lima peran pengguna.
 
-[Fitur](#fitur-dan-lima-peran) · [Development lokal](#development-lokal) · [Production server](#production-server) · [Dokumentasi API](openapi.json) · [Diagram](#use-case-diagram) · [Pengujian](#struktur-dan-pengujian)
+Aplikasi memakai React 19 dan Vite di frontend, Express 5 di backend, serta MySQL untuk menyimpan data.
+
+[Fitur dan peran](#fitur-dan-lima-peran) · [Cara kerja](#cara-kerja) · [Menjalankan lokal](#development-lokal) · [Production server](#production-server) · [Pengujian](#struktur-dan-pengujian) · [API](#dokumentasi-api) · [Diagram](#diagram-sistem) · [Keamanan](#keamanan-dan-batas-operasional)
 
 ## Fitur dan lima peran
 
-- Lihat ringkasan aset, kondisi perangkat, dan perkembangan tiket dari dashboard.
-- Kelola data lab dan perangkat yang digunakan untuk pembelajaran.
-- Catat aset Operasional sekolah, termasuk printer, proyektor, dan perangkat jaringan.
-- Tambahkan beberapa unit sekaligus tanpa mencampur identitas dan riwayat perbaikannya.
-- Terbitkan QR aset, buka halaman verifikasinya, dan cetak ulang label saat diperlukan.
-- Laporkan masalah melalui Bantuan lalu ikuti penanganannya lewat status dan komentar.
-- Catat pemeriksaan dan perbaikan tanpa kehilangan riwayat pekerjaan sebelumnya.
-- Ajukan jadwal lab dan periksa hasil persetujuannya.
-- Bagikan pengumuman beserta lampiran kepada pengguna.
-- Sesuaikan nama, logo, warna sekolah, dan jam pelajaran.
+Fitur yang tersedia mengikuti peran pengguna, bukan berarti semua akun bisa mengubah semua data.
+
+- **Inventaris dan kondisi perangkat.** Catat perangkat pembelajaran di lab dan aset Operasional sekolah, seperti printer, proyektor, serta perangkat jaringan. Dashboard merangkum aset, kondisi perangkat, dan perkembangan tiket.
+- **Penambahan banyak unit.** Admin dapat menambahkan beberapa aset Operasional sekaligus. Setiap unit tetap memiliki nomor inventaris dan riwayat perbaikan sendiri.
+- **Label QR.** Terbitkan QR sesuai kewenangan, buka informasi aset dari hasil pindai, lalu cetak ulang label dengan nama dan logo sekolah tanpa mengganti identitas aset.
+- **Laporan inventaris.** Admin dan Teknisi dapat mengekspor daftar aset sekolah atau perangkat lab ke Excel dan PDF sesuai filter dan pencarian.
+- **Pemeriksaan, perbaikan, dan Bantuan.** Catat temuan serta hasil perbaikan. Pengguna dapat melaporkan masalah melalui tiket dan mengikuti penanganannya lewat status serta komentar.
+- **Pemakaian lab.** Guru mengajukan jadwal, pengelola meninjaunya, dan Guru melihat hasil pengajuan. Sistem memeriksa bentrok waktu sebelum persetujuan.
+- **Informasi sekolah.** Bagikan pengumuman dan lampiran, sesuaikan nama, logo, warna sekolah, serta jam pelajaran melalui akun yang berwenang.
+- **Status pengguna.** Lihat status Online dan Offline yang diperbarui otomatis tanpa memuat ulang daftar.
 
 Panduan awal menjelaskan menu yang tersedia bagi setiap pengguna. Panduan otomatis muncul sekali per akun dan statusnya disimpan di database. Untuk mengulangnya, pilih **Panduan awal** dari menu profil.
 
@@ -33,17 +35,45 @@ Semua pengguna yang sudah login dapat melihat inventaris dan data pengadaan sert
 
 ## Cara kerja
 
+Alur sehari-harinya terbagi menjadi tiga bagian:
+
+1. **Mencatat barang.** Admin menyiapkan data lab dan aset. Kepala Lab mengelola perangkat Pembelajaran di lab yang dipimpinnya. Setelah QR diterbitkan, pengguna yang login dapat mencetak labelnya.
+2. **Menangani masalah.** Pengguna membuat tiket Bantuan. Pengelola mengatur penugasan, teknisi mencatat penanganan, lalu hasilnya diverifikasi sesuai izin. Pemeriksaan perangkat dan catatan perbaikan tetap disimpan terpisah dari tiket.
+3. **Menggunakan lab.** Guru mengajukan tanggal dan slot pelajaran. Admin atau Kepala Lab yang berwenang meninjau pengajuan; jadwal yang disetujui tampil pada jadwal lab.
+
+Rincian berikut menjelaskan batas dan perilaku yang perlu diketahui sebelum memakai fitur tersebut.
+
+### Inventaris dan label QR
+
 Perangkat untuk pembelajaran dikelola melalui **Kelola Data Perangkat** dan terhubung dengan labnya. Menu **Aset IT Sekolah** digunakan untuk perangkat Operasional. Tahun pengadaan, sumber dana, dan harga beli boleh dikosongkan jika belum diketahui.
 
-Saat menambah aset Operasional, isi **Jumlah unit** untuk memasukkan sampai 100 unit dalam satu proses. Jika jumlahnya lebih dari satu, isi awalan nomor inventaris. Contohnya awalan `MOUSE` untuk tiga unit menghasilkan `MOUSE-001`, `MOUSE-002`, dan `MOUSE-003`. Gunakan awalan lain bila nomor tersebut sudah terpakai. Harga beli yang diisi berlaku **per unit**, bukan total seluruh barang.
+Saat Admin menambah aset Operasional, isi **Jumlah unit** untuk memasukkan sampai 100 unit dalam satu proses. Jika jumlahnya lebih dari satu, isi awalan nomor inventaris. Contohnya awalan `MOUSE` untuk tiga unit menghasilkan `MOUSE-001`, `MOUSE-002`, dan `MOUSE-003`. Gunakan awalan lain bila nomor tersebut sudah terpakai. Harga beli yang diisi berlaku **per unit**, bukan total seluruh barang.
 
 Setiap unit tetap mempunyai catatan, kondisi, dan riwayat sendiri. QR juga diterbitkan terpisah melalui tindakan penerbitan yang sudah tersedia. Jumlah hanya mempersingkat pengisian formulir dan tidak menggabungkan aset lama. Jika satu nomor inventaris bentrok atau penyimpanan gagal, seluruh penambahan pada proses tersebut dibatalkan agar tidak ada hasil setengah tersimpan.
+
+Label QR mengikuti nama instansi dan logo pada **Pengaturan Sistem**, disertai nama **Sistem Manajemen IT dan Penggunaan Lab**. Logo diletakkan di luar kode agar QR tetap mudah dipindai. Jika logo belum diatur, label menggunakan teks tanpa logo; jika logo yang sudah diatur gagal dimuat, perbaiki sumber logo lalu coba cetak kembali. Mencetak ulang tidak mengubah identitas aset.
+
+### Ekspor inventaris
+
+Pada daftar aset sekolah dan perangkat lab, **Admin dan Teknisi** dapat membuka **Ekspor** lalu memilih **Excel (.xlsx)** atau **PDF (.pdf)**. Hak ekspor diperiksa kembali oleh server, bukan hanya dengan menyembunyikan tombol. Kepala Lab, Koordinator Lab, dan Guru tidak memiliki hak ekspor. Kepala Lab tetap dapat mengelola perangkat lab sesuai kewenangannya.
+
+Berkas berisi seluruh hasil filter dan pencarian, bukan hanya halaman tabel yang sedang terbuka. Satu proses ekspor dibatasi 5.000 unit; gunakan filter untuk membagi laporan yang lebih besar. Data pengadaan yang belum diketahui ditampilkan sebagai `-`, sedangkan harga beli tetap dicatat per unit. Jika pilihan data berubah sebelum ekspor selesai, muat ulang daftar dan coba kembali.
+
+### Status Online dan Offline
+
+Status **Online** berarti setidaknya satu koneksi aplikasi pengguna masih aktif. Menutup satu tab tidak membuat pengguna Offline jika tab lain masih terhubung. Status berubah ketika koneksi terakhir ditutup; koneksi yang putus mendadak diperiksa melalui heartbeat dan batas waktu sekitar satu menit. Saat sambungan status belum tersedia, tampilan tidak menganggap semua pengguna Offline. Status ini dikelola otomatis dan tidak dapat diubah dari formulir edit pengguna.
+
+Presence berjalan pada satu proses backend dan tidak mengubah skema database. Jika aplikasi dijalankan pada beberapa instance backend, diperlukan penyimpanan presence bersama agar status antarmesin tetap konsisten. Contoh systemd di panduan ini menjalankan satu instance.
+
+### Masalah perangkat dan jadwal lab
 
 Saat perangkat bermasalah, pengelola dapat mencatat temuan dan teknisi menambahkan hasil perbaikan. Tiket di menu Bantuan membantu pengguna mengikuti penanganan masalah. Aset boleh dikaitkan ke tiket, tetapi tidak wajib.
 
 Untuk pemakaian lab, Guru mengajukan waktu yang diinginkan. Admin atau Kepala Lab meninjau pengajuan dan sistem memeriksa bentrok jadwal sebelum menyetujuinya.
 
 ## Development lokal
+
+Urutannya: tentukan apakah instalasi baru atau sudah ada, pasang dependensi, periksa konfigurasi, siapkan database sesuai kondisi instalasi, lalu jalankan backend dan frontend di dua terminal. Jangan langsung menjalankan contoh inisialisasi database pada instalasi yang sudah dipakai.
 
 Panduan ini untuk mengubah dan mencoba kode, bukan menjalankan layanan publik. Gunakan **Node.js >=24**, npm, dan **MySQL 8**. Perintah shell memakai Bash: Windows dapat memakai Git Bash atau WSL. Pasang MySQL Server beserta kliennya terlebih dahulu, aktifkan layanan, dan pastikan `node --version`, `npm --version`, serta `mysql --version` berhasil. Pada Git Bash, tambahkan folder `bin` instalasi MySQL ke PATH; pada WSL, gunakan alamat server MySQL yang benar untuk lingkungan tersebut.
 
@@ -54,7 +84,7 @@ Panduan ini untuk mengubah dan mencoba kode, bukan menjalankan layanan publik. G
 
 ### 2. Pasang dependensi dan konfigurasi
 
-Dari folder utama source yang sudah tersedia:
+Dari folder utama source yang sudah tersedia, yaitu folder yang berisi `README.md`, `package.json`, `backend/`, dan `frontend/`:
 
 ```sh
 npm ci
@@ -121,7 +151,7 @@ cd frontend
 npm run dev
 ```
 
-Buka `http://localhost:5174`. Backend memakai `PORT=5000`. Untuk akses HP satu jaringan, buka `http://<IP-LAN-KOMPUTER>:5174`, bukan localhost HP. Izinkan akses LAN seperlunya; jangan membuka MySQL ke internet. Lanjutkan [smoke check](#pemeriksaan-setelah-menjalankan).
+Buka `http://localhost:5174` setelah kedua terminal menampilkan bahwa layanan sudah berjalan. Biarkan kedua terminal terbuka; gunakan `Ctrl+C` pada masing-masing terminal untuk menghentikan layanan development. Backend memakai `PORT=5000`. Untuk akses HP satu jaringan, buka `http://<IP-LAN-KOMPUTER>:5174`, bukan localhost HP. Izinkan akses LAN seperlunya; jangan membuka MySQL ke internet. Lanjutkan [smoke check](#pemeriksaan-setelah-menjalankan).
 
 ## Production server
 
@@ -245,6 +275,10 @@ server {
 
     location /api {
         proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_buffering off;
+        proxy_read_timeout 75s;
+        proxy_set_header Connection "";
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
@@ -452,6 +486,20 @@ npm run build
 `npm test` menjalankan seluruh suite melalui `test/run.mjs`. Perintah lainnya berguna saat hanya ingin memeriksa satu bagian. Semua tes, fixture, dan skrip pengujian berada di folder `test/`.
 
 Tes otomatis memeriksa perilaku kode, tetapi tidak menggantikan uji penggunaan dengan akun sebenarnya, database MySQL, kamera, atau printer fisik. Pengujian yang mengubah data membutuhkan persetujuan terpisah dan tidak termasuk langkah instalasi.
+
+## Diagram sistem
+
+Gunakan gambar PNG untuk membaca diagram dan berkas `.drawio` untuk menyuntingnya di diagrams.net. Tabel ini menautkan lima diagram pendamping; diagram ringkas alur pengguna tetap tersedia di bawah.
+
+Diagram mengikuti kode dan deklarasi migrasi, bukan hasil pemeriksaan database yang sedang berjalan. ERD membedakan foreign key dengan relasi logis dan merangkum atribut non-kunci. Activity dan sequence berfokus pada penanganan tiket; class diagram memperlihatkan struktur layanan pengguna dan tiket, termasuk modul berbentuk factory, bukan menganggap semua modul sebagai class. Untuk ERD, gunakan halaman A3 agar teks tetap terbaca. PNG dan draw.io memakai susunan yang sama, tetapi posisi konektor atau font dapat sedikit berbeda saat dibuka di editor.
+
+| Diagram | Isi | Gambar | Sumber yang dapat diedit |
+| --- | --- | --- | --- |
+| ERD | Struktur data dan hubungan antartabel | [PNG](docs/diagrams/01-erd.png) | [draw.io](docs/diagrams/01-erd.drawio) |
+| Use case | Pengguna dan fitur sesuai kewenangannya | [PNG](docs/diagrams/02-use-case.png) | [draw.io](docs/diagrams/02-use-case.drawio) |
+| Activity | Urutan kegiatan dan keputusan dalam alur aplikasi | [PNG](docs/diagrams/03-activity.png) | [draw.io](docs/diagrams/03-activity.drawio) |
+| Class | Struktur komponen kode dan hubungan tanggung jawabnya | [PNG](docs/diagrams/04-class.png) | [draw.io](docs/diagrams/04-class.drawio) |
+| Sequence | Urutan interaksi antarkomponen saat memproses permintaan | [PNG](docs/diagrams/05-sequence.png) | [draw.io](docs/diagrams/05-sequence.drawio) |
 
 ## Use Case Diagram
 

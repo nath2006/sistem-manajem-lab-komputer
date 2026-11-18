@@ -6,8 +6,9 @@ test('central dashboard palette meets text 4.5 and graphic 3 contrast for extrem
  assert.equal(typeof mod.dashboardTokens,'function','central contrast tokens exist');
  for(const primary of themes){
   const t=mod.dashboardTokens(primary),contrast=mod.contrastRatio;
-  assert.equal(t['--dashboard-primary'],primary);
-  assert.ok(contrast(t['--dashboard-on-primary'],primary)>=4.5,primary);
+  assert.equal(t['--dashboard-brand'],primary);
+  assert.equal(t['--dashboard-on-primary'],'#ffffff');
+  assert.ok(contrast(t['--dashboard-on-primary'],t['--dashboard-primary'])>=6,primary);
   assert.ok(contrast(t['--dashboard-text'],t['--dashboard-surface'])>=4.5);
   assert.ok(contrast(t['--dashboard-accent'],t['--dashboard-surface'])>=4.5);
   for(const tone of ['info','warning','danger','success','series-0','series-1','series-2','series-3']){
