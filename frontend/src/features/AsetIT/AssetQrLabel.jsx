@@ -1,5 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { AuthContext } from "../../Context/AuthContext";
+import { useSettings } from "../../Context/SettingsContext";
+import { getDocumentBranding } from "../../utils/documentBranding";
 import { get, post } from "../../utils/api";
 import {
   createLabelPrintJob,
@@ -11,6 +13,9 @@ const button =
   "min-h-11 rounded-lg bg-maroon px-4 py-2 text-sm font-semibold text-white hover:bg-maroon/90 focus-visible:ring-2 focus-visible:ring-maroon disabled:opacity-50";
 export default function AssetQrLabel({ asset }) {
   const { state: user } = useContext(AuthContext) || {};
+  const { settings, logoSrc } = useSettings();
+  const branding = getDocumentBranding(settings, logoSrc);
+  const [failedLogo, setFailedLogo] = useState("");
   const [identity, setIdentity] = useState(null),
     [error, setError] = useState(""),
     [attempt, setAttempt] = useState(0),
@@ -117,7 +122,7 @@ export default function AssetQrLabel({ asset }) {
             ...asset,
             public_id: identity.public_id,
           })),
-          { base, preview },
+          { base, preview, branding },
         )
       )
         setNotice(
@@ -184,6 +189,15 @@ export default function AssetQrLabel({ asset }) {
           )}
           {image && !baseError && (
             <figure className="rounded-lg border border-gray-200 bg-white p-3">
+              <div className="mb-2 flex min-w-0 items-center justify-center gap-3">
+                {branding.logoSrc && <img src={branding.logoSrc} alt="Logo institusi" crossOrigin="anonymous" onError={() => setFailedLogo(branding.logoSrc)} onLoad={() => setFailedLogo("")} className="h-12 w-16 shrink-0 object-contain" />}
+                <div className="min-w-0 text-center">
+                  <p className="break-words text-sm font-semibold text-gray-900">{branding.schoolName}</p>
+                  <p className="break-words text-xs text-gray-600">{branding.systemName}</p>
+                </div>
+              </div>
+              {!branding.logoSrc && <p className="mb-2 text-center text-xs text-amber-900">Logo belum diatur di Pengaturan; label dicetak tanpa logo.</p>}
+              {branding.logoSrc && failedLogo === branding.logoSrc && <p role="alert" className="mb-2 text-center text-xs text-red-700">Logo institusi gagal dimuat. Periksa logo di Pengaturan dan akses gambar/CORS. Cetak label PDF akan mencoba memuat logo kembali.</p>}
               <img
                 src={image}
                 width="180"
@@ -252,7 +266,7 @@ export default function AssetQrLabel({ asset }) {
             {busy ? "Menyiapkan…" : "Cetak label PDF"}
           </button>
           <p className="text-xs text-gray-500">
-            A4, label 90 × 50 mm, 10 per halaman. Nama, inventaris, kategori, QR
+            A4, label 90 × 50 mm, 10 per halaman. Logo institusi (jika diatur), nama institusi dan sistem, nama perangkat, inventaris, kategori, QR
             dan identitas terbaca; tanpa data pengadaan.
           </p>
         </div>
