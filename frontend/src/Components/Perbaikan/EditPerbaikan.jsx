@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { get, put } from '../../utils/api'; 
+import useRepairPrimary from './useRepairPrimary';
 import ModalContainer from '../../Components/DetailModal/ModalContainer'; 
 import LoadingSpinner from '../../Components/DetailModal/LoadingSpinner';   
 import { AuthContext } from '../../Context/AuthContext';       
@@ -153,12 +154,13 @@ const EditPerbaikan = ({ id, onClose, onUpdate }) => {
     { value: 'Perlu Penggantian Komponen', label: 'Perlu Penggantian Komponen' },
   ];
 
+  const primaryAppearance = useRepairPrimary();
   const primaryButton = (
     <button
       type="button"
       onClick={handleSubmit}
       disabled={saving || loading}
-      className="w-full px-5 py-2 text-sm font-semibold text-center rounded-md bg-red-600 hover:bg-red-700 text-white active:scale-95 focus:outline-none"
+      {...primaryAppearance}
     >
       {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
     </button>
@@ -238,7 +240,7 @@ const EditPerbaikan = ({ id, onClose, onUpdate }) => {
               name="user_id"
               value={formData.user_id}
               onChange={handleChange}
-              className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+              className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5"
               required
               disabled={usersList.length === 0 && !loading} // Disable jika list kosong & tidak loading
             >
@@ -268,7 +270,7 @@ const EditPerbaikan = ({ id, onClose, onUpdate }) => {
             name="tanggal_perbaikan"
             value={formData.tanggal_perbaikan}
             onChange={handleChange}
-            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5"
             required
           />
         </div>
@@ -281,7 +283,7 @@ const EditPerbaikan = ({ id, onClose, onUpdate }) => {
             rows="3"
             value={formData.tindakan}
             onChange={handleChange}
-            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5"
             placeholder="Jelaskan tindakan perbaikan"
             required
           ></textarea>
@@ -294,7 +296,7 @@ const EditPerbaikan = ({ id, onClose, onUpdate }) => {
             name="hasil_perbaikan"
             value={formData.hasil_perbaikan}
             onChange={handleChange}
-            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5"
             required
           >
             {hasilPerbaikanOptions.map(option => (
@@ -313,7 +315,7 @@ const EditPerbaikan = ({ id, onClose, onUpdate }) => {
             rows="2"
             value={formData.catatan_tambahan}
             onChange={handleChange}
-            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5"
             placeholder="Informasi tambahan"
           ></textarea>
         </div>
@@ -326,7 +328,7 @@ const EditPerbaikan = ({ id, onClose, onUpdate }) => {
             name="tanggal_selesai_perbaikan"
             value={formData.tanggal_selesai_perbaikan}
             onChange={handleChange}
-            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            className="shadow-sm bg-white border border-gray-300 outline-none text-sm rounded-md focus:ring-maroon focus:border-maroon block w-full p-2.5"
           />
         </div>
       </form>

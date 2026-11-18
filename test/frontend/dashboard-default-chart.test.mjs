@@ -6,7 +6,7 @@ test('exact installed Chart.js default palette stays brand independent', () => {
  const source=fs.readFileSync(new URL('../../node_modules/chart.js/dist/chart.js',import.meta.url),'utf8');
  const block=source.slice(source.indexOf('const BORDER_COLORS = ['),source.indexOf('// Border colors with 50% transparency'));
  assert.deepEqual([...block.matchAll(/'([^']+)'/g)].map(m=>m[1]),official);
- for(const primary of primaries){const t=dashboardTokens(primary);official.forEach((color,i)=>assert.equal(t[`--dashboard-chart-${i}`],color));assert.equal(t['--dashboard-primary'],primary);}
+ for(const primary of primaries){const t=dashboardTokens(primary);official.forEach((color,i)=>assert.equal(t[`--dashboard-chart-${i}`],color));assert.equal(t['--dashboard-brand'],primary);assert.equal(t['--dashboard-on-primary'],'#ffffff');}
 });
 test('conditions are distinct and independent of row order',()=>{
  const expected={'Baik':'success','Dalam Perbaikan':'info','Perlu Perbaikan':'warning','Rusak':'danger'};
