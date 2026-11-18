@@ -94,10 +94,7 @@ export const login = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 hari
     });     
     
-    await db.query(
-      "UPDATE user SET is_online = true WHERE user_id = ?", // Menggunakan true bukan 1 untuk boolean
-      [user.user_id]
-    );
+    // Presence follows live SSE connections, never persisted login flags.
 
     // Data yang dikirim ke frontend setelah login
     const responsePayload = {
@@ -186,12 +183,7 @@ export const refreshToken = async (req, res) => { // Tambahkan async karena ada 
 
 export const logout = async (req, res) => {
   try {
-    // req.user didapat dari middleware verifyToken
-    const userId = req.user?.id || req.user?.userId; // Sesuaikan dengan properti ID di req.user Anda
-
-    if (userId) { // Update is_online hanya jika userId teridentifikasi
-      await db.query("UPDATE user SET is_online = false WHERE user_id = ?", [userId]); // Menggunakan false bukan 0
-    }
+    // The client closes its own stream; other tabs retain their own leases.
   
     res.clearCookie('refreshToken', {
         httpOnly: true,

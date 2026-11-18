@@ -4,6 +4,7 @@ import DashboardLayout from "./Layouts/DashboardLayout";
 // App.jsx
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./Context/AuthContext";
+import { PresenceProvider } from "./Context/PresenceContext";
 import { ProtectedRoute, RoleRoute } from "./utils/Middleware/ProtectedRoute";
 
 // Pages
@@ -49,6 +50,7 @@ const AssetVerification = lazy(() => import("./features/AsetIT/AssetVerification
 function App() {
   return (
     <AuthProvider>
+      <PresenceProvider>
       <BrowserRouter basename={import.meta.env?.BASE_URL || "/"}>
         <Routes>
           <Route element={<RouteBoundary />}>
@@ -149,6 +151,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
+      </PresenceProvider>
     </AuthProvider>
   );
 }

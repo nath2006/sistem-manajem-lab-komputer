@@ -19,7 +19,6 @@ const EditUser = ({ id, onClose, onUpdate }) => {
           username: response.data.username,
           email: response.data.email,
           role: response.data.role,
-          is_online: Boolean(response.data.is_online),
         });
       } catch (error) {
         console.error("Gagal mengambil data:", error);
@@ -45,7 +44,10 @@ const EditUser = ({ id, onClose, onUpdate }) => {
     try {
       // Data yang akan dikirim ke backend
       const dataToSubmit = {
-        ...formData,
+        nama_lengkap: formData.nama_lengkap,
+        username: formData.username,
+        email: formData.email,
+        role: formData.role,
         is_active: formData.is_active ? 1 : 0,
       };
 
@@ -195,20 +197,7 @@ const EditUser = ({ id, onClose, onUpdate }) => {
                 </option>
               </select>
             </div>
-            <div className="mb-4">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  name="is_online"
-                  checked={formData.is_online}
-                  onChange={handleChange}
-                  className="mr-2 h-5 w-5 text-maroon focus:ring-maroon"
-                />
-                <span className="text-gray-700 font-medium">
-                  Status Onlines
-                </span>
-              </label>
-            </div>
+            <p className="text-sm text-gray-500">Status online dikelola otomatis berdasarkan koneksi pengguna.</p>
             {/* Input Password */}
             <div className="mb-4">
               <label

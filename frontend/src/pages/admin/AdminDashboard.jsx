@@ -1,4 +1,5 @@
 import DashboardInsights from '../../Components/DashboardInsights';
+import { usePresence } from '../../Context/PresenceContext';
 import DashboardTheme from '../../Components/DashboardTheme';
 import LoadingSkeleton, { SkeletonRows } from '../../Components/Loading/Skeleton';
 import React, { useState, useEffect} from "react";
@@ -11,6 +12,7 @@ import CardStatAdmin from "../../components/cardDashboard/CardStatAdmin";
 import { get } from "../../utils/api"; 
 
 const DasboardAdmin = () => {
+  const presence = usePresence();
   useTitle("Dashboard Admin - SIM Lab Komputer");
 
   // State untuk menyimpan data dari API baru
@@ -63,7 +65,7 @@ const DasboardAdmin = () => {
         <div className="dashboard-admin-details flex w-full min-w-0 flex-col">
           <div className="grid w-full min-w-0 grid-cols-12 gap-4">
             <section className="col-span-12 grid grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Administrasi">
-              <CardStatAdmin icon={FaUser} count={isLoading && !dashboardStats ? <LoadingSkeleton variant="text" rows={1} /> : dashboardStats?.totalOnlineUsers || 0} label="Pengguna online" />
+              <CardStatAdmin icon={FaUser} count={presence.connected && presence.ready ? presence.onlineUserIds.length : <span className="text-sm font-medium" title="Status online belum tersedia">Belum terhubung</span>} label="Pengguna online" />
               <CardStatAdmin icon={FaComputer} count={isLoading && !dashboardStats ? <LoadingSkeleton variant="text" rows={1} /> : dashboardStats?.totalLab || 0} label="Laboratorium" />
               <CardStatAdmin icon={FaUser} count={isLoading && !dashboardStats ? <LoadingSkeleton variant="text" rows={1} /> : dashboardStats?.totalUser || 0} label="Pengguna" />
               <CardStatAdmin icon={FaRegNewspaper} count={isLoading && !dashboardStats ? <LoadingSkeleton variant="text" rows={1} /> : dashboardStats?.totalPengumuman || 0} label="Pengumuman" />

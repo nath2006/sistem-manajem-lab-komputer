@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 async function load(name, db) {
   const source=(await readFile(new URL(`../../backend/controllers/${name}Controller.js`,import.meta.url),'utf8')).replace(/^import .*$/gm,'').replace(/^export /gm,'');
-  const context={db,console:{error() {}}};
+  const context={db,presenceRegistry:{isOnline:id=>id===1||id===2},console:{error() {}}};
   vm.runInNewContext(source+'\nglobalThis.handler = '+(name==='dashboard'?'getDashboardStats':'getTeknisiDashboardStats')+';',context);
   return context.handler;
 }
@@ -21,7 +21,7 @@ function measuredDatabase(rows) {
 }
 
 test('admin dashboard independent SQL reads start together without changing the response contract', async () => {
-  const db=measuredDatabase([['total_online_users',[{total_online_users:2}]],['total_perangkat',[{total_perangkat:10}]],['total_lab',[{total_lab:3}]],['total_user',[{total_user:12}]],['total_pengumuman',[{total_pengumuman:1}]],['SELECT id, judul',[{id:4,judul:'Info'}]],['FROM perangkat GROUP BY',[{status:'Baik',jumlah:10}]],['FROM laboratorium GROUP BY',[{status:'Tersedia',jumlah:3}]]]);
+  const db=measuredDatabase([['SELECT user_id FROM user',[{user_id:1},{user_id:2},{user_id:3}]],['total_perangkat',[{total_perangkat:10}]],['total_lab',[{total_lab:3}]],['total_user',[{total_user:12}]],['total_pengumuman',[{total_pengumuman:1}]],['SELECT id, judul',[{id:4,judul:'Info'}]],['FROM perangkat GROUP BY',[{status:'Baik',jumlah:10}]],['FROM laboratorium GROUP BY',[{status:'Tersedia',jumlah:3}]]]);
   const res=response();await (await load('dashboard',db))({},res);
   assert.equal(res.code,200);assert.equal(db.calls.length,8);
   assert.equal(db.maximum,8,'Independent reads should not be serialized');
