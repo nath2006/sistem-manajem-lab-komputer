@@ -5,7 +5,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../Context/AuthContext'; 
 import Dashboard from '../../Layouts/Dashboard'; 
-import Footer from '../../components/Footer'; 
+import Footer from '../../Components/Footer'; 
 import { getGreetingTime } from '../../utils/greetingTime'; 
 import moment from 'moment'; 
 import 'moment/locale/id'; 
