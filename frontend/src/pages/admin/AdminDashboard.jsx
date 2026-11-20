@@ -6,9 +6,9 @@ import React, { useState, useEffect} from "react";
 import { User as FaUser, Monitor as FaComputer, Newspaper as FaRegNewspaper } from 'lucide-react';
 import DashboardTablePanel from '../../Components/DashboardTablePanel';
 import Dashboard from "../../Layouts/Dashboard";
-import Footer from "../../components/Footer";
+import Footer from "../../Components/Footer";
 import useTitle from "../../utils/useTitle";
-import CardStatAdmin from "../../components/cardDashboard/CardStatAdmin";
+import CardStatAdmin from "../../Components/cardDashboard/CardStatAdmin";
 import { get } from "../../utils/api"; 
 
 const DasboardAdmin = () => {
