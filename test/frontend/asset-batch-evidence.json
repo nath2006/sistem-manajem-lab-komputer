@@ -1,0 +1,36 @@
+{
+  "scope": "Synthetic mounted React fixtures only; no database/runtime QA",
+  "frontend_tests": 254,
+  "shared_tests": 3,
+  "focused_tests": 6,
+  "lint_errors": 0,
+  "lint_warnings": 6,
+  "build": "passed",
+  "files": [
+    {
+      "path": "src/features/AsetIT/AssetForm.jsx",
+      "bytes": 6075,
+      "sha256": "8c4f69c6c613d9b23cc39e90107cad273f2fb61eedea93a423393afd3c3c122a"
+    },
+    {
+      "path": "src/features/AsetIT/AsetIT.jsx",
+      "bytes": 8737,
+      "sha256": "fca4487e2630bf6fab4e70320d91b5a7a7829e17f65360ce87e1d7f867c004b3"
+    },
+    {
+      "path": "../test/frontend/assets-batch.test.mjs",
+      "bytes": 3964,
+      "sha256": "65374888548dd5f6c5709e9336c527036fee609764fb716560b79cb509c8c5d8"
+    },
+    {
+      "path": "../test/frontend/assets-batch-page.test.mjs",
+      "bytes": 4744,
+      "sha256": "68af8ff8be1ad3a9f876d725f64839b266ef598ffba4295245798112881493e4"
+    },
+    {
+      "path": "dist/assets/AsetIT-D6Ep-O_7.js",
+      "bytes": 20438,
+      "sha256": "c3040be11b2e51a285a5ac33892854341dd0dfe922fb975c076b4f783f72e744"
+    }
+  ]
+}
